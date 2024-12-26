@@ -276,19 +276,20 @@ export default class WordCountPlugin extends Plugin {
 
   private async saveDeviceData(data: WordCountData) {
     try {
-      const pluginDir = `.obsidian/plugins/${this.manifest.id}`;
-      const dataDir = `${pluginDir}/data`;
-      const filePath = `${pluginDir}/${this.getDeviceDataPath()}`;
+      const dataDir = this.app.vault.configDir;
 
-      const pluginDirExists = await this.app.vault.adapter.exists(pluginDir);
-      if (!pluginDirExists) {
-        await this.app.vault.adapter.mkdir(pluginDir);
-      }
-
-      const dataDirExists = await this.app.vault.adapter.exists(dataDir);
-      if (!dataDirExists) {
+      try {
         await this.app.vault.adapter.mkdir(dataDir);
+      } catch (dirError) {
+        if (
+          !(dirError instanceof Error) ||
+          !dirError.message.includes("File exists")
+        ) {
+          throw dirError;
+        }
       }
+
+      const filePath = `${dataDir}/keep-the-rhythm-device-${this.getDeviceId()}.json`;
 
       await this.app.vault.adapter.write(
         filePath,
@@ -301,14 +302,22 @@ export default class WordCountPlugin extends Plugin {
 
   private async loadAllDevicesData(): Promise<WordCountData[]> {
     try {
-      const pluginDir = `.obsidian/plugins/${this.manifest.id}/data`;
-      const files = await this.app.vault.adapter.list(pluginDir);
-      const deviceFiles = files.files.filter((f) => f.endsWith(".json"));
+      const dataDir = this.app.vault.configDir;
+      const files = await this.app.vault.adapter.list(dataDir);
+      const deviceFiles = files.files.filter(
+        (f) =>
+          f.startsWith(`${dataDir}/keep-the-rhythm-device-`) &&
+          f.endsWith(".json"),
+      );
 
       const allData: WordCountData[] = [];
       for (const file of deviceFiles) {
-        const content = await this.app.vault.adapter.read(file);
-        allData.push(JSON.parse(content));
+        try {
+          const content = await this.app.vault.adapter.read(file);
+          allData.push(JSON.parse(content));
+        } catch (fileError) {
+          console.error(`Error reading device file ${file}:`, fileError);
+        }
       }
       return allData;
     } catch (error) {
@@ -323,16 +332,41 @@ export default class WordCountPlugin extends Plugin {
       dailyCounts: {},
     };
 
+    const allDates = new Set<string>();
     allDevicesData.forEach((deviceData) => {
-      Object.entries(deviceData.dailyCounts).forEach(([date, dayData]) => {
-        if (!mergedData.dailyCounts[date]) {
-          mergedData.dailyCounts[date] = {
-            totalDelta: 0,
-            files: {},
-          };
+      Object.keys(deviceData.dailyCounts).forEach((date) => {
+        allDates.add(date);
+      });
+    });
+
+    allDates.forEach((date) => {
+      mergedData.dailyCounts[date] = {
+        totalDelta: 0,
+        files: {},
+      };
+
+      allDevicesData.forEach((deviceData) => {
+        const dayData = deviceData.dailyCounts[date];
+        if (dayData) {
+          mergedData.dailyCounts[date].totalDelta += dayData.totalDelta || 0;
+
+          Object.entries(dayData.files || {}).forEach(
+            ([filePath, fileData]) => {
+              const existingFileData =
+                mergedData.dailyCounts[date].files[filePath];
+
+              if (!existingFileData) {
+                mergedData.dailyCounts[date].files[filePath] = { ...fileData };
+              } else {
+                if (fileData.current > existingFileData.current) {
+                  mergedData.dailyCounts[date].files[filePath] = {
+                    ...fileData,
+                  };
+                }
+              }
+            },
+          );
         }
-        mergedData.dailyCounts[date].totalDelta += dayData.totalDelta;
-        Object.assign(mergedData.dailyCounts[date].files, dayData.files);
       });
     });
 
@@ -341,7 +375,7 @@ export default class WordCountPlugin extends Plugin {
 
   private async loadDeviceData(): Promise<WordCountData | null> {
     try {
-      const path = `.obsidian/plugins/${this.manifest.id}/${this.getDeviceDataPath()}`;
+      const path = `${this.app.vault.configDir}/keep-the-rhythm-device-${this.getDeviceId()}.json`;
       const exists = await this.app.vault.adapter.exists(path);
 
       if (exists) {
