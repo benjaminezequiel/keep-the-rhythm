@@ -4,6 +4,11 @@ Keep the Rhythm is an Obsidian plugin that helps you maintain a consistent writi
 
 ![plugin-heatmap](docs/image.png)
 
+### Why not use Better Word Count?
+
+I built this plugin after finding that [Better Word Count](https://github.com/lukeleppan/better-word-count/), while useful, had issues with Obsidian Sync - stats would get overwritten when switching between devices.
+Keep the Rhythm solves this by maintaining separate files for each device, ensuring your writing progress is always accurately tracked.
+
 ## Features
 
 - **Daily Word Count Tracking**: Automatically tracks how many words you write each day in Obsidian
