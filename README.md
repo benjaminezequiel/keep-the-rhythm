@@ -13,11 +13,10 @@ Keep the Rhythm is an Obsidian plugin that helps you maintain a consistent writi
 
 ## Installation
 
-1. Open Obsidian Settings
-2. Go to Community Plugins and disable Safe Mode
-3. Click Browse and search for "Keep the Rhythm"
-4. Click Install
-5. Enable the plugin in the Community Plugins tab
+- Download the latest release files from this repository's Releases section
+- Create a folder on `/.obsidian/plugins/` name `keep-the-rhythm`
+- Reload Obsidian
+- Go to Settings > Community Plugins and enable "Keep the Rhythm"
 
 ## Usage
 
