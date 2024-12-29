@@ -227,9 +227,6 @@ export default class WordCountPlugin extends Plugin {
         delete this.data.dailyCounts[date].files[oldPath];
 
         await this.saveDeviceData(this.data);
-        console.log(
-          `File renamed from ${oldPath} to ${file.path}, updated tracking data`,
-        );
       }
     } catch (error) {
       console.error("Error in handleFileRename:", error);
@@ -446,9 +443,6 @@ export default class WordCountPlugin extends Plugin {
       this.viewData = this.mergeDevicesData(allDevicesData);
       this.view?.refresh();
 
-      console.log(
-        `File ${file.path} changed. Delta: ${delta}, Total delta today: ${this.data.dailyCounts[date].totalDelta}`,
-      );
     } catch (error) {
       console.error("Error in handleFileModify:", error);
     }
