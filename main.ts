@@ -18,7 +18,10 @@ import { SettingsTab } from "./src/views/SettingsTab";
 interface PluginSettings {
   intensityLevels: IntensityConfig;
   showOverview: boolean;
-  colors: ColorConfig;
+  colors: {
+    light: ColorConfig;
+    dark: ColorConfig;
+  };
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -28,11 +31,20 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     high: 1000,
   },
   colors: {
-    level0: "#ebedf015",
-    level1: "#9be9a8",
-    level2: "#40c463",
-    level3: "#30a14e",
-    level4: "#216e39",
+    light: {
+      level0: "#ebedf015",
+      level1: "#9be9a8",
+      level2: "#40c463",
+      level3: "#30a14e",
+      level4: "#216e39",
+    },
+    dark: {
+      level0: "#161b22",
+      level1: "#0e4429",
+      level2: "#006d32",
+      level3: "#26a641",
+      level4: "#39d353",
+    }
   },
   showOverview: true,
 };
@@ -85,11 +97,13 @@ export default class WordCountPlugin extends Plugin {
         },
         onColorsChange: (newColors) => {
           this.settings.colors = newColors;
+          this.applyColorStyles();
           this.saveSettings();
         },
-      }),
+      })
     );
   }
+  
 
   private getDeviceDataPath(): string {
     return `data/device-${this.getDeviceId()}.json`;
@@ -126,15 +140,27 @@ export default class WordCountPlugin extends Plugin {
       styleEl.id = "word-count-heatmap-colors";
       document.head.appendChild(styleEl);
     }
-
-    const colors = this.settings.colors;
+  
+    const lightColors = this.settings.colors.light;
+    const darkColors = this.settings.colors.dark;
+    
     styleEl.textContent = `
-    .level-0 { background-color: ${colors.level0}; }
-    .level-1 { background-color: ${colors.level1}; }
-    .level-2 { background-color: ${colors.level2}; }
-    .level-3 { background-color: ${colors.level3}; }
-    .level-4 { background-color: ${colors.level4}; }
-  `;
+      .theme-light {
+        --level-0-color: ${lightColors.level0};
+        --level-1-color: ${lightColors.level1};
+        --level-2-color: ${lightColors.level2};
+        --level-3-color: ${lightColors.level3};
+        --level-4-color: ${lightColors.level4};
+      }
+      
+      .theme-dark {
+        --level-0-color: ${darkColors.level0};
+        --level-1-color: ${darkColors.level1};
+        --level-2-color: ${darkColors.level2};
+        --level-3-color: ${darkColors.level3};
+        --level-4-color: ${darkColors.level4};
+      }
+    `;
   }
 
   async activateView() {

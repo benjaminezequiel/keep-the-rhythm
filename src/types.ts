@@ -17,6 +17,11 @@ export interface ColorConfig {
   level4: string;
 }
 
+export interface ThemeColors {
+  light: ColorConfig;
+  dark: ColorConfig;
+}
+
 export interface DayData {
   totalDelta: number;
   files: {

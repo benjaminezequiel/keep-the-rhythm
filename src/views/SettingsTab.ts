@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, Modal } from "obsidian";
-import { IntensityConfig, ColorConfig } from "src/types";
+import { IntensityConfig, ColorConfig, ThemeColors } from "src/types";
 import { DEFAULT_SETTINGS } from "../../main";
 
 class ConfirmationModal extends Modal {
@@ -56,13 +56,14 @@ class ConfirmationModal extends Modal {
 interface SettingsTabOptions {
   intensityLevels: IntensityConfig;
   showOverview: boolean;
-  colors: ColorConfig;
+  colors: ThemeColors;
   onIntensityLevelsChange: (newLevels: IntensityConfig) => void;
   onShowOverviewChange: (newShowOverview: boolean) => void;
-  onColorsChange: (newColors: ColorConfig) => void;
+  onColorsChange: (newColors: ThemeColors) => void;
 }
 
 export class SettingsTab extends PluginSettingTab {
+  
   private plugin: any;
   private options: SettingsTabOptions;
 
@@ -144,75 +145,12 @@ export class SettingsTab extends PluginSettingTab {
           }),
       );
     new Setting(containerEl).setName("Heatmap Colors").setHeading();
-    // Color for Level 0 (No activity)
-    new Setting(containerEl)
-      .setName("No Activity Color")
-      .setDesc("Color for days with no writing activity")
-      .addColorPicker((color) =>
-        color
-          .setValue(this.plugin.settings.colors.level0)
-          .onChange(async (value) => {
-            this.plugin.settings.colors.level0 = value;
-            this.options.onColorsChange(this.plugin.settings.colors);
-            this.applyColorStyles();
-          }),
-      );
 
-    // Color for Level 1
-    new Setting(containerEl)
-      .setName("Low Activity Color")
-      .setDesc("Color for minimal writing activity")
-      .addColorPicker((color) =>
-        color
-          .setValue(this.plugin.settings.colors.level1)
-          .onChange(async (value) => {
-            this.plugin.settings.colors.level1 = value;
-            this.options.onColorsChange(this.plugin.settings.colors);
-            this.applyColorStyles();
-          }),
-      );
+    new Setting(containerEl).setName("Light Theme Colors").setHeading();
+    this.createColorSettings(containerEl, 'light');
 
-    // Color for Level 2
-    new Setting(containerEl)
-      .setName("Medium Activity Color")
-      .setDesc("Color for moderate writing activity")
-      .addColorPicker((color) =>
-        color
-          .setValue(this.plugin.settings.colors.level2)
-          .onChange(async (value) => {
-            this.plugin.settings.colors.level2 = value;
-            this.options.onColorsChange(this.plugin.settings.colors);
-            this.applyColorStyles();
-          }),
-      );
-
-    // Color for Level 3
-    new Setting(containerEl)
-      .setName("High Activity Color")
-      .setDesc("Color for significant writing activity")
-      .addColorPicker((color) =>
-        color
-          .setValue(this.plugin.settings.colors.level3)
-          .onChange(async (value) => {
-            this.plugin.settings.colors.level3 = value;
-            this.options.onColorsChange(this.plugin.settings.colors);
-            this.applyColorStyles();
-          }),
-      );
-
-    // Color for Level 4
-    new Setting(containerEl)
-      .setName("Very High Activity Color")
-      .setDesc("Color for intense writing activity")
-      .addColorPicker((color) =>
-        color
-          .setValue(this.plugin.settings.colors.level4)
-          .onChange(async (value) => {
-            this.plugin.settings.colors.level4 = value;
-            this.options.onColorsChange(this.plugin.settings.colors);
-            this.applyColorStyles();
-          }),
-      );
+    new Setting(containerEl).setName("Dark Theme Colors").setHeading();    
+    this.createColorSettings(containerEl, 'dark');
 
     new Setting(containerEl)
       .setName("Restore Default Settings")
@@ -256,8 +194,64 @@ export class SettingsTab extends PluginSettingTab {
           }),
       );
   }
-  private applyColorStyles() {
-    // Apply dynamic styles to the document
+
+  private createColorSettings(containerEl: HTMLElement, theme: 'light' | 'dark') {
+    const colorDescriptions = {
+      level0: "No Activity Color",
+      level1: "Low Activity Color",
+      level2: "Medium Activity Color",
+      level3: "High Activity Color",
+      level4: "Very High Activity Color",
+    };
+
+    const descriptions = {
+      level0: "Color for days with no writing activity",
+      level1: "Color for minimal writing activity",
+      level2: "Color for moderate writing activity",
+      level3: "Color for significant writing activity",
+      level4: "Color for intense writing activity",
+    };
+
+    Object.entries(colorDescriptions).forEach(([level, name]) => {
+      new Setting(containerEl)
+        .setName(name)
+        .setDesc(descriptions[level as keyof typeof descriptions])
+        .addColorPicker((color) =>
+          color
+            .setValue(this.plugin.settings.colors[theme][level as keyof ColorConfig])
+            .onChange(async (value) => {
+              this.plugin.settings.colors[theme][level as keyof ColorConfig] = value;
+              this.options.onColorsChange(this.plugin.settings.colors);
+              this.applyColorStyles();
+            }),
+        );
+    });
+
+    // Add theme-specific reset button
+    new Setting(containerEl)
+      .setName(`Reset ${theme === 'light' ? 'Light' : 'Dark'} Theme Colors`)
+      .addButton((button) =>
+        button
+          .setButtonText("Reset Theme Colors")
+          .onClick(() => {
+            new ConfirmationModal(
+              this.plugin.app,
+              `Are you sure you want to reset the ${theme} theme colors to their default values?`,
+              async () => {
+                this.plugin.settings.colors[theme] = {
+                  ...DEFAULT_SETTINGS.colors[theme]
+                };
+                await this.plugin.saveSettings();
+                this.plugin.applyColorStyles();
+                this.display();
+                this.plugin.view?.refresh();
+              },
+            ).open();
+          }),
+      );
+  }
+
+ private applyColorStyles() {
     let styleEl = document.getElementById("word-count-heatmap-colors");
     if (!styleEl) {
       styleEl = document.createElement("style");
@@ -265,13 +259,29 @@ export class SettingsTab extends PluginSettingTab {
       document.head.appendChild(styleEl);
     }
 
-    const colors = this.plugin.settings.colors;
+    const { light, dark } = this.plugin.settings.colors;
     styleEl.textContent = `
-      .level-0 { background-color: ${colors.level0}; }
-      .level-1 { background-color: ${colors.level1}; }
-      .level-2 { background-color: ${colors.level2}; }
-      .level-3 { background-color: ${colors.level3}; }
-      .level-4 { background-color: ${colors.level4}; }
+      .theme-light {
+        --level-0-color: ${light.level0};
+        --level-1-color: ${light.level1};
+        --level-2-color: ${light.level2};
+        --level-3-color: ${light.level3};
+        --level-4-color: ${light.level4};
+      }
+      
+      .theme-dark {
+        --level-0-color: ${dark.level0};
+        --level-1-color: ${dark.level1};
+        --level-2-color: ${dark.level2};
+        --level-3-color: ${dark.level3};
+        --level-4-color: ${dark.level4};
+      }
+
+      .level-0 { background-color: var(--level-0-color); }
+      .level-1 { background-color: var(--level-1-color); }
+      .level-2 { background-color: var(--level-2-color); }
+      .level-3 { background-color: var(--level-3-color); }
+      .level-4 { background-color: var(--level-4-color); }
     `;
   }
 }
