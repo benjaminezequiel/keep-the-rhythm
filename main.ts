@@ -32,14 +32,14 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   },
   colors: {
     light: {
-      level0: "#ebedf015",
+      level0: "#e0e0e0",
       level1: "#9be9a8",
-      level2: "#40c463",
-      level3: "#30a14e",
-      level4: "#216e39",
+      level2: "#6ad286",
+      level3: "#2ebd54",
+      level4: "#12a53e",
     },
     dark: {
-      level0: "#161b22",
+      level0: "#ebedf015",
       level1: "#0e4429",
       level2: "#006d32",
       level3: "#26a641",
@@ -134,33 +134,22 @@ export default class WordCountPlugin extends Plugin {
   }
 
   private applyColorStyles() {
-    let styleEl = document.getElementById("word-count-heatmap-colors");
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = "word-count-heatmap-colors";
-      document.head.appendChild(styleEl);
-    }
-  
-    const lightColors = this.settings.colors.light;
-    const darkColors = this.settings.colors.dark;
+    const container = this.app.workspace.containerEl;
+    const { light, dark } = this.settings.colors;
     
-    styleEl.textContent = `
-      .theme-light {
-        --level-0-color: ${lightColors.level0};
-        --level-1-color: ${lightColors.level1};
-        --level-2-color: ${lightColors.level2};
-        --level-3-color: ${lightColors.level3};
-        --level-4-color: ${lightColors.level4};
-      }
-      
-      .theme-dark {
-        --level-0-color: ${darkColors.level0};
-        --level-1-color: ${darkColors.level1};
-        --level-2-color: ${darkColors.level2};
-        --level-3-color: ${darkColors.level3};
-        --level-4-color: ${darkColors.level4};
-      }
-    `;
+    const style = container.style;
+    
+    style.setProperty('--light-level-0', light.level0);
+    style.setProperty('--light-level-1', light.level1);
+    style.setProperty('--light-level-2', light.level2);
+    style.setProperty('--light-level-3', light.level3);
+    style.setProperty('--light-level-4', light.level4);
+    
+    style.setProperty('--dark-level-0', dark.level0);
+    style.setProperty('--dark-level-1', dark.level1);
+    style.setProperty('--dark-level-2', dark.level2);
+    style.setProperty('--dark-level-3', dark.level3);
+    style.setProperty('--dark-level-4', dark.level4);
   }
 
   async activateView() {
@@ -295,7 +284,22 @@ export default class WordCountPlugin extends Plugin {
     }
   }
 
-  async onunload() {}
+  async onunload() {
+    const style = this.app.workspace.containerEl.style;
+  
+    // Clean up all properties
+    style.removeProperty('--light-level-0');
+    style.removeProperty('--light-level-1');
+    style.removeProperty('--light-level-2');
+    style.removeProperty('--light-level-3');
+    style.removeProperty('--light-level-4');
+    
+    style.removeProperty('--dark-level-0');
+    style.removeProperty('--dark-level-1');
+    style.removeProperty('--dark-level-2');
+    style.removeProperty('--dark-level-3');
+    style.removeProperty('--dark-level-4');
+  }
 
   private async saveDeviceData(data: WordCountData) {
     try {
