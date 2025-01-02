@@ -11,8 +11,9 @@ import { Overview } from "./Overview";
 import { relative } from "path";
 
 const formatDate = (date: Date): string => {
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    return localDate.toISOString().split('T')[0];
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
 };
 
 interface HeatmapProps {
@@ -41,6 +42,10 @@ const HeatmapCell = ({
     return 4;
   };
   
+  const [year, month, day] = date.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
+
+  console.log(localDate)
 
   return (
     <Tooltip>
@@ -49,7 +54,7 @@ const HeatmapCell = ({
       </TooltipTrigger>
       <TooltipContent className="custom-tooltip">
         <div className="tooltip-date">
-		  {formatDate(new Date(date))}
+		  {formatDate(new Date(localDate))}
         </div>
         <div className="tooltip-wordCount">+{count} words</div>
       </TooltipContent>
@@ -86,12 +91,15 @@ export const Heatmap = ({
 
   const getDateForCell = (weekIndex: number, dayIndex: number): Date => {
     const date = new Date(today);
-	const todayDayIndex = getDayIndex(date.getDay());
-	const todayWeekIndex = weeksToShow - 1;
+    
 
-    const daysOffset = (weekIndex - todayWeekIndex) * 7  + (dayIndex - todayDayIndex);      
-
-    date.setDate(date.getDate() + daysOffset + 1);
+    const currentDayIndex = getDayIndex(date.getDay());
+    date.setDate(date.getDate() - currentDayIndex);
+    
+    // Calculate offset from the current week's Monday
+    const weekOffset = weekIndex - (weeksToShow - 1);
+    date.setDate(date.getDate() + (weekOffset * 7) + dayIndex);
+    
     return date;
   };
 
@@ -152,8 +160,11 @@ export const Heatmap = ({
 								.fill(null)
 								.map((_, dayIndex) => {
 									const date = getDateForCell(weekIndex, dayIndex);
+									
 									const dateStr = formatDate(date);
+									
 									const dayData = data.dailyCounts[dateStr];
+									
 									let count = 0;
 									if (dayData && dayData.totalDelta) {
 										count = dayData?.totalDelta;

@@ -111,16 +111,12 @@ export default class WordCountPlugin extends Plugin {
   }
 
   private getCurrentDate(): string {
-    const date = new Date();
-    // Adjust for timezone offset to get your local calendar date
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, '0');
-    const day = String(localDate.getDate()).padStart(2, '0');
+    const now = new Date();
 
-    
-    return `${year}-${month}-${day}`;
-  }
+    return now.getFullYear() + '-' + 
+           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(now.getDate()).padStart(2, '0');
+	}
 
 
 

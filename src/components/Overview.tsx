@@ -1,14 +1,22 @@
 import React from "react";
 import { WordCountData } from "../types";
+// import { formatDate } from '../utils';
 
 export const Overview = ({ data }: { data: WordCountData }) => {
   const today = new Date();
-  const getDateStr = (date: Date) => date.toISOString().split("T")[0];
+  const formatDate = (date: Date): string => {
+	return date.getFullYear() + '-' + 
+		   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+		   String(date.getDate()).padStart(2, '0');
+	};
+
+  const todayStr = formatDate(today);
+
 
   const getWordCount = (startDate: Date, endDate: Date) => {
     let total = 0;
-    const start = getDateStr(startDate);
-    const end = getDateStr(endDate);
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
 
     Object.entries(data.dailyCounts).forEach(([date, dayData]) => {
       if (date >= start && date <= end) {
@@ -18,10 +26,21 @@ export const Overview = ({ data }: { data: WordCountData }) => {
     return total;
   };
 
-  const todayCount = data.dailyCounts[getDateStr(today)]?.totalDelta || 0;
+	const getWeekStart = (date: Date): Date => {
+		const result = new Date(date);
+		const day = result.getDay();
+		const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+		result.setDate(diff);
+		return result;
+	};
+
+
+  const todayCount = data.dailyCounts[todayStr]?.totalDelta || 0;
 
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
+  const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
+  weekStart.setDate(today.getDate() - daysSinceMonday);
+  
   const weekCount = getWordCount(weekStart, today);
 
   const yearStart = new Date(today.getFullYear(), 0, 1);
