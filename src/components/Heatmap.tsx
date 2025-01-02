@@ -91,7 +91,7 @@ export const Heatmap = ({
 
     const daysOffset = (weekIndex - todayWeekIndex) * 7  + (dayIndex - todayDayIndex);      
 
-    date.setDate(date.getDate() + daysOffset);
+    date.setDate(date.getDate() + daysOffset + 1);
     return date;
   };
 
