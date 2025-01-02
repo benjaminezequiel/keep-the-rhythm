@@ -8,30 +8,28 @@ import {
 import React from "react";
 import { WordCountData, IntensityConfig, ColorConfig } from "../types";
 import { Overview } from "./Overview";
+import { relative } from "path";
+
+const formatDate = (date: Date): string => {
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    return localDate.toISOString().split('T')[0];
+};
 
 interface HeatmapProps {
   data: WordCountData;
   intensityLevels: IntensityConfig;
-  colors: ColorConfig;
   showOverview?: boolean;
 }
 
 interface HeatmapCellProps {
   date: string;
   count: number;
-  files: {
-    [path: string]: {
-      initial: number;
-      current: number;
-    };
-  };
   intensityLevels: IntensityConfig;
 }
 
 const HeatmapCell = ({
   date,
   count,
-  files,
   intensityLevels,
 }: HeatmapCellProps) => {
   const getIntensityLevel = (count: number): number => {
@@ -42,6 +40,7 @@ const HeatmapCell = ({
     if (count < high) return 3;
     return 4;
   };
+  
 
   return (
     <Tooltip>
@@ -50,7 +49,7 @@ const HeatmapCell = ({
       </TooltipTrigger>
       <TooltipContent className="custom-tooltip">
         <div className="tooltip-date">
-          {new Date(date).toISOString().split("T")[0]}
+		  {formatDate(new Date(date))}
         </div>
         <div className="tooltip-wordCount">+{count} words</div>
       </TooltipContent>
@@ -61,7 +60,6 @@ const HeatmapCell = ({
 export const Heatmap = ({
   data,
   intensityLevels,
-  colors,
   showOverview = true,
 }: HeatmapProps) => {
   const today = new Date();
@@ -82,24 +80,31 @@ export const Heatmap = ({
     "Dec",
   ];
 
+  const getDayIndex = (dayIndex: number): number => {
+	return dayIndex === 0 ? 6 : dayIndex - 1
+  }
+
   const getDateForCell = (weekIndex: number, dayIndex: number): Date => {
     const date = new Date(today);
-    date.setDate(
-      date.getDate() - ((weeksToShow - weekIndex - 1) * 7 + (6 - dayIndex)),
-    );
+	const todayDayIndex = getDayIndex(date.getDay());
+	const todayWeekIndex = weeksToShow - 1;
+
+    const daysOffset = (weekIndex - todayWeekIndex) * 7  + (dayIndex - todayDayIndex);      
+
+    date.setDate(date.getDate() + daysOffset);
     return date;
   };
-
-  const formatDate = (date: Date): string => date.toISOString().split("T")[0];
 
   const getMonthLabels = () => {
     const labels = [];
     let lastMonth = -1;
 
     for (let week = 0; week < weeksToShow; week++) {
-      const date = getDateForCell(week, 0);
-      const month = date.getMonth();
-      const dayOfMonth = date.getDate();
+        const date = getDateForCell(week, 0);
+        // Get local date
+        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+        const month = localDate.getMonth();
+        const dayOfMonth = localDate.getDate();
 
       if (month !== lastMonth && dayOfMonth <= 7) {
         labels.push({
@@ -138,33 +143,36 @@ export const Heatmap = ({
                   </div>
                 ))}
               </div>
-
-              <div className="heatmap-grid">
-                {Array(7)
-                  .fill(null)
-                  .map((_, dayIndex) => (
-                    <div key={dayIndex} className="heatmap-row">
-                      {Array(weeksToShow)
-                        .fill(null)
-                        .map((_, weekIndex) => {
-                          const date = getDateForCell(weekIndex, dayIndex);
-                          const dateStr = formatDate(date);
-                          const dayData = data.dailyCounts[dateStr];
-                          const count = dayData?.totalDelta || 0;
-
-                          return (
-                            <HeatmapCell
-                              key={weekIndex}
-                              date={dateStr}
-                              count={count}
-                              files={dayData?.files}
-                              intensityLevels={intensityLevels}
-                            />
-                          );
-                        })}
-                    </div>
-                  ))}
-              </div>
+			  <div className="heatmap-new-grid">
+				{Array(weeksToShow)
+					.fill(null)
+					.map((_, weekIndex) => (
+						<div key={weekIndex} className="heatmap-column">
+							{Array(7)
+								.fill(null)
+								.map((_, dayIndex) => {
+									const date = getDateForCell(weekIndex, dayIndex);
+									const dateStr = formatDate(date);
+									const dayData = data.dailyCounts[dateStr];
+									let count = 0;
+									if (dayData && dayData.totalDelta) {
+										count = dayData?.totalDelta;
+									}
+		  
+									return (
+									  <HeatmapCell
+										key={dayIndex}
+										date={dateStr}
+										count={count}
+										intensityLevels={intensityLevels}
+									  />
+									);
+								})
+							}
+						</div>
+					))
+				}
+			  </div>
             </div>
           </div>
         </div>

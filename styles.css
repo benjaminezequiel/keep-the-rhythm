@@ -189,3 +189,19 @@
   flex-direction: column;
   gap: 8px;
 }
+
+
+.heatmap-new-grid {
+	display: flex;
+	flex-direction: row;
+	gap: 2px;
+}
+
+.heatmap-column {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	/* height: 80px; */
+	/* width: 32px; */
+	/* background-color: red; */
+}

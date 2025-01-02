@@ -38,7 +38,6 @@ export class WordCountView extends ItemView {
         data: this.plugin.viewData,
         intensityLevels: this.plugin.settings.intensityLevels,
         showOverview: this.plugin.settings.showOverview,
-        colors: this.plugin.settings.colors,
       }),
     );
   }
@@ -56,7 +55,6 @@ export class WordCountView extends ItemView {
         data: this.plugin.viewData,
         intensityLevels: this.plugin.settings.intensityLevels,
         showOverview: this.plugin.settings.showOverview,
-        colors: this.plugin.settings.colors,
       }),
     );
   }

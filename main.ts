@@ -14,6 +14,7 @@ import { WordCountData } from "src/types";
 import "./styles.css";
 import { IntensityConfig, ColorConfig } from "src/types";
 import { SettingsTab } from "./src/views/SettingsTab";
+import { FileX } from "lucide-react";
 
 interface PluginSettings {
   intensityLevels: IntensityConfig;
@@ -110,8 +111,18 @@ export default class WordCountPlugin extends Plugin {
   }
 
   private getCurrentDate(): string {
-    return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const date = new Date();
+    // Adjust for timezone offset to get your local calendar date
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getDate()).padStart(2, '0');
+
+    
+    return `${year}-${month}-${day}`;
   }
+
+
 
   getWordCount(text: string): number {
     return text.split(/\s+/).filter((word) => word.length > 0).length;
@@ -171,6 +182,12 @@ export default class WordCountPlugin extends Plugin {
     this.createSettingsTab();
     await this.initializeData();
     this.applyColorStyles();
+
+	this.addCommand({
+		id: 'open-keep-the-rhythm',
+		name: 'Open tracking heatmap',
+		callback: () => { this.activateView() }
+	});
 
     this.registerView(VIEW_TYPE, (leaf) => {
       this.view = new WordCountView(leaf, this);
@@ -478,3 +495,4 @@ export default class WordCountPlugin extends Plugin {
     }
   }
 }
+
