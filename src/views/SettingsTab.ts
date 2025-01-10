@@ -26,7 +26,7 @@ class ConfirmationModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Confirm Action" });
+    contentEl.createEl("h3", { text: "Confirm action" });
     contentEl.createEl("p", { text: this.message });
 
     new Setting(contentEl)
@@ -79,7 +79,7 @@ export class SettingsTab extends PluginSettingTab {
 
     // Intensity Levels Section
     new Setting(containerEl)
-      .setName("Low Intensity Threshold")
+      .setName("Low intensity threshold")
       .setDesc("Minimum word count to be considered low intensity")
       .addText((text) =>
         text
@@ -97,7 +97,7 @@ export class SettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Medium Intensity Threshold")
+      .setName("Medium intensity threshold")
       .setDesc("Minimum word count to be considered medium intensity")
       .addText((text) =>
         text
@@ -115,7 +115,7 @@ export class SettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("High Intensity Threshold")
+      .setName("High intensity threshold")
       .setDesc("Minimum word count to be considered high intensity")
       .addText((text) =>
         text
@@ -134,7 +134,7 @@ export class SettingsTab extends PluginSettingTab {
 
     // Show Overview Section
     new Setting(containerEl)
-      .setName("Show Overview")
+      .setName("Show overview")
       .setDesc("Display the overview section in the word count heatmap")
       .addToggle((toggle) =>
         toggle
@@ -144,20 +144,20 @@ export class SettingsTab extends PluginSettingTab {
             this.options.onShowOverviewChange(value);
           }),
       );
-    new Setting(containerEl).setName("Heatmap Colors").setHeading();
+    new Setting(containerEl).setName("Heatmap colors").setHeading();
 
-    new Setting(containerEl).setName("Light Theme Colors").setHeading();
+    new Setting(containerEl).setName("Light theme colors").setHeading();
     this.createColorSettings(containerEl, 'light');
 
-    new Setting(containerEl).setName("Dark Theme Colors").setHeading();    
+    new Setting(containerEl).setName("Dark theme colors").setHeading();    
     this.createColorSettings(containerEl, 'dark');
 
     new Setting(containerEl)
-      .setName("Restore Default Settings")
+      .setName("Restore default settings")
       .setDesc("Reset all settings to their original values")
       .addButton((button) =>
         button
-          .setButtonText("Restore Defaults")
+          .setButtonText("Restore defaults")
           .setCta()
           .onClick(() => {
             new ConfirmationModal(
