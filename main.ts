@@ -314,56 +314,60 @@ export default class WordCountPlugin extends Plugin {
     style.removeProperty('--dark-level-4');
   }
 
-  private async saveDeviceData(data: WordCountData) {
+  private getSystemName(): string {
     try {
-      const dataDir = this.app.vault.configDir;
-
-      try {
-        await this.app.vault.adapter.mkdir(dataDir);
-      } catch (dirError) {
-        if (
-          !(dirError instanceof Error) ||
-          !dirError.message.includes("File exists")
-        ) {
-          throw dirError;
-        }
-      }
-
-      const filePath = `${dataDir}/keep-the-rhythm-device-${this.getDeviceId()}.json`;
-
-      await this.app.vault.adapter.write(
-        filePath,
-        JSON.stringify(data, null, 2),
-      );
+      const os = require('os');
+      return os.hostname().replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
     } catch (error) {
-      console.error("Error saving device data:", error);
+      console.error("Error getting system name:", error);
+      return 'unknown-device';
     }
   }
-
-  private async loadAllDevicesData(): Promise<WordCountData[]> {
+  
+  private async saveDeviceData(data: WordCountData) {
     try {
-      const dataDir = this.app.vault.configDir;
-      const files = await this.app.vault.adapter.list(dataDir);
-      const deviceFiles = files.files.filter(
-        (f) =>
-          f.startsWith(`${dataDir}/keep-the-rhythm-device-`) &&
-          f.endsWith(".json"),
+      const path = `${this.manifest.dir}/ktr-${this.getSystemName()}-${this.getDeviceId()}.json`;
+      await this.app.vault.adapter.write(
+          path,
+          JSON.stringify(data, null, 2)
       );
-
-      const allData: WordCountData[] = [];
-      for (const file of deviceFiles) {
-        try {
-          const content = await this.app.vault.adapter.read(file);
-          allData.push(JSON.parse(content));
-        } catch (fileError) {
-          console.error(`Error reading device file ${file}:`, fileError);
-        }
-      }
-      return allData;
     } catch (error) {
-      console.error("Error loading all devices data:", error);
-      return [];
+        console.error("Error saving device data:", error);
+        throw error;
     }
+    }
+
+    private async loadAllDevicesData(): Promise<WordCountData[]> {
+      try {
+          const path = this.manifest.dir;
+          if (!path) {
+              console.warn("Manifest directory is undefined");
+              return [];
+          }
+  
+          const files = await this.app.vault.adapter.list(path);
+          const deviceFiles = files.files.filter(
+              (f) =>
+                  f.startsWith(`${path}/ktr-`) &&
+                  f.endsWith(".json"),
+          );
+  
+          const allData: WordCountData[] = [];
+          for (const file of deviceFiles) {
+              try {
+                const content = await this.app.vault.adapter.read(file);
+                const parsedData = JSON.parse(content);
+                allData.push(parsedData);
+              } catch (fileError) {
+                console.error(`Error reading device file ${file}:`, fileError);
+              }
+          }
+          return allData;
+  
+      } catch (error) {
+          console.error("Error loading all devices data:", error);
+          return [];
+      }
   }
 
   private mergeDevicesData(allDevicesData: WordCountData[]): WordCountData {

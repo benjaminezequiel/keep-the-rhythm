@@ -20,6 +20,6 @@ data.json
 
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
-data/device-305b09fc-3c01-44d6-a048-abb566e6155f.json
 
-data/device-305b09fc-3c01-44d6-a048-abb566e6155f.json
+# Ignore KTR files with data
+ktr-*
