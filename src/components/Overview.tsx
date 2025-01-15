@@ -1,30 +1,33 @@
 import React from "react";
-import { WordCountData } from "../types";
+import { Stats } from "../types";
 // import { formatDate } from '../utils';
 
-export const Overview = ({ data }: { data: WordCountData }) => {
-  const today = new Date();
-  const formatDate = (date: Date): string => {
-	return date.getFullYear() + '-' + 
-		   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-		   String(date.getDate()).padStart(2, '0');
+export const Overview = ({ data }: { data: Stats }) => {
+	const today = new Date();
+	const formatDate = (date: Date): string => {
+		return (
+			date.getFullYear() +
+			"-" +
+			String(date.getMonth() + 1).padStart(2, "0") +
+			"-" +
+			String(date.getDate()).padStart(2, "0")
+		);
 	};
 
-  const todayStr = formatDate(today);
+	const todayStr = formatDate(today);
 
+	const getWordCount = (startDate: Date, endDate: Date) => {
+		let total = 0;
+		const start = formatDate(startDate);
+		const end = formatDate(endDate);
 
-  const getWordCount = (startDate: Date, endDate: Date) => {
-    let total = 0;
-    const start = formatDate(startDate);
-    const end = formatDate(endDate);
-
-    Object.entries(data.dailyCounts).forEach(([date, dayData]) => {
-      if (date >= start && date <= end) {
-        total += dayData.totalDelta;
-      }
-    });
-    return total;
-  };
+		Object.entries(data).forEach(([date, dayData]) => {
+			if (date >= start && date <= end) {
+				total += dayData.totalDelta;
+			}
+		});
+		return total;
+	};
 
 	const getWeekStart = (date: Date): Date => {
 		const result = new Date(date);
@@ -34,34 +37,33 @@ export const Overview = ({ data }: { data: WordCountData }) => {
 		return result;
 	};
 
+	const todayCount = data[todayStr]?.totalDelta || 0;
 
-  const todayCount = data.dailyCounts[todayStr]?.totalDelta || 0;
+	const weekStart = new Date(today);
+	const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
+	weekStart.setDate(today.getDate() - daysSinceMonday);
 
-  const weekStart = new Date(today);
-  const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
-  weekStart.setDate(today.getDate() - daysSinceMonday);
-  
-  const weekCount = getWordCount(weekStart, today);
+	const weekCount = getWordCount(weekStart, today);
 
-  const yearStart = new Date(today.getFullYear(), 0, 1);
-  const yearCount = getWordCount(yearStart, today);
+	const yearStart = new Date(today.getFullYear(), 0, 1);
+	const yearCount = getWordCount(yearStart, today);
 
-  return (
-    <div className="stats-overview">
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Today</div>
-          <div className="stat-value">{todayCount}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">This Week</div>
-          <div className="stat-value">{weekCount}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">This Year</div>
-          <div className="stat-value">{yearCount}</div>
-        </div>
-      </div>
-    </div>
-  );
+	return (
+		<div className="stats-overview">
+			<div className="stats-grid">
+				<div className="stat-card">
+					<div className="stat-label">Today</div>
+					<div className="stat-value">{todayCount}</div>
+				</div>
+				<div className="stat-card">
+					<div className="stat-label">This Week</div>
+					<div className="stat-value">{weekCount}</div>
+				</div>
+				<div className="stat-card">
+					<div className="stat-label">This Year</div>
+					<div className="stat-value">{yearCount}</div>
+				</div>
+			</div>
+		</div>
+	);
 };

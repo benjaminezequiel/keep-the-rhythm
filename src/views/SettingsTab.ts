@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting, Modal } from "obsidian";
 import { IntensityConfig, ColorConfig, ThemeColors } from "src/types";
-import { DEFAULT_SETTINGS } from "../../main";
+import { DEFAULT_SETTINGS } from "../types";
 
 class ConfirmationModal extends Modal {
   private onConfirm: () => void;
