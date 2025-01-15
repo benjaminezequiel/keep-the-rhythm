@@ -5,11 +5,11 @@ export interface IntensityConfig {
 }
 
 export interface ColorConfig {
-	level0: string;
-	level1: string;
-	level2: string;
-	level3: string;
-	level4: string;
+	level_0: string;
+	level_1: string;
+	level_2: string;
+	level_3: string;
+	level_4: string;
 }
 
 export interface ThemeColors {
@@ -57,18 +57,18 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	},
 	colors: {
 		light: {
-			level0: "#e0e0e0",
-			level1: "#9be9a8",
-			level2: "#6ad286",
-			level3: "#2ebd54",
-			level4: "#12a53e",
+			level_0: "#e0e0e0",
+			level_1: "#9be9a8",
+			level_2: "#6ad286",
+			level_3: "#2ebd54",
+			level_4: "#12a53e",
 		},
 		dark: {
-			level0: "#ebedf015",
-			level1: "#0e4429",
-			level2: "#006d32",
-			level3: "#26a641",
-			level4: "#39d353",
+			level_0: "#ebedf015",
+			level_1: "#0e4429",
+			level_2: "#006d32",
+			level_3: "#26a641",
+			level_4: "#39d353",
 		},
 	},
 	showOverview: true,

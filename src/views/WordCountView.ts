@@ -36,8 +36,9 @@ export class WordCountView extends ItemView {
 		this.root.render(
 			React.createElement(Heatmap, {
 				data: this.plugin.mergedStats,
-				intensityLevels: this.plugin.settings.intensityLevels,
-				showOverview: this.plugin.settings.showOverview,
+				intensityLevels:
+					this.plugin.pluginData.settings.intensityLevels,
+				showOverview: this.plugin.pluginData.settings.showOverview,
 			}),
 		);
 	}
@@ -53,8 +54,9 @@ export class WordCountView extends ItemView {
 		this.root?.render(
 			React.createElement(Heatmap, {
 				data: this.plugin.mergedStats,
-				intensityLevels: this.plugin.settings.intensityLevels,
-				showOverview: this.plugin.settings.showOverview,
+				intensityLevels:
+					this.plugin.pluginData.settings.intensityLevels,
+				showOverview: this.plugin.pluginData.settings.showOverview,
 			}),
 		);
 	}

@@ -6,7 +6,7 @@ import {
 } from "../components/ui/tooltip";
 
 import React from "react";
-import { Stats, IntensityConfig, ColorConfig } from "../types";
+import { Stats, IntensityConfig } from "../types";
 import { Overview } from "./Overview";
 
 const formatDate = (date: Date): string => {
