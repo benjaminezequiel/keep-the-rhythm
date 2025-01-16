@@ -28,7 +28,7 @@ export default class WordCountPlugin extends Plugin {
 			await this.handleFileModify(file);
 		},
 		300,
-		true 
+		true,
 	);
 
 	pluginData: PluginData;
@@ -52,143 +52,179 @@ export default class WordCountPlugin extends Plugin {
 	async onExternalSettingsChange() {
 		try {
 			const externalData = (await this.loadData()) as PluginData | null;
-	
+
 			if (!externalData?.devices) {
-				console.warn("External data is null, undefined, or missing devices");
+				console.warn(
+					"External data is null, undefined, or missing devices",
+				);
 				return;
 			}
-	
-			const allDeviceIds = new Set([
-				...Object.keys(this.pluginData.devices),
-				...Object.keys(externalData.devices),
-			]);
-	
-			const mergedDevices: deviceStats = {};
-	
-			// Helper function to calculate files delta
-			const calculateFilesDelta = (files: {
-				[filePath: string]: FileWordCount;
-			}) => {
-				return Object.values(files).reduce(
-					(sum, file) => sum + (file.current - file.initial),
-					0
-				);
-			};
-	
-			allDeviceIds.forEach((deviceId) => {
-				const localDevice = this.pluginData.devices[deviceId];
-				const externalDevice = externalData.devices[deviceId];
-	
-				// If device only exists in one source, use that data
-				if (!localDevice) {
-					mergedDevices[deviceId] = externalDevice;
-					return;
-				}
-				if (!externalDevice) {
-					mergedDevices[deviceId] = localDevice;
-					return;
-				}
-	
-				mergedDevices[deviceId] = {};
-	
-				// Get all dates from both sources
-				const allDates = new Set([
-					...Object.keys(localDevice),
-					...Object.keys(externalDevice),
-				]);
-	
-				allDates.forEach((date) => {
-					const localDate = localDevice[date];
-					const externalDate = externalDevice[date];
-	
-					// Always merge files from both sources
-					const mergedFiles: { [filePath: string]: FileWordCount } = {};
-	
-					// Get all files from both sources
-					const allFiles = new Set([
-						...Object.keys(localDate?.files || {}),
-						...Object.keys(externalDate?.files || {}),
-					]);
-	
-					// For each file
-					allFiles.forEach((filePath) => {
-						const localFile = localDate?.files?.[filePath];
-						const externalFile = externalDate?.files?.[filePath];
-	
-						// If file only exists in one source, use that data
-						if (!localFile) {
-							mergedFiles[filePath] = externalFile;
-						} else if (!externalFile) {
-							mergedFiles[filePath] = localFile;
-						} else {
-							// File exists in both - merge counts
-							mergedFiles[filePath] = {
-								initial: Math.min(
-									localFile.initial,
-									externalFile.initial
-								),
-								current: Math.max(
-									localFile.current,
-									externalFile.current
-								),
-							};
-						}
-					});
-	
-					// Calculate new delta from current files
-					const newDelta = calculateFilesDelta(mergedFiles);
-	
-					// Consider historical deltas from both sources
-					const localHistoricalDelta = localDate?.totalDelta || 0;
-					const externalHistoricalDelta = externalDate?.totalDelta || 0;
-	
-					// Calculate deltas from current files in both sources
-					const localFilesDelta = calculateFilesDelta(
-						localDate?.files || {}
-					);
-					const externalFilesDelta = calculateFilesDelta(
-						externalDate?.files || {}
-					);
-	
-					// Combine all deltas
-					// If we have no files but have historical delta, use the max historical
-					// If we have files, add their delta to any existing historical delta
-					const totalDelta =
-						Object.keys(mergedFiles).length === 0
-							? Math.max(
-								localHistoricalDelta,
-								externalHistoricalDelta
-							)
-							: newDelta +
-							Math.max(
-								localHistoricalDelta - localFilesDelta,
-								externalHistoricalDelta - externalFilesDelta
-							);
-	
-					// Create merged date data
-					mergedDevices[deviceId][date] = {
-						files: mergedFiles,
-						totalDelta: totalDelta,
-					};
-				});
-			});
-	
-			this.pluginData = {
-				settings: Object.assign(
-					{},
-					DEFAULT_SETTINGS,
-					this.pluginData.settings,
-					externalData?.settings ?? {}
-				),
-				devices: mergedDevices,
-			};
-	
+
+			// For each external device's data
+			Object.entries(externalData.devices).forEach(
+				([deviceId, deviceData]) => {
+					// If this is not our device
+					if (deviceId !== this.deviceId) {
+						// Simply update/add the external device's data as is
+						this.pluginData.devices[deviceId] = deviceData;
+					}
+				},
+			);
+
+			// Update settings
+			this.pluginData.settings = Object.assign(
+				{},
+				DEFAULT_SETTINGS,
+				this.pluginData.settings,
+				externalData?.settings ?? {},
+			);
+
 			await this.updateAndSave();
 		} catch (error) {
 			console.error("Error in onExternalSettingsChange:", error);
 		}
 	}
-	
+
+	// async onExternalSettingsChange() {
+	// 	try {
+	// 		const externalData = (await this.loadData()) as PluginData | null;
+
+	// 		if (!externalData?.devices) {
+	// 			console.warn("External data is null, undefined, or missing devices");
+	// 			return;
+	// 		}
+
+	// 		const allDeviceIds = new Set([
+	// 			...Object.keys(this.pluginData.devices),
+	// 			...Object.keys(externalData.devices),
+	// 		]);
+
+	// 		const mergedDevices: deviceStats = {};
+
+	// 		// Helper function to calculate files delta
+	// 		const calculateFilesDelta = (files: {
+	// 			[filePath: string]: FileWordCount;
+	// 		}) => {
+	// 			return Object.values(files).reduce(
+	// 				(sum, file) => sum + (file.current - file.initial),
+	// 				0
+	// 			);
+	// 		};
+
+	// 		allDeviceIds.forEach((deviceId) => {
+	// 			const localDevice = this.pluginData.devices[deviceId];
+	// 			const externalDevice = externalData.devices[deviceId];
+
+	// 			// If device only exists in one source, use that data
+	// 			if (!localDevice) {
+	// 				mergedDevices[deviceId] = externalDevice;
+	// 				return;
+	// 			}
+	// 			if (!externalDevice) {
+	// 				mergedDevices[deviceId] = localDevice;
+	// 				return;
+	// 			}
+
+	// 			mergedDevices[deviceId] = {};
+
+	// 			// Get all dates from both sources
+	// 			const allDates = new Set([
+	// 				...Object.keys(localDevice),
+	// 				...Object.keys(externalDevice),
+	// 			]);
+
+	// 			allDates.forEach((date) => {
+	// 				const localDate = localDevice[date];
+	// 				const externalDate = externalDevice[date];
+
+	// 				// Always merge files from both sources
+	// 				const mergedFiles: { [filePath: string]: FileWordCount } = {};
+
+	// 				// Get all files from both sources
+	// 				const allFiles = new Set([
+	// 					...Object.keys(localDate?.files || {}),
+	// 					...Object.keys(externalDate?.files || {}),
+	// 				]);
+
+	// 				// For each file
+	// 				allFiles.forEach((filePath) => {
+	// 					const localFile = localDate?.files?.[filePath];
+	// 					const externalFile = externalDate?.files?.[filePath];
+
+	// 					// If file only exists in one source, use that data
+	// 					if (!localFile) {
+	// 						mergedFiles[filePath] = externalFile;
+	// 					} else if (!externalFile) {
+	// 						mergedFiles[filePath] = localFile;
+	// 					} else {
+	// 						// File exists in both - merge counts
+	// 						mergedFiles[filePath] = {
+	// 							initial: Math.min(
+	// 								localFile.initial,
+	// 								externalFile.initial
+	// 							),
+	// 							current: Math.max(
+	// 								localFile.current,
+	// 								externalFile.current
+	// 							),
+	// 						};
+	// 					}
+	// 				});
+
+	// 				// Calculate new delta from current files
+	// 				const newDelta = calculateFilesDelta(mergedFiles);
+
+	// 				// Consider historical deltas from both sources
+	// 				const localHistoricalDelta = localDate?.totalDelta || 0;
+	// 				const externalHistoricalDelta = externalDate?.totalDelta || 0;
+
+	// 				// Calculate deltas from current files in both sources
+	// 				const localFilesDelta = calculateFilesDelta(
+	// 					localDate?.files || {}
+	// 				);
+	// 				const externalFilesDelta = calculateFilesDelta(
+	// 					externalDate?.files || {}
+	// 				);
+
+	// 				// Combine all deltas
+	// 				// If we have no files but have historical delta, use the max historical
+	// 				// If we have files, add their delta to any existing historical delta
+	// 				const totalDelta =
+	// 					Object.keys(mergedFiles).length === 0
+	// 						? Math.max(
+	// 							localHistoricalDelta,
+	// 							externalHistoricalDelta
+	// 						)
+	// 						: newDelta +
+	// 						Math.max(
+	// 							localHistoricalDelta - localFilesDelta,
+	// 							externalHistoricalDelta - externalFilesDelta
+	// 						);
+
+	// 				// Create merged date data
+	// 				mergedDevices[deviceId][date] = {
+	// 					files: mergedFiles,
+	// 					totalDelta: totalDelta,
+	// 				};
+	// 			});
+	// 		});
+
+	// 		this.pluginData = {
+	// 			settings: Object.assign(
+	// 				{},
+	// 				DEFAULT_SETTINGS,
+	// 				this.pluginData.settings,
+	// 				externalData?.settings ?? {}
+	// 			),
+	// 			devices: mergedDevices,
+	// 		};
+
+	// 		await this.updateAndSave();
+	// 	} catch (error) {
+	// 		console.error("Error in onExternalSettingsChange:", error);
+	// 	}
+	// }
+
 	private createSettingsTab() {
 		const pluginWithSettings = {
 			...this,
