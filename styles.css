@@ -58,8 +58,8 @@
 	border-radius: var(--radius-m);
 	padding: var(--size-4-1) var(--size-4-2);
 	font-size: var(--font-smaller);
-	color: var(--text-normal);
-	/* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); */
+	color: var(--text-on-accent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 	z-index: var(--layer-tooltip);
 	max-width: 300px;
 	white-space: break-spaces;
@@ -67,10 +67,6 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-}
-
-.tooltip-date {
-	color: var(--text-normal);
 }
 
 .tooltip-wordCount {
