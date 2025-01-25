@@ -147,6 +147,10 @@ export default class WordCountPlugin extends Plugin {
 	}
 
 	private getDeviceData(date: string) {
+		if (!this.pluginData.devices[this.deviceId]) {
+			this.setDeviceId();
+			this.update();
+		}
 		if (!this.pluginData.devices[this.deviceId][date]) {
 			this.pluginData.devices[this.deviceId][date] = {
 				totalDelta: 0,
@@ -371,6 +375,9 @@ export default class WordCountPlugin extends Plugin {
 			const date = this.getCurrentDate();
 			const content = await this.app.vault.read(file);
 			const initialWordCount = this.getWordCount(content);
+			if (!this.pluginData.devices[this.deviceId]) {
+				this.pluginData.devices[this.deviceId] = {};
+			}
 			const currentDeviceData = this.pluginData.devices[this.deviceId];
 
 			if (!currentDeviceData[date]) {
