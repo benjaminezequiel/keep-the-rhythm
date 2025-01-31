@@ -1,3 +1,15 @@
+export type ScriptName =
+	| "LATIN"
+	| "CJK"
+	| "JAPANESE"
+	| "KOREAN"
+	| "CYRILLIC"
+	| "GREEK"
+	| "ARABIC"
+	| "HEBREW"
+	| "INDIC"
+	| "SOUTHEAST_ASIAN";
+
 export interface IntensityConfig {
 	low: number;
 	medium: number;
@@ -36,6 +48,7 @@ export interface deviceStats {
 }
 
 export interface PluginSettings {
+	enabledScripts: ScriptName[];
 	intensityLevels: IntensityConfig;
 	showOverview: boolean;
 	colors: {
@@ -72,4 +85,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 		},
 	},
 	showOverview: true,
+	enabledScripts: ["LATIN"] as ScriptName[],
 };

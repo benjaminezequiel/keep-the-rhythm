@@ -8,7 +8,7 @@ import {
 	Notice,
 } from "obsidian";
 import { v4 as uuidv4 } from "uuid";
-
+import { createRegex, getWordCount } from "@/wordCounting";
 import { WordCountView, VIEW_TYPE } from "./src/views/WordCountView";
 import {
 	DEFAULT_SETTINGS,
@@ -34,12 +34,20 @@ export default class WordCountPlugin extends Plugin {
 
 	pluginData: PluginData;
 	mergedStats: Stats;
+	regex: RegExp;
 
 	deviceId: string;
 	private view: WordCountView | null = null;
 
 	get settings() {
 		return this.pluginData.settings;
+	}
+
+	getExternalWordCount(text: string) {
+		if (!this.regex) {
+			this.regex = createRegex(this.settings.enabledScripts);
+		}
+		return getWordCount(text, this.regex);
 	}
 
 	private applyColorStyles() {
@@ -117,6 +125,7 @@ export default class WordCountPlugin extends Plugin {
 				intensityLevels: this.pluginData.settings.intensityLevels,
 				showOverview: this.pluginData.settings.showOverview,
 				colors: this.pluginData.settings.colors,
+				enabledScripts: this.pluginData.settings.enabledScripts,
 				onIntensityLevelsChange: (newLevels) => {
 					this.pluginData.settings.intensityLevels = newLevels;
 					this.updateAndSave();
@@ -128,6 +137,11 @@ export default class WordCountPlugin extends Plugin {
 				onColorsChange: (newColors) => {
 					this.pluginData.settings.colors = newColors;
 					this.applyColorStyles();
+					this.updateAndSave();
+				},
+				onEnabledScriptsChange: (newEnabledScripts) => {
+					this.pluginData.settings.enabledScripts = newEnabledScripts;
+					this.regex = createRegex(this.settings.enabledScripts);
 					this.updateAndSave();
 				},
 			}),
@@ -158,10 +172,6 @@ export default class WordCountPlugin extends Plugin {
 			};
 		}
 		return this.pluginData.devices[this.deviceId][date];
-	}
-
-	getWordCount(text: string): number {
-		return text.split(/\s+/).filter((word) => word.length > 0).length;
 	}
 
 	private async initializePluginData() {
@@ -246,7 +256,6 @@ export default class WordCountPlugin extends Plugin {
 		};
 
 		await this.updateAndSave();
-		// console.log(newDeviceSet[0]);
 		const recoveredFiles = Object.keys(newDeviceSet).length;
 		if (recoveredFiles) {
 			new Notice(`Data from ${recoveredFiles} files was recovered!`);
@@ -374,7 +383,7 @@ export default class WordCountPlugin extends Plugin {
 		try {
 			const date = this.getCurrentDate();
 			const content = await this.app.vault.read(file);
-			const initialWordCount = this.getWordCount(content);
+			const initialWordCount = this.getExternalWordCount(content);
 			if (!this.pluginData.devices[this.deviceId]) {
 				this.pluginData.devices[this.deviceId] = {};
 			}
@@ -445,7 +454,7 @@ export default class WordCountPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(file);
-			const currentWordCount = this.getWordCount(content);
+			const currentWordCount = this.getExternalWordCount(content);
 			const previousCount = dateData.files[file.path].current;
 			const delta = currentWordCount - previousCount;
 

@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting, Modal } from "obsidian";
 import { IntensityConfig, ColorConfig, ThemeColors } from "src/types";
-import { DEFAULT_SETTINGS } from "../types";
+import { DEFAULT_SETTINGS, ScriptName } from "../types";
 
 class ConfirmationModal extends Modal {
 	private onConfirm: () => void;
@@ -57,9 +57,11 @@ interface SettingsTabOptions {
 	intensityLevels: IntensityConfig;
 	showOverview: boolean;
 	colors: ThemeColors;
+	enabledScripts: ScriptName[];
 	onIntensityLevelsChange: (newLevels: IntensityConfig) => void;
 	onShowOverviewChange: (newShowOverview: boolean) => void;
 	onColorsChange: (newColors: ThemeColors) => void;
+	onEnabledScriptsChange: (scripts: ScriptName[]) => void;
 }
 
 export class SettingsTab extends PluginSettingTab {
@@ -240,6 +242,67 @@ export class SettingsTab extends PluginSettingTab {
 		});
 
 		// Add theme-specific reset button
+
+		new Setting(containerEl)
+			.setName("Enabled Scripts")
+			.setDesc("Select which writing systems to count")
+			.addDropdown((dropdown) => {
+				const scriptOptions = {
+					basic: "Basic (Latin only)",
+					cjk: "CJK Support",
+					full: "Full Unicode",
+					custom: "Custom",
+				};
+
+				dropdown
+					.addOptions(scriptOptions)
+					.setValue(
+						this.plugin.settings.enabledScripts.length === 1
+							? "basic"
+							: this.plugin.settings.enabledScripts.includes(
+										"CJK",
+								  )
+								? "cjk"
+								: this.plugin.settings.enabledScripts.length > 3
+									? "full"
+									: "custom",
+					)
+					.onChange((value) => {
+						let newScripts: ScriptName[] = [];
+						switch (value) {
+							case "basic":
+								newScripts = ["LATIN"];
+								break;
+							case "cjk":
+								newScripts = [
+									"LATIN",
+									"CJK",
+									"JAPANESE",
+									"KOREAN",
+								];
+								break;
+							case "full":
+								newScripts = [
+									"LATIN",
+									"CJK",
+									"JAPANESE",
+									"KOREAN",
+									"CYRILLIC",
+									"GREEK",
+									"ARABIC",
+									"HEBREW",
+									"INDIC",
+									"SOUTHEAST_ASIAN",
+								];
+								break;
+							case "custom":
+								// Add checkboxes for individual scripts
+								break;
+						}
+						this.options.onEnabledScriptsChange(newScripts);
+					});
+			});
+
 		new Setting(containerEl)
 			.setName(
 				`Reset ${theme === "light" ? "light" : "dark"} theme colors`,

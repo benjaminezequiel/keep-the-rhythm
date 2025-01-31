@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
-import { Heatmap } from "../components/Heatmap";
+import { Heatmap } from "@/components/Heatmap";
 import WordCountPlugin from "../../main";
 import { IntensityConfig } from "src/types";
 
