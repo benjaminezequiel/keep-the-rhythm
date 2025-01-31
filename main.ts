@@ -129,18 +129,14 @@ export default class WordCountPlugin extends Plugin {
 				return;
 			}
 
-			// For each external device's data
 			Object.entries(externalData.devices).forEach(
 				([deviceId, deviceData]) => {
-					// If this is not our device
 					if (deviceId !== this.deviceId) {
-						// Simply update/add the external device's data as is
 						this.pluginData.devices[deviceId] = deviceData;
 					}
 				},
 			);
 
-			// Update settings
 			this.pluginData.settings = Object.assign(
 				{},
 				DEFAULT_SETTINGS,
