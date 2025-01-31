@@ -6,10 +6,16 @@ import {
 	MarkdownView,
 	Stat,
 	Notice,
+	MarkdownPostProcessor,
+	MarkdownPostProcessorContext,
+	MarkdownRenderChild,
 } from "obsidian";
 import { v4 as uuidv4 } from "uuid";
 import { createRegex, getWordCount } from "@/wordCounting";
 import { WordCountView, VIEW_TYPE } from "./src/views/WordCountView";
+import { createRoot } from "react-dom/client";
+import React from "react";
+import { Heatmap } from "@/components/Heatmap";
 import {
 	DEFAULT_SETTINGS,
 	Stats,
@@ -23,6 +29,7 @@ import "./styles.css";
 export default class WordCountPlugin extends Plugin {
 	private readonly LOCAL_BACKUP_PREFIX = "ktr-backup";
 	private readonly MAX_BACKUPS = 5;
+	private codeBlockProcessor: MarkdownPostProcessor;
 
 	private debouncedHandleModify = debounce(
 		async (file: TFile) => {
@@ -31,6 +38,39 @@ export default class WordCountPlugin extends Plugin {
 		300,
 		true,
 	);
+
+	private createCodeBlockProcessor(): (
+		source: string,
+		el: HTMLElement,
+		ctx: MarkdownPostProcessorContext,
+	) => void {
+		return (
+			source: string,
+			el: HTMLElement,
+			ctx: MarkdownPostProcessorContext,
+		) => {
+			const container = el.createDiv("heatmap-codeblock");
+			const root = createRoot(container);
+			root.render(
+				React.createElement(Heatmap, {
+					data: this.mergedStats,
+					intensityLevels: this.pluginData.settings.intensityLevels,
+					showOverview: this.pluginData.settings.showOverview,
+				}),
+			);
+			const child = new (class extends MarkdownRenderChild {
+				constructor(containerEl: HTMLElement) {
+					super(containerEl);
+				}
+
+				onunload() {
+					root.unmount();
+				}
+			})(container);
+
+			ctx.addChild(child);
+		};
+	}
 
 	pluginData: PluginData;
 	mergedStats: Stats;
@@ -282,6 +322,9 @@ export default class WordCountPlugin extends Plugin {
 	}
 
 	async onload() {
+		const processor = this.createCodeBlockProcessor();
+		this.registerMarkdownCodeBlockProcessor("keep-the-rhythm", processor);
+
 		this.setDeviceId();
 		await this.initializePluginData();
 		this.createSettingsTab();
