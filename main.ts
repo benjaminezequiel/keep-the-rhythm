@@ -39,6 +39,38 @@ export default class WordCountPlugin extends Plugin {
 		true,
 	);
 
+	private parsePathFilter(query: string): string | null {
+		const match = query.match(/PATH\s+includes\s+"([^"]+)"/i);
+		return match ? match[1] : null;
+	}
+
+	private filterStatsByPath(stats: Stats, pathFilter: string | null): Stats {
+		if (!pathFilter) {
+			return stats;
+		}
+
+		const filteredStats: Stats = {};
+
+		for (const [date, dateData] of Object.entries(stats)) {
+			const filteredFiles: Record<string, FileWordCount> = {};
+
+			for (const [filePath, fileData] of Object.entries(dateData.files)) {
+				if (filePath.includes(pathFilter)) {
+					filteredFiles[filePath] = fileData;
+				}
+			}
+
+			if (Object.keys(filteredFiles).length > 0) {
+				filteredStats[date] = {
+					totalDelta: dateData.totalDelta,
+					files: filteredFiles,
+				};
+			}
+		}
+
+		return filteredStats;
+	}
+
 	private createCodeBlockProcessor(): (
 		source: string,
 		el: HTMLElement,
@@ -49,15 +81,32 @@ export default class WordCountPlugin extends Plugin {
 			el: HTMLElement,
 			ctx: MarkdownPostProcessorContext,
 		) => {
+			if (!this.pluginData || !this.pluginData.settings) {
+				el.createDiv({
+					text: "Plugin data not loaded. Please try again.",
+				});
+				return;
+			}
+
+			const query = source.trim();
+			const pathFilter = this.parsePathFilter(query);
+
+			const filteredStats = this.filterStatsByPath(
+				this.mergedStats,
+				pathFilter,
+			);
+
 			const container = el.createDiv("heatmap-codeblock");
+
 			const root = createRoot(container);
 			root.render(
 				React.createElement(Heatmap, {
-					data: this.mergedStats,
+					data: filteredStats,
 					intensityLevels: this.pluginData.settings.intensityLevels,
 					showOverview: this.pluginData.settings.showOverview,
 				}),
 			);
+
 			const child = new (class extends MarkdownRenderChild {
 				constructor(containerEl: HTMLElement) {
 					super(containerEl);
@@ -318,11 +367,12 @@ export default class WordCountPlugin extends Plugin {
 	}
 
 	async onload() {
+		await this.initializePluginData();
+
 		const processor = this.createCodeBlockProcessor();
 		this.registerMarkdownCodeBlockProcessor("keep-the-rhythm", processor);
 
 		this.setDeviceId();
-		await this.initializePluginData();
 		this.createSettingsTab();
 		this.applyColorStyles();
 
