@@ -91,13 +91,55 @@ export default class WordCountPlugin extends Plugin {
 			const query = source.trim();
 			const pathFilter = this.parsePathFilter(query);
 
-			const filteredStats = this.filterStatsByPath(
-				this.mergedStats,
-				pathFilter,
-			);
+			if (!pathFilter) {
+				const container = el.createDiv("heatmap-codeblock");
+				const root = createRoot(container);
+				root.render(
+					React.createElement(Heatmap, {
+						data: this.mergedStats,
+						intensityLevels:
+							this.pluginData.settings.intensityLevels,
+						showOverview: this.pluginData.settings.showOverview,
+					}),
+				);
 
+				ctx.addChild(
+					new (class extends MarkdownRenderChild {
+						constructor(containerEl: HTMLElement) {
+							super(containerEl);
+						}
+						onunload() {
+							root.unmount();
+						}
+					})(container),
+				);
+				return;
+			}
+
+			const filteredStats: Stats = {};
+
+			Object.entries(this.mergedStats).forEach(([date, dateData]) => {
+				// Only include files that match our path filter
+				const matchingFiles = Object.entries(dateData.files).filter(
+					([filePath]) => filePath.includes(pathFilter),
+				);
+
+				if (matchingFiles.length > 0) {
+					const dateDelta = matchingFiles.reduce(
+						(total, [_, fileData]) =>
+							total + (fileData.current - fileData.initial),
+						0,
+					);
+
+					if (dateDelta !== 0) {
+						filteredStats[date] = {
+							totalDelta: dateDelta,
+							files: Object.fromEntries(matchingFiles),
+						};
+					}
+				}
+			});
 			const container = el.createDiv("heatmap-codeblock");
-
 			const root = createRoot(container);
 			root.render(
 				React.createElement(Heatmap, {
@@ -107,17 +149,16 @@ export default class WordCountPlugin extends Plugin {
 				}),
 			);
 
-			const child = new (class extends MarkdownRenderChild {
-				constructor(containerEl: HTMLElement) {
-					super(containerEl);
-				}
-
-				onunload() {
-					root.unmount();
-				}
-			})(container);
-
-			ctx.addChild(child);
+			ctx.addChild(
+				new (class extends MarkdownRenderChild {
+					constructor(containerEl: HTMLElement) {
+						super(containerEl);
+					}
+					onunload() {
+						root.unmount();
+					}
+				})(container),
+			);
 		};
 	}
 
