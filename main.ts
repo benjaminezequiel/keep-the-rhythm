@@ -4,18 +4,26 @@ import {
 	TFile,
 	TAbstractFile,
 	MarkdownView,
-	Stat,
 	Notice,
 	MarkdownPostProcessor,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
 } from "obsidian";
 import { v4 as uuidv4 } from "uuid";
-import { createRegex, getWordCount } from "@/wordCounting";
+import {
+	createRegex,
+	getWordCount,
+	getExternalWordCount,
+} from "@/wordCounting";
+import { handleFileModify } from "@/events/fileModify";
+import { handleFileDelete } from "@/events/fileDelete";
 import { WordCountView, VIEW_TYPE } from "./src/views/WordCountView";
 import { createRoot } from "react-dom/client";
 import React from "react";
 import { Heatmap } from "@/components/Heatmap";
+import { handleFileRename } from "@/events/fileRename";
+import { handleFileOpen } from "@/events/fileOpen";
+
 import {
 	DEFAULT_SETTINGS,
 	Stats,
@@ -25,24 +33,35 @@ import {
 } from "src/types";
 import { SettingsTab } from "./src/views/SettingsTab";
 import "./styles.css";
+import {
+	getCurrentDate,
+	parsePathFilter,
+	parseToggles,
+	formatDate,
+} from "@/utils";
 
 export default class WordCountPlugin extends Plugin {
 	private readonly LOCAL_BACKUP_PREFIX = "ktr-backup";
 	private readonly MAX_BACKUPS = 5;
 	private codeBlockProcessor: MarkdownPostProcessor;
+	private codeBlockRoots: Map<
+		HTMLElement,
+		{ root: any; ctx: MarkdownPostProcessorContext; source: string }
+	> = new Map();
+	pluginData: PluginData;
+	mergedStats: Stats;
+	regex: RegExp;
+	deviceId: string;
+
+	private view: WordCountView | null = null;
 
 	private debouncedHandleModify = debounce(
 		async (file: TFile) => {
-			await this.handleFileModify(file);
+			await handleFileModify(this, file);
 		},
 		300,
 		true,
 	);
-
-	private parsePathFilter(query: string): string | null {
-		const match = query.match(/PATH\s+includes\s+"([^"]+)"/i);
-		return match ? match[1] : null;
-	}
 
 	private filterStatsByPath(stats: Stats, pathFilter: string | null): Stats {
 		if (!pathFilter) {
@@ -89,17 +108,21 @@ export default class WordCountPlugin extends Plugin {
 			}
 
 			const query = source.trim();
-			const pathFilter = this.parsePathFilter(query);
+			const pathFilter = parsePathFilter(query);
+			const toggles = parseToggles(query);
 
 			if (!pathFilter) {
 				const container = el.createDiv("heatmap-codeblock");
 				const root = createRoot(container);
+				this.codeBlockRoots.set(el, { root, ctx, source });
+
 				root.render(
 					React.createElement(Heatmap, {
 						data: this.mergedStats,
 						intensityLevels:
 							this.pluginData.settings.intensityLevels,
-						showOverview: this.pluginData.settings.showOverview,
+						...toggles,
+						plugin: this,
 					}),
 				);
 
@@ -119,7 +142,6 @@ export default class WordCountPlugin extends Plugin {
 			const filteredStats: Stats = {};
 
 			Object.entries(this.mergedStats).forEach(([date, dateData]) => {
-				// Only include files that match our path filter
 				const matchingFiles = Object.entries(dateData.files).filter(
 					([filePath]) => filePath.includes(pathFilter),
 				);
@@ -139,13 +161,17 @@ export default class WordCountPlugin extends Plugin {
 					}
 				}
 			});
+
 			const container = el.createDiv("heatmap-codeblock");
 			const root = createRoot(container);
+			this.codeBlockRoots.set(el, { root, ctx, source });
+
 			root.render(
 				React.createElement(Heatmap, {
 					data: filteredStats,
 					intensityLevels: this.pluginData.settings.intensityLevels,
-					showOverview: this.pluginData.settings.showOverview,
+					...toggles,
+					plugin: this,
 				}),
 			);
 
@@ -162,22 +188,20 @@ export default class WordCountPlugin extends Plugin {
 		};
 	}
 
-	pluginData: PluginData;
-	mergedStats: Stats;
-	regex: RegExp;
-
-	deviceId: string;
-	private view: WordCountView | null = null;
+	private refreshAllCodeBlocks() {
+		for (const [
+			el,
+			{ root, ctx, source },
+		] of this.codeBlockRoots.entries()) {
+			el.style.minHeight = el.innerHeight + "px";
+			el.empty();
+			this.createCodeBlockProcessor()(source, el, ctx);
+			el.style.minHeight = "unset";
+		}
+	}
 
 	get settings() {
 		return this.pluginData.settings;
-	}
-
-	getExternalWordCount(text: string) {
-		if (!this.regex) {
-			this.regex = createRegex(this.settings.enabledScripts);
-		}
-		return getWordCount(text, this.regex);
 	}
 
 	private applyColorStyles() {
@@ -250,6 +274,8 @@ export default class WordCountPlugin extends Plugin {
 			new SettingsTab(this.app, this, {
 				intensityLevels: this.pluginData.settings.intensityLevels,
 				showOverview: this.pluginData.settings.showOverview,
+				showEntries: this.pluginData.settings.showEntries,
+				showHeatmap: this.pluginData.settings.showHeatmap,
 				colors: this.pluginData.settings.colors,
 				enabledScripts: this.pluginData.settings.enabledScripts,
 				onIntensityLevelsChange: (newLevels) => {
@@ -258,6 +284,15 @@ export default class WordCountPlugin extends Plugin {
 				},
 				onShowOverviewChange: (newShowOverview) => {
 					this.pluginData.settings.showOverview = newShowOverview;
+					this.updateAndSave();
+				},
+				onShowEntriesChange: (newShowEntries) => {
+					this.pluginData.settings.showEntries = newShowEntries;
+					this.updateAndSave();
+				},
+				onShowHeatmapChange: (newShowHeatmap) => {
+					this.pluginData.settings.showHeatmap = newShowHeatmap;
+					console.log(this.pluginData.settings.showHeatmap);
 					this.updateAndSave();
 				},
 				onColorsChange: (newColors) => {
@@ -274,19 +309,7 @@ export default class WordCountPlugin extends Plugin {
 		);
 	}
 
-	private getCurrentDate(): string {
-		const now = new Date();
-
-		return (
-			now.getFullYear() +
-			"-" +
-			String(now.getMonth() + 1).padStart(2, "0") +
-			"-" +
-			String(now.getDate()).padStart(2, "0")
-		);
-	}
-
-	private getDeviceData(date: string) {
+	public getDeviceData(date: string) {
 		if (!this.pluginData.devices[this.deviceId]) {
 			this.setDeviceId();
 			this.update();
@@ -388,9 +411,10 @@ export default class WordCountPlugin extends Plugin {
 		}
 	}
 
-	private async updateAndSave() {
+	public async updateAndSave() {
 		await this.mergeDevicesData();
 		await this.update();
+		this.refreshAllCodeBlocks();
 	}
 
 	async activateView() {
@@ -443,14 +467,14 @@ export default class WordCountPlugin extends Plugin {
 				if (view instanceof MarkdownView) {
 					const file = view.file;
 					if (file instanceof TFile) {
-						this.handleFileOpen(file);
+						handleFileOpen(this, file);
 					}
 				}
 			}),
 		);
 
 		this.debouncedHandleModify = debounce(
-			(file: TFile) => this.handleFileModify(file),
+			(file: TFile) => handleFileModify(this, file),
 			1000,
 			false,
 		);
@@ -468,7 +492,7 @@ export default class WordCountPlugin extends Plugin {
 				"rename",
 				(file: TAbstractFile, oldPath: string) => {
 					if (file instanceof TFile) {
-						this.handleFileRename(file, oldPath);
+						handleFileRename(this, file, oldPath);
 					}
 				},
 			),
@@ -477,123 +501,10 @@ export default class WordCountPlugin extends Plugin {
 		this.registerEvent(
 			this.app.vault.on("delete", (file: TAbstractFile) => {
 				if (file instanceof TFile) {
-					this.handleFileDelete(file);
+					handleFileDelete(this, file);
 				}
 			}),
 		);
-	}
-
-	private async handleFileRename(file: TFile, oldPath: string) {
-		if (!file || file.extension !== "md") {
-			return;
-		}
-
-		try {
-			const date = this.getCurrentDate();
-			const dateData = this.getDeviceData(date);
-
-			if (dateData?.files?.[oldPath]) {
-				const fileData = dateData.files[oldPath];
-
-				dateData.files[file.path] = fileData;
-				delete dateData.files[oldPath];
-
-				await this.updateAndSave();
-			}
-		} catch (error) {
-			console.error("Error in handleFileRename:", error);
-		}
-	}
-
-	private async handleFileOpen(file: TFile) {
-		if (!file || file.extension !== "md") {
-			return;
-		}
-
-		try {
-			const date = this.getCurrentDate();
-			const content = await this.app.vault.read(file);
-			const initialWordCount = this.getExternalWordCount(content);
-			if (!this.pluginData.devices[this.deviceId]) {
-				this.pluginData.devices[this.deviceId] = {};
-			}
-			const currentDeviceData = this.pluginData.devices[this.deviceId];
-
-			if (!currentDeviceData[date]) {
-				currentDeviceData[date] = {
-					totalDelta: 0,
-					files: {},
-				};
-			}
-
-			if (!currentDeviceData[date].files[file.path]) {
-				currentDeviceData[date].files[file.path] = {
-					initial: initialWordCount,
-					current: initialWordCount,
-				};
-
-				await this.updateAndSave();
-			}
-		} catch (error) {
-			console.error("Error in handleFileOpen:", error);
-		}
-	}
-
-	private async handleFileDelete(file: TFile) {
-		if (!file || file.extension !== "md") {
-			return;
-		}
-
-		try {
-			const date = this.getCurrentDate();
-			const deviceId = this.deviceId;
-			const dateData = this.getDeviceData(date);
-
-			if (dateData.files?.[file.path]) {
-				const fileData = dateData.files[file.path];
-				const lastWordCount = fileData.current;
-				const initialWordCount = fileData.initial;
-
-				const fileDelta = lastWordCount - initialWordCount;
-				dateData.totalDelta -= fileDelta;
-				dateData.files[file.path].current = 0;
-
-				await this.updateAndSave();
-			}
-		} catch (error) {
-			console.error("Error in handleFileDelete:", error);
-		}
-	}
-
-	private async handleFileModify(file: TFile) {
-		if (!file || file.extension !== "md") {
-			return;
-		}
-
-		try {
-			const date = this.getCurrentDate();
-			const dateData = this.getDeviceData(date);
-
-			if (
-				!this.pluginData.devices[this.deviceId][date]?.files?.[
-					file.path
-				]
-			) {
-				await this.handleFileOpen(file);
-				return;
-			}
-
-			const content = await this.app.vault.read(file);
-			const currentWordCount = this.getExternalWordCount(content);
-			const previousCount = dateData.files[file.path].current;
-			const delta = currentWordCount - previousCount;
-
-			dateData.files[file.path].current = currentWordCount;
-			dateData.totalDelta += delta;
-			await this.updateAndSave();
-		} catch (error) {
-			console.error("Error in handleFileModify:", error);
-		}
 	}
 
 	async mergeDevicesData() {
@@ -654,5 +565,92 @@ export default class WordCountPlugin extends Plugin {
 			style.removeProperty(`--light-${level}`);
 			style.removeProperty(`--dark-${level}`);
 		});
+	}
+
+	public handleDeleteEntry(filePath: string) {
+		// console.log(this.pluginData);
+		new ConfirmationModal(this.app, filePath, () => {
+			this.deleteEntry(filePath); // Call the actual delete method after confirmation
+		}).open();
+	}
+
+	private deleteEntry(filePath: string) {
+		console.log("Deleting file: ", filePath);
+
+		const todayStr = formatDate(new Date());
+
+		const deviceData = this.pluginData.devices[this.deviceId];
+		if (!deviceData) {
+			console.warn("No device data found for today.");
+			return;
+		}
+
+		const todayData = deviceData[todayStr];
+		if (!todayData || !todayData.files) {
+			console.warn("No data found for today.");
+			return;
+		}
+
+		delete todayData.files[filePath];
+		todayData.totalDelta = Object.values(todayData.files).reduce(
+			(total, fileData) => total + (fileData.current - fileData.initial),
+			0,
+		);
+
+		this.updateAndSave(); // Save the updated data after deletion
+	}
+}
+
+import { Modal, App, ButtonComponent } from "obsidian";
+
+class ConfirmationModal extends Modal {
+	private onConfirm: () => void;
+	private filePath: string;
+
+	constructor(app: App, filePath: string, onConfirm: () => void) {
+		super(app);
+		this.filePath = filePath;
+		this.onConfirm = onConfirm;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		this.containerEl.classList.add("KTR__modal");
+
+		this.setTitle("Are you sure?");
+
+		contentEl.createEl("p", {
+			text: `Do you really want to delete the entry for this file?`,
+		});
+
+		contentEl.createEl("p", {
+			text: `${this.filePath}`,
+			cls: "KTR__file-to-delete",
+		});
+
+		contentEl.createEl("p", {
+			text: `This action is irreversible!`,
+		});
+
+		const buttonsContainer = contentEl.createDiv("KTR__modal-buttons");
+
+		new ButtonComponent(buttonsContainer)
+			.setButtonText("Cancel")
+			.onClick(() => {
+				this.close();
+			});
+
+		new ButtonComponent(buttonsContainer)
+			.setButtonText("Yes, Delete")
+			.setClass("mod-warning")
+			.onClick(() => {
+				this.onConfirm();
+				this.close();
+			});
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
 	}
 }

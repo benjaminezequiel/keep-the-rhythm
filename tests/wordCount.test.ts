@@ -1,4 +1,3 @@
-// tests/wordCount.test.ts
 import { getWordCount, createRegex } from "../src/wordCounting";
 import { ScriptName } from "../src/types";
 

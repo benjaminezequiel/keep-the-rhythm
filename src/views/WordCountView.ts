@@ -39,6 +39,9 @@ export class WordCountView extends ItemView {
 				intensityLevels:
 					this.plugin.pluginData.settings.intensityLevels,
 				showOverview: this.plugin.pluginData.settings.showOverview,
+				showHeatmap: this.plugin.pluginData.settings.showHeatmap,
+				showEntries: this.plugin.pluginData.settings.showEntries,
+				plugin: this.plugin,
 			}),
 		);
 	}
@@ -57,6 +60,9 @@ export class WordCountView extends ItemView {
 				intensityLevels:
 					this.plugin.pluginData.settings.intensityLevels,
 				showOverview: this.plugin.pluginData.settings.showOverview,
+				showHeatmap: this.plugin.pluginData.settings.showHeatmap,
+				showEntries: this.plugin.pluginData.settings.showEntries,
+				plugin: this.plugin,
 			}),
 		);
 	}

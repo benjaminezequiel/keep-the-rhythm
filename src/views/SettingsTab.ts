@@ -56,10 +56,14 @@ class ConfirmationModal extends Modal {
 interface SettingsTabOptions {
 	intensityLevels: IntensityConfig;
 	showOverview: boolean;
+	showHeatmap: boolean;
+	showEntries: boolean;
 	colors: ThemeColors;
 	enabledScripts: ScriptName[];
 	onIntensityLevelsChange: (newLevels: IntensityConfig) => void;
 	onShowOverviewChange: (newShowOverview: boolean) => void;
+	onShowEntriesChange: (newShowEntries: boolean) => void;
+	onShowHeatmapChange: (newShowHeatmap: boolean) => void;
 	onColorsChange: (newColors: ThemeColors) => void;
 	onEnabledScriptsChange: (scripts: ScriptName[]) => void;
 }
@@ -140,7 +144,66 @@ export class SettingsTab extends PluginSettingTab {
 					}),
 			);
 
-		// Show Overview Section
+		new Setting(containerEl)
+			.setName("Enabled Scripts")
+			.setDesc("Select which writing systems to count")
+			.addDropdown((dropdown) => {
+				const scriptOptions = {
+					basic: "Basic (Latin only)",
+					cjk: "CJK Support",
+					full: "Full Unicode",
+					custom: "Custom",
+				};
+
+				dropdown
+					.addOptions(scriptOptions)
+					.setValue(
+						this.plugin.settings.enabledScripts.length === 1
+							? "basic"
+							: this.plugin.settings.enabledScripts.includes(
+										"CJK",
+								  )
+								? "cjk"
+								: this.plugin.settings.enabledScripts.length > 3
+									? "full"
+									: "custom",
+					)
+					.onChange((value) => {
+						let newScripts: ScriptName[] = [];
+						switch (value) {
+							case "basic":
+								newScripts = ["LATIN"];
+								break;
+							case "cjk":
+								newScripts = [
+									"LATIN",
+									"CJK",
+									"JAPANESE",
+									"KOREAN",
+								];
+								break;
+							case "full":
+								newScripts = [
+									"LATIN",
+									"CJK",
+									"JAPANESE",
+									"KOREAN",
+									"CYRILLIC",
+									"GREEK",
+									"ARABIC",
+									"HEBREW",
+									"INDIC",
+									"SOUTHEAST_ASIAN",
+								];
+								break;
+							case "custom":
+								// Add checkboxes for individual scripts
+								break;
+						}
+						this.options.onEnabledScriptsChange(newScripts);
+					});
+			});
+
 		new Setting(containerEl)
 			.setName("Show overview")
 			.setDesc("Display the overview section in the word count heatmap")
@@ -150,6 +213,32 @@ export class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.showOverview = value;
 						this.options.onShowOverviewChange(value);
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show today entries")
+			.setDesc(
+				"Display which files were edited today and their respective word counts.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showEntries)
+					.onChange(async (value) => {
+						this.plugin.settings.showEntries = value;
+						this.options.onShowEntriesChange(value);
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show heatmap")
+			.setDesc("Displays a heatmap with historic writing data.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showHeatmap)
+					.onChange(async (value) => {
+						this.plugin.settings.showHeatmap = value;
+						this.options.onShowHeatmapChange(value);
 					}),
 			);
 		new Setting(containerEl).setName("Heatmap colors").setHeading();
@@ -242,66 +331,6 @@ export class SettingsTab extends PluginSettingTab {
 		});
 
 		// Add theme-specific reset button
-
-		new Setting(containerEl)
-			.setName("Enabled Scripts")
-			.setDesc("Select which writing systems to count")
-			.addDropdown((dropdown) => {
-				const scriptOptions = {
-					basic: "Basic (Latin only)",
-					cjk: "CJK Support",
-					full: "Full Unicode",
-					custom: "Custom",
-				};
-
-				dropdown
-					.addOptions(scriptOptions)
-					.setValue(
-						this.plugin.settings.enabledScripts.length === 1
-							? "basic"
-							: this.plugin.settings.enabledScripts.includes(
-										"CJK",
-								  )
-								? "cjk"
-								: this.plugin.settings.enabledScripts.length > 3
-									? "full"
-									: "custom",
-					)
-					.onChange((value) => {
-						let newScripts: ScriptName[] = [];
-						switch (value) {
-							case "basic":
-								newScripts = ["LATIN"];
-								break;
-							case "cjk":
-								newScripts = [
-									"LATIN",
-									"CJK",
-									"JAPANESE",
-									"KOREAN",
-								];
-								break;
-							case "full":
-								newScripts = [
-									"LATIN",
-									"CJK",
-									"JAPANESE",
-									"KOREAN",
-									"CYRILLIC",
-									"GREEK",
-									"ARABIC",
-									"HEBREW",
-									"INDIC",
-									"SOUTHEAST_ASIAN",
-								];
-								break;
-							case "custom":
-								// Add checkboxes for individual scripts
-								break;
-						}
-						this.options.onEnabledScriptsChange(newScripts);
-					});
-			});
 
 		new Setting(containerEl)
 			.setName(

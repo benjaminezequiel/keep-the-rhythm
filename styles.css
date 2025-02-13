@@ -87,6 +87,7 @@
 	padding-top: 6px;
 	border-radius: var(--radius-m);
 	max-width: 100%;
+	border: 1px solid var(--background-modifier-border);
 }
 
 .heatmap-content {
@@ -170,6 +171,7 @@
 }
 
 .stat-card {
+	border: 1px solid var(--background-modifier-border);
 	padding: var(--size-4-2);
 	width: 100%;
 	background: var(--background-primary);
@@ -206,4 +208,92 @@
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
+}
+
+.heatmap-codeblock {
+	min-height: 180px;
+}
+
+.stat-unit {
+	color: var(--text-faint);
+}
+
+.todayEntries__section {
+	display: flex;
+	flex-direction: column;
+
+	background: var(--background-primary);
+	border-radius: var(--radius-m);
+	max-width: 100%;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.todayEntries__section-title {
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	padding: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.todayEntires__list-item {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	height: 32px;
+	padding: 6px 8px;
+}
+
+.todayEntires__list-item:not(:last-child) {
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.todayEntries__file-path {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-wrap: nowrap;
+}
+
+.todayEntries__word-count {
+	min-width: fit-content;
+	text-wrap: nowrap;
+	color: var(--text-muted);
+}
+
+.KTR__modal-buttons {
+	display: flex;
+	gap: 8px;
+}
+
+.todayEntires__list-item:hover button.todayEntries__delete-button {
+	display: block;
+}
+button.todayEntries__delete-button {
+	height: 100%;
+	padding: 0;
+	height: 100%;
+	color: var(--text-faint);
+	border: none;
+	background-color: transparent;
+	cursor: pointer;
+	display: none;
+	margin-left: -6px;
+}
+
+.KTR__file-to-delete {
+	font-weight: var(--bold-weight);
+	color: var(--text-error);
+	padding: 4px 8px;
+	margin: 0;
+	background: var(--background-primary-alt);
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.KTR__modal .modal .modal-header {
+	margin: 0;
+}
+
+.KTR__modal p {
+	margin-top: 12px;
+	margin-bottom: 12px;
 }

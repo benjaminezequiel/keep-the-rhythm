@@ -51,6 +51,8 @@ export interface PluginSettings {
 	enabledScripts: ScriptName[];
 	intensityLevels: IntensityConfig;
 	showOverview: boolean;
+	showHeatmap: boolean;
+	showEntries: boolean;
 	colors: {
 		light: ColorConfig;
 		dark: ColorConfig;
@@ -85,5 +87,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 		},
 	},
 	showOverview: true,
+	showEntries: true,
+	showHeatmap: true,
 	enabledScripts: ["LATIN"] as ScriptName[],
 };

@@ -5,9 +5,12 @@ import {
 	TooltipProvider,
 } from "../components/ui/tooltip";
 
+import { ButtonComponent } from "obsidian";
 import React from "react";
 import { Stats, IntensityConfig } from "../types";
 import { Overview } from "./Overview";
+import { getCurrentDate } from "@/utils";
+import WordCountPlugin from "main";
 
 const formatDate = (date: Date): string => {
 	return (
@@ -23,6 +26,9 @@ interface HeatmapProps {
 	data: Stats;
 	intensityLevels: IntensityConfig;
 	showOverview?: boolean;
+	showHeatmap?: boolean;
+	showEntries?: boolean;
+	plugin: WordCountPlugin;
 }
 
 interface HeatmapCellProps {
@@ -65,6 +71,9 @@ export const Heatmap = ({
 	data,
 	intensityLevels,
 	showOverview = true,
+	showEntries = true,
+	showHeatmap = true,
+	plugin,
 }: HeatmapProps) => {
 	const today = new Date();
 	const weeksToShow = 52;
@@ -101,6 +110,21 @@ export const Heatmap = ({
 		return date;
 	};
 
+	const getTodayFiles = () => {
+		const today = getCurrentDate();
+		const todayData = data[today]?.files || [];
+
+		return Object.entries(todayData)
+			.filter(
+				([_, wordCount]) => wordCount.current - wordCount.initial !== 0,
+			)
+			.map(([filePath, wordCount]) => ({
+				path: filePath,
+				wordCount,
+				delta: wordCount.current - wordCount.initial,
+			}));
+	};
+
 	const getMonthLabels = () => {
 		const labels = [];
 		let lastMonth = -1;
@@ -128,79 +152,134 @@ export const Heatmap = ({
 	return (
 		<div className="component-wrapper">
 			{showOverview && <Overview data={data} />}
-			<TooltipProvider>
-				<div className="heatmap-wrapper">
-					<div className="heatmap-container">
-						<div className="week-day-labels">
-							{days.map((day) => (
-								<div key={day} className="week-day-label">
-									{day}
-								</div>
-							))}
-						</div>
-
-						<div className="heatmap-content">
-							<div className="month-labels">
-								{getMonthLabels().map(({ month, week }) => (
-									<div
-										key={`${month}-${week}`}
-										className="month-label"
-										style={{ gridColumn: week + 1 }}
-									>
-										{month}
+			{showHeatmap && (
+				<TooltipProvider>
+					<div className="heatmap-wrapper">
+						<div className="heatmap-container">
+							<div className="week-day-labels">
+								{days.map((day) => (
+									<div key={day} className="week-day-label">
+										{day}
 									</div>
 								))}
 							</div>
-							<div className="heatmap-new-grid">
-								{Array(weeksToShow)
-									.fill(null)
-									.map((_, weekIndex) => (
+
+							<div className="heatmap-content">
+								<div className="month-labels">
+									{getMonthLabels().map(({ month, week }) => (
 										<div
-											key={weekIndex}
-											className="heatmap-column"
+											key={`${month}-${week}`}
+											className="month-label"
+											style={{ gridColumn: week + 1 }}
 										>
-											{Array(7)
-												.fill(null)
-												.map((_, dayIndex) => {
-													const date = getDateForCell(
-														weekIndex,
-														dayIndex,
-													);
-
-													const dateStr =
-														formatDate(date);
-
-													const dayData =
-														data?.[dateStr];
-
-													let count = 0;
-
-													if (
-														dayData &&
-														dayData.totalDelta
-													) {
-														count =
-															dayData?.totalDelta;
-													}
-
-													return (
-														<HeatmapCell
-															key={dayIndex}
-															date={dateStr}
-															count={count}
-															intensityLevels={
-																intensityLevels
-															}
-														/>
-													);
-												})}
+											{month}
 										</div>
 									))}
+								</div>
+								<div className="heatmap-new-grid">
+									{Array(weeksToShow)
+										.fill(null)
+										.map((_, weekIndex) => (
+											<div
+												key={weekIndex}
+												className="heatmap-column"
+											>
+												{Array(7)
+													.fill(null)
+													.map((_, dayIndex) => {
+														const date =
+															getDateForCell(
+																weekIndex,
+																dayIndex,
+															);
+
+														const dateStr =
+															formatDate(date);
+
+														const dayData =
+															data?.[dateStr];
+
+														let count = 0;
+
+														if (
+															dayData &&
+															dayData.totalDelta
+														) {
+															count =
+																dayData?.totalDelta;
+														}
+
+														return (
+															<HeatmapCell
+																key={dayIndex}
+																date={dateStr}
+																count={count}
+																intensityLevels={
+																	intensityLevels
+																}
+															/>
+														);
+													})}
+											</div>
+										))}
+								</div>
 							</div>
 						</div>
 					</div>
+				</TooltipProvider>
+			)}
+			{showEntries && (
+				<div className="todayEntries__section">
+					<div className="todayEntries__section-title">
+						TODAY ENTRIES
+					</div>
+					{getTodayFiles().length > 0 ? (
+						getTodayFiles().map((file) => (
+							<div
+								key={file.path}
+								className="todayEntires__list-item"
+							>
+								<span className="todayEntries__file-path">
+									{file.path}
+								</span>
+								<span className="todayEntries__word-count">
+									{file.delta > 0
+										? `+${file.delta}`
+										: file.delta}{" "}
+									words
+								</span>
+								<button
+									className="todayEntries__delete-button"
+									onClick={() =>
+										plugin.handleDeleteEntry(file.path)
+									}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor" // This ensures the icon uses the current text color
+										strokeWidth="2" // React uses camelCase for attributes like 'stroke-width'
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										className="svg-icon"
+									>
+										<path d="M3 6h18" />
+										<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+										<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+										<line x1="10" y1="11" x2="10" y2="17" />
+										<line x1="14" y1="11" x2="14" y2="17" />
+									</svg>
+								</button>
+							</div>
+						))
+					) : (
+						<p className="">No files edited today</p>
+					)}
 				</div>
-			</TooltipProvider>
+			)}
 		</div>
 	);
 };

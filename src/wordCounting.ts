@@ -1,5 +1,12 @@
-import { Script } from "vm";
 import { ScriptName } from "./types";
+import type WordCountPlugin from "main";
+
+export function getExternalWordCount(plugin: WordCountPlugin, text: string) {
+	if (!plugin.regex) {
+		plugin.regex = createRegex(plugin.settings.enabledScripts);
+	}
+	return getWordCount(text, plugin.regex);
+}
 
 const unicodeRanges = {
 	LATIN: "\\u0041-\\u007A\\u00A0-\\u024F",

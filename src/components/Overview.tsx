@@ -53,15 +53,24 @@ export const Overview = ({ data }: { data: Stats }) => {
 			<div className="stats-grid">
 				<div className="stat-card">
 					<div className="stat-label">Today</div>
-					<div className="stat-value">{todayCount}</div>
+					<div className="stat-value">
+						{todayCount}
+						<span className="stat-unit"> words</span>
+					</div>
 				</div>
 				<div className="stat-card">
 					<div className="stat-label">This Week</div>
-					<div className="stat-value">{weekCount}</div>
+					<div className="stat-value">
+						{weekCount}
+						<span className="stat-unit"> words</span>
+					</div>
 				</div>
 				<div className="stat-card">
 					<div className="stat-label">This Year</div>
-					<div className="stat-value">{yearCount}</div>
+					<div className="stat-value">
+						{yearCount}
+						<span className="stat-unit"> words</span>
+					</div>
 				</div>
 			</div>
 		</div>
