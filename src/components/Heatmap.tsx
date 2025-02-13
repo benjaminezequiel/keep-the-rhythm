@@ -276,7 +276,7 @@ export const Heatmap = ({
 							</div>
 						))
 					) : (
-						<p className="">No files edited today</p>
+						<p className="empty-data">No files edited today</p>
 					)}
 				</div>
 			)}

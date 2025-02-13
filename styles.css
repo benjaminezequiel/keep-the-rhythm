@@ -297,3 +297,10 @@ button.todayEntries__delete-button {
 	margin-top: 12px;
 	margin-bottom: 12px;
 }
+
+.empty-data {
+	text-align: center;
+	color: var(--text-faint);
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
