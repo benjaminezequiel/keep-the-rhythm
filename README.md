@@ -21,17 +21,22 @@ Keep the Rhythm solves this by properly saving and merging data through devices,
 - Multi-device Sync: Seamlessly syncs and merges statistics across different devices
 
 ## Installation
+
 RECOMMENDED
+
 - You can install the plugin through the Community Plugins section, inside Obsidian's settings
-  
+
 MANUAL INSTALLATION
+
 - Download the latest release files from this repository's Releases section
 - Create a folder on `/.obsidian/plugins/` named `keep-the-rhythm`
 - Reload Obsidian
 - Go to Settings > Community Plugins and enable "Keep the Rhythm"
 
 ## Usage
+
 #### **Basic Usage**
+
 Once installed and enabled, Keep the Rhythm will automatically begin tracking your writing activity. To view your heatmap:
 
 - Click the Keep the Rhythm icon in the left sidebar
@@ -39,43 +44,47 @@ Once installed and enabled, Keep the Rhythm will automatically begin tracking yo
 - Hover over any day to see the exact word count
 
 #### **Embedded Heatmaps**
+
 You can embed heatmaps directly in your notes using code blocks:
 
-```
+````
 	```keep-the-rhythm
 	```
-```
+````
 
 To filter data for specific paths:
-```
+
+````
 	```keep-the-rhythm
 		PATH includes "daily"
 	```
-```
-
+````
 
 #### **Display Options**
+
 You can customize the plugin's display through settings:
+
 - Toggle heatmap visibility
 - Toggle today's entries visibility
 - Adjust color schemes and intensity levels
 
 Toggling sections can also be made through the code blocks:
 
-```
+````
 	```keep-the-rhythm
 		HIDE overview
 		HIDE heatmap
 		HIDE entries
 	```
-```
+````
 
 #### **Managing data tracking for the current day**
+
 Through the "TODAY ENTRIES" section, you can:
+
 - View all files tracked today
 - Delete individual entries if needed
 - Monitor real-time progress for each file
-
 
 ## Data and Privacy
 
