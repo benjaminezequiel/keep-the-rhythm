@@ -17,9 +17,24 @@ export function getCurrentDate(): string {
 	);
 }
 
-export function parsePathFilter(query: string): string | null {
-	const match = query.match(/PATH\s+includes\s+"([^"]+)"/i);
-	return match ? match[1] : null;
+export interface PathCondition {
+	path: string;
+	isInclusion: boolean;
+}
+
+export function parsePathFilters(query: string): PathCondition[] {
+	const conditions: PathCondition[] = [];
+
+	const regex = /PATH\s+((?:does\s+not\s+include)|includes)\s+"([^"]+)"/gi;
+	let match;
+	while ((match = regex.exec(query)) !== null) {
+		const isInclusion = match[1].toLowerCase() !== "does not include";
+		conditions.push({
+			path: match[2],
+			isInclusion,
+		});
+	}
+	return conditions;
 }
 
 export function parseToggles(query: string) {
@@ -48,4 +63,13 @@ export const formatDate = (date: Date): string => {
 		"-" +
 		String(date.getDate()).padStart(2, "0")
 	);
+};
+
+export const getFileName = (path: string): string => {
+	return path.split("/").pop() || path;
+};
+
+export const getFileNameWithoutExtension = (path: string): string => {
+	const fileName = getFileName(path);
+	return fileName.replace(/\.[^/.]+$/, "");
 };

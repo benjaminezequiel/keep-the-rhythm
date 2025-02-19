@@ -152,6 +152,7 @@
 @container wrapper (width < 300px) {
 	.stats-grid {
 		flex-direction: column;
+		gap: 8px;
 	}
 }
 .stats-overview {
@@ -168,7 +169,7 @@
 .stats-grid {
 	display: flex;
 	width: 100%;
-	gap: 8px;
+	gap: 4px;
 }
 
 .stat-card {
@@ -266,18 +267,25 @@
 }
 
 .todayEntires__list-item:hover button.todayEntries__delete-button {
-	display: block;
+	margin-left: 4px;
+	max-width: 18px;
+	opacity: 1;
 }
 button.todayEntries__delete-button {
+	transition:
+		margin-left 200ms ease,
+		max-width 200ms ease,
+		opacity 200ms ease;
 	height: 100%;
 	padding: 0;
-	height: 100%;
-	color: var(--text-faint);
+	color: var(--text-error);
 	border: none;
+	box-shadow: none;
 	background-color: transparent;
 	cursor: pointer;
-	display: none;
-	margin-left: -6px;
+	margin-left: 0px;
+	opacity: 0;
+	max-width: 0;
 }
 
 .KTR__file-to-delete {
@@ -304,4 +312,9 @@ button.todayEntries__delete-button {
 	color: var(--text-faint);
 	margin-top: 8px;
 	margin-bottom: 8px;
+}
+
+.todayEntries__list-item-right {
+	display: flex;
+	flex-direction: row;
 }

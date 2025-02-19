@@ -35,7 +35,7 @@ import { SettingsTab } from "./src/views/SettingsTab";
 import "./styles.css";
 import {
 	getCurrentDate,
-	parsePathFilter,
+	parsePathFilters,
 	parseToggles,
 	formatDate,
 } from "@/utils";
@@ -108,10 +108,10 @@ export default class WordCountPlugin extends Plugin {
 			}
 
 			const query = source.trim();
-			const pathFilter = parsePathFilter(query);
+			const pathConditions = parsePathFilters(query);
 			const toggles = parseToggles(query);
 
-			if (!pathFilter) {
+			if (pathConditions.length === 0) {
 				const container = el.createDiv("heatmap-codeblock");
 				const root = createRoot(container);
 				this.codeBlockRoots.set(el, { root, ctx, source });
@@ -143,7 +143,29 @@ export default class WordCountPlugin extends Plugin {
 
 			Object.entries(this.mergedStats).forEach(([date, dateData]) => {
 				const matchingFiles = Object.entries(dateData.files).filter(
-					([filePath]) => filePath.includes(pathFilter),
+					([filePath]) => {
+						let includeFile = [];
+						for (const condition of pathConditions) {
+							const pathIncluded = filePath.includes(
+								condition.path,
+							);
+							if (pathIncluded && condition.isInclusion) {
+								includeFile.push(true);
+							} else if (
+								!pathIncluded &&
+								!condition.isInclusion
+							) {
+								includeFile.push(true);
+							} else if (pathIncluded && !condition.isInclusion) {
+								includeFile.push(false);
+							} else if (!pathIncluded && condition.isInclusion) {
+								includeFile.push(false);
+							}
+						}
+						return includeFile.every(
+							(condition) => condition === true,
+						);
+					},
 				);
 
 				if (matchingFiles.length > 0) {
@@ -292,7 +314,6 @@ export default class WordCountPlugin extends Plugin {
 				},
 				onShowHeatmapChange: (newShowHeatmap) => {
 					this.pluginData.settings.showHeatmap = newShowHeatmap;
-					console.log(this.pluginData.settings.showHeatmap);
 					this.updateAndSave();
 				},
 				onColorsChange: (newColors) => {
@@ -568,15 +589,12 @@ export default class WordCountPlugin extends Plugin {
 	}
 
 	public handleDeleteEntry(filePath: string) {
-		// console.log(this.pluginData);
 		new ConfirmationModal(this.app, filePath, () => {
 			this.deleteEntry(filePath); // Call the actual delete method after confirmation
 		}).open();
 	}
 
 	private deleteEntry(filePath: string) {
-		console.log("Deleting file: ", filePath);
-
 		const todayStr = formatDate(new Date());
 
 		const deviceData = this.pluginData.devices[this.deviceId];
