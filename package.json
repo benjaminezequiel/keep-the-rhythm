@@ -1,6 +1,6 @@
 {
 	"name": "keep-the-rhyhtm",
-	"version": "0.1.9",
+	"version": "0.1.10",
 	"description": "Visualize daily word count with a heatmap.",
 	"main": "main.js",
 	"scripts": {
