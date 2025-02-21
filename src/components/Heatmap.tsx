@@ -62,7 +62,9 @@ const HeatmapCell = ({ date, count, intensityLevels }: HeatmapCellProps) => {
 				<div className="tooltip-date">
 					{formatDate(new Date(localDate))}
 				</div>
-				<div className="tooltip-wordCount">+{count} words</div>
+				<div className="tooltip-wordCount">
+					+{count.toLocaleString()} words
+				</div>
 			</TooltipContent>
 		</Tooltip>
 	);
@@ -246,8 +248,8 @@ export const Heatmap = ({
 								<div className="todayEntries__list-item-right">
 									<span className="todayEntries__word-count">
 										{file.delta > 0
-											? `+${file.delta}`
-											: file.delta}{" "}
+											? `+${file.delta.toLocaleString()}`
+											: file.delta.toLocaleString()}{" "}
 										words
 									</span>
 									<button

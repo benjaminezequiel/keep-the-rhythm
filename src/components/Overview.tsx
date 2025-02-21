@@ -54,21 +54,21 @@ export const Overview = ({ data }: { data: Stats }) => {
 				<div className="stat-card">
 					<div className="stat-label">Today</div>
 					<div className="stat-value">
-						{todayCount}
+						{todayCount.toLocaleString()}
 						<span className="stat-unit"> words</span>
 					</div>
 				</div>
 				<div className="stat-card">
 					<div className="stat-label">This Week</div>
 					<div className="stat-value">
-						{weekCount}
+						{weekCount.toLocaleString()}
 						<span className="stat-unit"> words</span>
 					</div>
 				</div>
 				<div className="stat-card">
 					<div className="stat-label">This Year</div>
 					<div className="stat-value">
-						{yearCount}
+						{yearCount.toLocaleString()}
 						<span className="stat-unit"> words</span>
 					</div>
 				</div>
