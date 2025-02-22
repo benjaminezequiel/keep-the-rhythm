@@ -1,7 +1,7 @@
 {
 	"id": "keep-the-rhythm",
 	"name": "Keep the Rhythm",
-	"version": "0.1.12",
+	"version": "0.1.11",
 	"minAppVersion": "1.0.0",
 	"description": "Visualize daily word count with a heatmap.",
 	"author": "Ezben",
