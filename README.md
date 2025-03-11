@@ -57,6 +57,7 @@ To filter data for specific paths:
 ````
 	```keep-the-rhythm
 		PATH includes "daily"
+		PATH does not include "meta"
 	```
 ````
 
