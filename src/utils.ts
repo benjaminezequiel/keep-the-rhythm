@@ -17,26 +17,6 @@ export function getCurrentDate(): string {
 	);
 }
 
-export interface PathCondition {
-	path: string;
-	isInclusion: boolean;
-}
-
-export function parsePathFilters(query: string): PathCondition[] {
-	const conditions: PathCondition[] = [];
-
-	const regex = /PATH\s+((?:does\s+not\s+include)|includes)\s+"([^"]+)"/gi;
-	let match;
-	while ((match = regex.exec(query)) !== null) {
-		const isInclusion = match[1].toLowerCase() !== "does not include";
-		conditions.push({
-			path: match[2],
-			isInclusion,
-		});
-	}
-	return conditions;
-}
-
 export function parseToggles(query: string) {
 	const toggles = {
 		showHeatmap: true,
