@@ -1,100 +1,75 @@
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	TooltipProvider,
-} from "../components/ui/tooltip";
-
-import { ButtonComponent } from "obsidian";
+import { db, type DailyActivity } from "@/db";
 import React from "react";
-import { Stats, IntensityConfig } from "../types";
-import { Overview } from "./Overview";
-import { getCurrentDate } from "@/utils";
-import WordCountPlugin from "main";
-import { getFileNameWithoutExtension } from "@/utils";
-
-const formatDate = (date: Date): string => {
-	return (
-		date.getFullYear() +
-		"-" +
-		String(date.getMonth() + 1).padStart(2, "0") +
-		"-" +
-		String(date.getDate()).padStart(2, "0")
-	);
-};
+import KeepTheRhythm from "../../main";
+import { formatDate } from "../utils";
+import { IntensityConfig } from "../types";
+import { weeksToShow, weekdaysNames, monthNames } from "../utils";
 
 interface HeatmapProps {
-	data: Stats;
+	// data: DailyActivity[];
 	intensityLevels: IntensityConfig;
-	showOverview?: boolean;
-	showHeatmap?: boolean;
-	showEntries?: boolean;
-	plugin: WordCountPlugin;
+	// showOverview?: boolean;
+	// showHeatmap?: boolean;
+	// showEntries?: boolean;
+	// plugin: KeepTheRhythm;
 }
 
 interface HeatmapCellProps {
-	date: string;
-	count: number;
-	intensityLevels: IntensityConfig;
+	// count: number;
+	intensity: number;
 }
 
-const HeatmapCell = ({ date, count, intensityLevels }: HeatmapCellProps) => {
-	const getIntensityLevel = (count: number): number => {
-		const { low, medium, high } = intensityLevels;
-		if (count <= 0) return 0;
-		if (count < low) return 1;
-		if (count < medium) return 2;
-		if (count < high) return 3;
-		return 4;
-	};
-
-	const [year, month, day] = date.split("-").map(Number);
-	const localDate = new Date(year, month - 1, day);
-
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<div
-					className={`heatmap-square level-${getIntensityLevel(count)}`}
-				/>
-			</TooltipTrigger>
-			<TooltipContent className="custom-tooltip">
-				<div className="tooltip-date">
-					{formatDate(new Date(localDate))}
-				</div>
-				<div className="tooltip-wordCount">
-					+{count.toLocaleString()} words
-				</div>
-			</TooltipContent>
-		</Tooltip>
-	);
+const getIntensityLevel = (
+	count: number,
+	intensityLevels: IntensityConfig,
+): number => {
+	const { low, medium, high } = intensityLevels;
+	if (count <= 0) return 0;
+	if (count < low) return 1;
+	if (count < medium) return 2;
+	if (count < high) return 3;
+	return 4;
 };
 
-export const Heatmap = ({
-	data,
-	intensityLevels,
-	showOverview = true,
-	showEntries = true,
-	showHeatmap = true,
-	plugin,
-}: HeatmapProps) => {
+// INDIVIDUAL CELL
+export const HeatmapCell = ({ intensity }: HeatmapCellProps) => {
+	return <div className={`heatmap-square level-${intensity}`}></div>;
+};
+
+// HEATMAP
+export const Heatmap = ({ intensityLevels }: HeatmapProps) => {
+	const [heatmapData, setHeatmapData] = React.useState<
+		Record<string, number>
+	>({});
+
+	React.useEffect(() => {
+		const fetchHeatmapData = async () => {
+			const requiredDates = new Set<string>();
+
+			for (let week = 0; week < weeksToShow; week++) {
+				for (let day = 0; day < 7; day++) {
+					const date = getDateForCell(week, day);
+					requiredDates.add(formatDate(date));
+				}
+			}
+
+			const results = await db.dailyActivity
+				.where("date")
+				.anyOf([...requiredDates])
+				.toArray();
+
+			const dateMap: Record<string, number> = {};
+			for (const entry of results) {
+				dateMap[entry.date] =
+					(dateMap[entry.date] || 0) + entry.wordsWritten;
+			}
+
+			setHeatmapData(dateMap);
+		};
+		fetchHeatmapData();
+	}, []);
+
 	const today = new Date();
-	const weeksToShow = 52;
-	const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-	const monthNames = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec",
-	];
 
 	const getDayIndex = (dayIndex: number): number => {
 		return dayIndex === 0 ? 6 : dayIndex - 1;
@@ -113,28 +88,13 @@ export const Heatmap = ({
 		return date;
 	};
 
-	const getTodayFiles = () => {
-		const today = getCurrentDate();
-		const todayData = data[today]?.files || [];
-
-		return Object.entries(todayData)
-			.filter(
-				([_, wordCount]) => wordCount.current - wordCount.initial !== 0,
-			)
-			.map(([filePath, wordCount]) => ({
-				path: filePath,
-				wordCount,
-				delta: wordCount.current - wordCount.initial,
-			}));
-	};
-
 	const getMonthLabels = () => {
 		const labels = [];
 		let lastMonth = -1;
 
 		for (let week = 0; week < weeksToShow; week++) {
 			const date = getDateForCell(week, 0);
-			// Get local date
+
 			const localDate = new Date(
 				date.getTime() - date.getTimezoneOffset() * 60000,
 			);
@@ -153,148 +113,76 @@ export const Heatmap = ({
 	};
 
 	return (
-		<div className="component-wrapper">
-			{showOverview && <Overview data={data} />}
-			{showHeatmap && (
-				<TooltipProvider>
-					<div className="heatmap-wrapper">
-						<div className="heatmap-container">
-							<div className="week-day-labels">
-								{days.map((day) => (
-									<div key={day} className="week-day-label">
-										{day}
-									</div>
-								))}
-							</div>
+		<div className="heatmap-wrapper">
+			<div className="week-day-labels">
+				{weekdaysNames.map((day) => (
+					<div key={day} className="week-day-label">
+						{day}
+					</div>
+				))}
+			</div>
 
-							<div className="heatmap-content">
-								<div className="month-labels">
-									{getMonthLabels().map(({ month, week }) => (
-										<div
-											key={`${month}-${week}`}
-											className="month-label"
-											style={{ gridColumn: week + 1 }}
-										>
-											{month}
-										</div>
-									))}
-								</div>
-								<div className="heatmap-new-grid">
-									{Array(weeksToShow)
-										.fill(null)
-										.map((_, weekIndex) => (
-											<div
-												key={weekIndex}
-												className="heatmap-column"
-											>
-												{Array(7)
-													.fill(null)
-													.map((_, dayIndex) => {
-														const date =
-															getDateForCell(
-																weekIndex,
-																dayIndex,
-															);
-
-														const dateStr =
-															formatDate(date);
-
-														const dayData =
-															data?.[dateStr];
-
-														let count = 0;
-
-														if (
-															dayData &&
-															dayData.totalDelta
-														) {
-															count =
-																dayData?.totalDelta;
-														}
-
-														return (
-															<HeatmapCell
-																key={dayIndex}
-																date={dateStr}
-																count={count}
-																intensityLevels={
-																	intensityLevels
-																}
-															/>
-														);
-													})}
-											</div>
-										))}
-								</div>
-							</div>
+			<div className="heatmap-content">
+				<div className="month-labels">
+					{getMonthLabels().map(({ month, week }) => (
+						<div
+							key={`${month}-${week}`}
+							className="month-label"
+							style={{ gridColumn: week + 1 }}
+						>
+							{month}
 						</div>
-					</div>
-				</TooltipProvider>
-			)}
-			{showEntries && (
-				<div className="todayEntries__section">
-					<div className="todayEntries__section-title">
-						TODAY ENTRIES
-					</div>
-					{getTodayFiles().length > 0 ? (
-						getTodayFiles().map((file) => (
-							<div
-								key={file.path}
-								className="todayEntires__list-item"
-							>
-								<span className="todayEntries__file-path">
-									{getFileNameWithoutExtension(file.path)}
-								</span>
-								<div className="todayEntries__list-item-right">
-									<span className="todayEntries__word-count">
-										{file.delta > 0
-											? `+${file.delta.toLocaleString()}`
-											: file.delta.toLocaleString()}{" "}
-										words
-									</span>
-									<button
-										className="todayEntries__delete-button"
-										onClick={() =>
-											plugin.handleDeleteEntry(file.path)
-										}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="24"
-											height="24"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor" // This ensures the icon uses the current text color
-											strokeWidth="2" // React uses camelCase for attributes like 'stroke-width'
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											className="svg-icon"
-										>
-											<path d="M3 6h18" />
-											<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-											<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-											<line
-												x1="10"
-												y1="11"
-												x2="10"
-												y2="17"
-											/>
-											<line
-												x1="14"
-												y1="11"
-												x2="14"
-												y2="17"
-											/>
-										</svg>
-									</button>
-								</div>
-							</div>
-						))
-					) : (
-						<p className="empty-data">No files edited today</p>
-					)}
+					))}
 				</div>
-			)}
+				<div className="heatmap-new-grid">
+					{Array(weeksToShow)
+						.fill(null)
+						.map((_, weekIndex) => (
+							<div key={weekIndex} className="heatmap-column">
+								{Array(7)
+									.fill(null)
+									.map((_, dayIndex) => {
+										const date = getDateForCell(
+											weekIndex,
+											dayIndex,
+										);
+										const dateStr = formatDate(date);
+										const count = heatmapData[dateStr] ?? 0;
+										return (
+											<HeatmapCell
+												intensity={getIntensityLevel(
+													count,
+													intensityLevels,
+												)}
+											/>
+										);
+									})}
+							</div>
+						))}
+				</div>
+			</div>
 		</div>
 	);
 };
+
+// const getTodayFiles = async () => {
+// 	const today = formatDate(new Date());
+// 	const todayData = await db.dailyActivity
+// 		.where("date")
+// 		.equals(today)
+// 		.toArray();
+
+// 	// return Object.entries(todayData)
+// 	// 	.filter(
+// 	// 		([_, wordCount]) => wordCount.current - wordCount.initial !== 0,
+// 	// 	)
+// 	// 	.map(([filePath, wordCount]) => ({
+// 	// 		path: filePath,
+// 	// 		wordCount,
+// 	// 		delta: wordCount.current - wordCount.initial,
+// 	// 	}));
+// };
+
+// const getDayData = async (day: string) => {
+// 	db.dailyActivity.where("date").equals(day);
+// };

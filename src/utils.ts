@@ -1,21 +1,28 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { db } from "./db";
+import { IntensityConfig } from "./types";
+
+async function resetDatabase() {
+	await db.delete();
+	location.reload(); // Force page reload to reinitialize DB
+}
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export function getCurrentDate(): string {
-	const now = new Date();
+// export function getCurrentDate(): string {
+// 	const now = new Date();
 
-	return (
-		now.getFullYear() +
-		"-" +
-		String(now.getMonth() + 1).padStart(2, "0") +
-		"-" +
-		String(now.getDate()).padStart(2, "0")
-	);
-}
+// 	return (
+// 		now.getFullYear() +
+// 		"-" +
+// 		String(now.getMonth() + 1).padStart(2, "0") +
+// 		"-" +
+// 		String(now.getDate()).padStart(2, "0")
+// 	);
+// }
 
 export interface PathCondition {
 	path: string;
@@ -73,3 +80,20 @@ export const getFileNameWithoutExtension = (path: string): string => {
 	const fileName = getFileName(path);
 	return fileName.replace(/\.[^/.]+$/, "");
 };
+
+export const weeksToShow = 52;
+export const weekdaysNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const monthNames = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];

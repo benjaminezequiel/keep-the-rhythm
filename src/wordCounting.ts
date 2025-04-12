@@ -1,11 +1,12 @@
-import { ScriptName } from "./types";
+import { Language } from "./types";
 import type WordCountPlugin from "main";
 
-export function getExternalWordCount(plugin: WordCountPlugin, text: string) {
-	if (!plugin.regex) {
-		plugin.regex = createRegex(plugin.settings.enabledScripts);
-	}
-	return getWordCount(text, plugin.regex);
+export function getExternalWordCount(
+	text: string,
+	enabledLanguages: Language[],
+) {
+	const regex: RegExp = createRegex(enabledLanguages);
+	return getWordCount(text, regex);
 }
 
 const unicodeRanges = {
@@ -35,12 +36,13 @@ export function getWordCount(text: string, regex: RegExp): number {
 	}
 }
 
-export function createRegex(enabledScripts: ScriptName[]): RegExp {
+export function createRegex(enabledLanguages: Language[]): RegExp {
 	const patterns: string[] = [];
 
-	const charBasedScripts = enabledScripts.filter((script) =>
+	const charBasedScripts = enabledLanguages.filter((script) =>
 		["CJK", "JAPANESE", "KOREAN"].includes(script),
 	);
+
 	if (charBasedScripts.length > 0) {
 		const ranges = charBasedScripts
 			.map((script) => unicodeRanges[script])
@@ -48,7 +50,7 @@ export function createRegex(enabledScripts: ScriptName[]): RegExp {
 		patterns.push(`[${ranges}]`);
 	}
 
-	const wordBasedScripts = enabledScripts.filter(
+	const wordBasedScripts = enabledLanguages.filter(
 		(script) => !["CJK", "JAPANESE", "KOREAN"].includes(script),
 	);
 	if (wordBasedScripts.length > 0) {

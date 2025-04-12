@@ -1,8 +1,8 @@
 import { getWordCount, createRegex } from "../src/wordCounting";
-import { ScriptName } from "../src/types";
+import { Language } from "../src/types";
 
 describe("Word counting", () => {
-	const defaultScripts: ScriptName[] = ["LATIN", "CJK", "JAPANESE", "KOREAN"];
+	const defaultScripts: Language[] = ["LATIN", "CJK", "JAPANESE", "KOREAN"];
 	let regex: RegExp;
 
 	beforeEach(() => {

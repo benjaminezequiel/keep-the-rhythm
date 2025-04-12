@@ -1,0 +1,4616 @@
+{
+	"settings": {
+		"intensityLevels": {
+			"low": 1000,
+			"medium": 2000,
+			"high": 3000
+		},
+		"colors": {
+			"light": {
+				"level_0": "#e0e0e0",
+				"level_1": "#9be9a8",
+				"level_2": "#6ad286",
+				"level_3": "#2ebd54",
+				"level_4": "#12a53e"
+			},
+			"dark": {
+				"level_0": "#ebedf015",
+				"level_1": "#0e4429",
+				"level_2": "#006d32",
+				"level_3": "#26a641",
+				"level_4": "#39d353",
+				"level0": "#382424"
+			}
+		},
+		"showOverview": true,
+		"showEntries": true,
+		"showHeatmap": true,
+		"enabledScripts": ["LATIN"]
+	},
+	"devices": {
+		"archived-a48bcb7f-f05d-4223-82ac-a1334c2bf756": {
+		  "2025-01-15": {
+			"files": {
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 2782,
+				"current": 3397
+			  },
+			  "content/journal/2025-01-15.md": {
+				"initial": 827,
+				"current": 1805
+			  }
+			},
+			"totalDelta": 1593
+		  },
+		  "2025-01-16": {
+			"totalDelta": 2822,
+			"files": {
+			  "content/journal/2025-01-15.md": {
+				"initial": 1805,
+				"current": 1805
+			  },
+			  "content/journal/2025-01-16.md": {
+				"initial": 26,
+				"current": 483
+			  },
+			  "content/notes/viagem pro uruguai 2025-01.md": {
+				"initial": 0,
+				"current": 2215
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 3397,
+				"current": 3547
+			  }
+			}
+		  },
+		  "2025-01-17": {
+			"totalDelta": 1777,
+			"files": {
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 3547,
+				"current": 3882
+			  },
+			  "content/journal/2025-01-17.md": {
+				"initial": 26,
+				"current": 1031
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 1582,
+				"current": 2019
+			  }
+			}
+		  },
+		  "2025-01-18": {
+			"totalDelta": 2151,
+			"files": {
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 14,
+				"current": 578
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 3882,
+				"current": 3883
+			  },
+			  "content/journal/2025-01-18.md": {
+				"initial": 26,
+				"current": 590
+			  },
+			  "notes/Doorstep.md": {
+				"initial": 813,
+				"current": 1251
+			  },
+			  "content/notes/2025-01-18 Cafézinho na Silvia.md": {
+				"initial": 0,
+				"current": 284
+			  },
+			  "content/notes/Having difficulties connecting with other people.md": {
+				"initial": 0,
+				"current": 300
+			  }
+			}
+		  },
+		  "2025-01-19": {
+			"totalDelta": 5652,
+			"files": {
+			  "content/notes/Having difficulties connecting with other people.md": {
+				"initial": 302,
+				"current": 1457
+			  },
+			  "notes/Acompanhamento psicológico.md": {
+				"initial": 928,
+				"current": 993
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 605,
+				"current": 2015
+			  },
+			  "notes/Doorstep.md": {
+				"initial": 1251,
+				"current": 1251
+			  },
+			  "content/notes/2025-01-18 Cafézinho na Silvia.md": {
+				"initial": 284,
+				"current": 284
+			  },
+			  "content/journal/2025-01-18.md": {
+				"initial": 590,
+				"current": 645
+			  },
+			  "notes/Writing.md": {
+				"initial": 204,
+				"current": 358
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 3883,
+				"current": 3996
+			  },
+			  "content/journal/2025-01-19.md": {
+				"initial": 26,
+				"current": 1538
+			  },
+			  "content/notes/mestra.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 95,
+				"current": 99
+			  },
+			  "content/notes/Mestrado.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/UAL 2025.md": {
+				"initial": 105,
+				"current": 508
+			  },
+			  "content/notes/Glasgow 2025.md": {
+				"initial": 92,
+				"current": 486
+			  },
+			  "content/journal/Invalid date.md": {
+				"initial": 26,
+				"current": 26
+			  },
+			  "content/journal/2025-01-24.md": {
+				"initial": 26,
+				"current": 26
+			  },
+			  "notes/Chevening Scholarship.md": {
+				"initial": 64,
+				"current": 15
+			  },
+			  "content/notes/UCA 2025.md": {
+				"initial": 105,
+				"current": 326
+			  },
+			  "content/notes/2024-11-04 Chevening Applicaton.md": {
+				"initial": 13,
+				"current": 13
+			  },
+			  "content/notes/Old notes.md": {
+				"initial": 0,
+				"current": 64
+			  },
+			  "content/notes/MIT 2025.md": {
+				"initial": 277,
+				"current": 279
+			  },
+			  "categories/Ideas.md": {
+				"initial": 1198,
+				"current": 1198
+			  },
+			  "content/notes/ratio of input to learning output.md": {
+				"initial": 0,
+				"current": 144
+			  },
+			  "content/notes/Graph Evolution.md": {
+				"initial": 0,
+				"current": 5
+			  }
+			}
+		  },
+		  "2025-01-20": {
+			"totalDelta": 1422,
+			"files": {
+			  "content/journal/2025-01-20.md": {
+				"initial": 26,
+				"current": 625
+			  },
+			  "content/journal/2025-01-19.md": {
+				"initial": 1538,
+				"current": 1538
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 722,
+				"current": 800
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 99,
+				"current": 99
+			  },
+			  "content/notes/Personal Statement MIT.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Glagow.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Glasgow 2025 Personal Statement.md": {
+				"initial": 0,
+				"current": 493
+			  },
+			  "content/notes/Glasgow 2025.md": {
+				"initial": 486,
+				"current": 738
+			  }
+			}
+		  },
+		  "2025-01-21": {
+			"totalDelta": 1635,
+			"files": {
+			  "content/notes/Glasgow 2025.md": {
+				"initial": 738,
+				"current": 738
+			  },
+			  "content/journal/2025-01-20.md": {
+				"initial": 625,
+				"current": 625
+			  },
+			  "content/journal/2025-01-21.md": {
+				"initial": 26,
+				"current": 1571
+			  },
+			  "content/notes/coral da.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Coral da UFRGS.md": {
+				"initial": 0,
+				"current": 90
+			  }
+			}
+		  },
+		  "2025-01-24": {
+			"totalDelta": 1573,
+			"files": {
+			  "content/journal/2025-01-21.md": {
+				"initial": 1571,
+				"current": 1571
+			  },
+			  "content/journal/2025-01-24.md": {
+				"initial": 31,
+				"current": 1604
+			  }
+			}
+		  },
+		  "2025-01-25": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-01-24.md": {
+				"initial": 1604,
+				"current": 1604
+			  },
+			  "content/journal/2025-01-25.md": {
+				"initial": 26,
+				"current": 26
+			  }
+			}
+		  }
+		},
+		"previous-device-01": {
+		  "2024-12-26": {
+			"files": {},
+			"totalDelta": 709
+		  },
+		  "2024-01-14": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-01-15": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-01-16": {
+			"files": {},
+			"totalDelta": 934
+		  },
+		  "2024-01-17": {
+			"files": {},
+			"totalDelta": 662
+		  },
+		  "2024-01-19": {
+			"files": {},
+			"totalDelta": 893
+		  },
+		  "2024-01-25": {
+			"files": {},
+			"totalDelta": 915
+		  },
+		  "2024-01-26": {
+			"files": {},
+			"totalDelta": 445
+		  },
+		  "2024-01-29": {
+			"files": {},
+			"totalDelta": 821
+		  },
+		  "2024-01-30": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-01-31": {
+			"files": {},
+			"totalDelta": 1944
+		  },
+		  "2024-02-05": {
+			"files": {},
+			"totalDelta": 1968
+		  },
+		  "2024-02-06": {
+			"files": {},
+			"totalDelta": 240
+		  },
+		  "2024-02-07": {
+			"files": {},
+			"totalDelta": 1235
+		  },
+		  "2024-02-08": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-09": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-11": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-12": {
+			"files": {},
+			"totalDelta": 690
+		  },
+		  "2024-02-13": {
+			"files": {},
+			"totalDelta": 1807
+		  },
+		  "2024-02-14": {
+			"files": {},
+			"totalDelta": 1537
+		  },
+		  "2024-02-15": {
+			"files": {},
+			"totalDelta": 935
+		  },
+		  "2024-02-16": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-18": {
+			"files": {},
+			"totalDelta": 557
+		  },
+		  "2024-02-19": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-20": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-21": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-23": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-02-27": {
+			"files": {},
+			"totalDelta": 1570
+		  },
+		  "2024-02-28": {
+			"files": {},
+			"totalDelta": 1443
+		  },
+		  "2024-02-29": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-03-01": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-03-02": {
+			"files": {},
+			"totalDelta": 524
+		  },
+		  "2024-03-04": {
+			"files": {},
+			"totalDelta": 1027
+		  },
+		  "2024-03-06": {
+			"files": {},
+			"totalDelta": 134
+		  },
+		  "2024-03-07": {
+			"files": {},
+			"totalDelta": 32
+		  },
+		  "2024-03-09": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-03-11": {
+			"files": {},
+			"totalDelta": 173
+		  },
+		  "2024-03-16": {
+			"files": {},
+			"totalDelta": 4073
+		  },
+		  "2024-03-17": {
+			"files": {},
+			"totalDelta": 1463
+		  },
+		  "2024-03-20": {
+			"files": {},
+			"totalDelta": 1720
+		  },
+		  "2024-03-21": {
+			"files": {},
+			"totalDelta": 2
+		  },
+		  "2024-03-26": {
+			"files": {},
+			"totalDelta": 655
+		  },
+		  "2024-03-27": {
+			"files": {},
+			"totalDelta": 611
+		  },
+		  "2024-04-01": {
+			"files": {},
+			"totalDelta": 324
+		  },
+		  "2024-04-02": {
+			"files": {},
+			"totalDelta": 25
+		  },
+		  "2024-04-03": {
+			"files": {},
+			"totalDelta": 1471
+		  },
+		  "2024-04-05": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-04-08": {
+			"files": {},
+			"totalDelta": 1568
+		  },
+		  "2024-04-09": {
+			"files": {},
+			"totalDelta": 176
+		  },
+		  "2024-04-12": {
+			"files": {},
+			"totalDelta": 271
+		  },
+		  "2024-04-15": {
+			"files": {},
+			"totalDelta": 5
+		  },
+		  "2024-04-18": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-04-21": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-04-23": {
+			"files": {},
+			"totalDelta": 463
+		  },
+		  "2024-04-25": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-04-27": {
+			"files": {},
+			"totalDelta": 1334
+		  },
+		  "2024-04-28": {
+			"files": {},
+			"totalDelta": 3238
+		  },
+		  "2024-04-29": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-04-30": {
+			"files": {},
+			"totalDelta": 485
+		  },
+		  "2024-05-06": {
+			"files": {},
+			"totalDelta": 1124
+		  },
+		  "2024-05-08": {
+			"files": {},
+			"totalDelta": 1253
+		  },
+		  "2024-05-09": {
+			"files": {},
+			"totalDelta": 2400
+		  },
+		  "2024-05-13": {
+			"files": {},
+			"totalDelta": 900
+		  },
+		  "2024-05-15": {
+			"files": {},
+			"totalDelta": 945
+		  },
+		  "2024-05-19": {
+			"files": {},
+			"totalDelta": 2797
+		  },
+		  "2024-05-20": {
+			"files": {},
+			"totalDelta": 5081
+		  },
+		  "2024-05-21": {
+			"files": {},
+			"totalDelta": 1634
+		  },
+		  "2024-05-22": {
+			"files": {},
+			"totalDelta": 1145
+		  },
+		  "2024-05-23": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-05-24": {
+			"files": {},
+			"totalDelta": 976
+		  },
+		  "2024-05-25": {
+			"files": {},
+			"totalDelta": 2316
+		  },
+		  "2024-05-26": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-05-27": {
+			"files": {},
+			"totalDelta": 2037
+		  },
+		  "2024-05-28": {
+			"files": {},
+			"totalDelta": 25
+		  },
+		  "2024-06-03": {
+			"files": {},
+			"totalDelta": 1396
+		  },
+		  "2024-06-04": {
+			"files": {},
+			"totalDelta": 878
+		  },
+		  "2024-06-05": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-06": {
+			"files": {},
+			"totalDelta": 386
+		  },
+		  "2024-06-07": {
+			"files": {},
+			"totalDelta": 390
+		  },
+		  "2024-06-14": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-15": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-16": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-19": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-20": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-06-22": {
+			"files": {},
+			"totalDelta": 5149
+		  },
+		  "2024-06-23": {
+			"files": {},
+			"totalDelta": 645
+		  },
+		  "2024-06-26": {
+			"files": {},
+			"totalDelta": 580
+		  },
+		  "2024-06-28": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-01": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-02": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-09": {
+			"files": {},
+			"totalDelta": 156
+		  },
+		  "2024-07-10": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-12": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-16": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-18": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-23": {
+			"files": {},
+			"totalDelta": 556
+		  },
+		  "2024-07-26": {
+			"files": {},
+			"totalDelta": 71
+		  },
+		  "2024-07-27": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-28": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-07-29": {
+			"files": {},
+			"totalDelta": 229
+		  },
+		  "2024-07-31": {
+			"files": {},
+			"totalDelta": 156
+		  },
+		  "2024-08-01": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-02": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-10": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-13": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-20": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-25": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-26": {
+			"files": {},
+			"totalDelta": 2454
+		  },
+		  "2024-08-27": {
+			"files": {},
+			"totalDelta": 1652
+		  },
+		  "2024-08-28": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-29": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-08-30": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-02": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-07": {
+			"files": {},
+			"totalDelta": 4922
+		  },
+		  "2024-09-08": {
+			"files": {},
+			"totalDelta": 409
+		  },
+		  "2024-09-10": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-12": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-14": {
+			"files": {},
+			"totalDelta": 100
+		  },
+		  "2024-09-15": {
+			"files": {},
+			"totalDelta": 32
+		  },
+		  "2024-09-16": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-17": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-18": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-20": {
+			"files": {},
+			"totalDelta": 876
+		  },
+		  "2024-09-21": {
+			"files": {},
+			"totalDelta": 3240
+		  },
+		  "2024-09-22": {
+			"files": {},
+			"totalDelta": 1803
+		  },
+		  "2024-09-23": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-09-24": {
+			"files": {},
+			"totalDelta": 1336
+		  },
+		  "2024-09-28": {
+			"files": {},
+			"totalDelta": 33
+		  },
+		  "2024-09-30": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-01": {
+			"files": {},
+			"totalDelta": 15
+		  },
+		  "2024-10-02": {
+			"files": {},
+			"totalDelta": 2801
+		  },
+		  "2024-10-03": {
+			"files": {},
+			"totalDelta": 5
+		  },
+		  "2024-10-04": {
+			"files": {},
+			"totalDelta": 592
+		  },
+		  "2024-10-05": {
+			"files": {},
+			"totalDelta": 4092
+		  },
+		  "2024-10-06": {
+			"files": {},
+			"totalDelta": 1972
+		  },
+		  "2024-10-07": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-08": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-09": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-10": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-11": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-12": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-13": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-15": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-16": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-17": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-10-20": {
+			"files": {},
+			"totalDelta": 1975
+		  },
+		  "2024-10-22": {
+			"files": {},
+			"totalDelta": 2901
+		  },
+		  "2024-10-23": {
+			"files": {},
+			"totalDelta": 1763
+		  },
+		  "2024-10-24": {
+			"files": {},
+			"totalDelta": 3850
+		  },
+		  "2024-10-25": {
+			"files": {},
+			"totalDelta": 1128
+		  },
+		  "2024-10-28": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-01": {
+			"files": {},
+			"totalDelta": 1833
+		  },
+		  "2024-11-02": {
+			"files": {},
+			"totalDelta": 960
+		  },
+		  "2024-11-03": {
+			"files": {},
+			"totalDelta": 4323
+		  },
+		  "2024-11-04": {
+			"files": {},
+			"totalDelta": 2557
+		  },
+		  "2024-11-07": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-09": {
+			"files": {},
+			"totalDelta": 1960
+		  },
+		  "2024-11-10": {
+			"files": {},
+			"totalDelta": 192
+		  },
+		  "2024-11-12": {
+			"files": {},
+			"totalDelta": 3608
+		  },
+		  "2024-11-13": {
+			"files": {},
+			"totalDelta": 615
+		  },
+		  "2024-11-14": {
+			"files": {},
+			"totalDelta": 823
+		  },
+		  "2024-11-15": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-16": {
+			"files": {},
+			"totalDelta": 1136
+		  },
+		  "2024-11-17": {
+			"files": {},
+			"totalDelta": 1380
+		  },
+		  "2024-11-18": {
+			"files": {},
+			"totalDelta": 538
+		  },
+		  "2024-11-20": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-21": {
+			"files": {},
+			"totalDelta": 7
+		  },
+		  "2024-11-22": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-23": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-25": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-26": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-27": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-28": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-29": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-11-30": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-01": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-03": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-08": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-09": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-10": {
+			"files": {},
+			"totalDelta": 30
+		  },
+		  "2024-12-13": {
+			"files": {},
+			"totalDelta": 104
+		  },
+		  "2024-12-14": {
+			"files": {},
+			"totalDelta": 39
+		  },
+		  "2024-12-15": {
+			"files": {},
+			"totalDelta": 35
+		  },
+		  "2024-12-16": {
+			"files": {},
+			"totalDelta": 147
+		  },
+		  "2024-12-17": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-19": {
+			"files": {},
+			"totalDelta": 0
+		  },
+		  "2024-12-22": {
+			"files": {},
+			"totalDelta": 1655
+		  },
+		  "2024-12-23": {
+			"files": {},
+			"totalDelta": 86
+		  },
+		  "2024-12-24": {
+			"files": {},
+			"totalDelta": 611
+		  },
+		  "2024-12-25": {
+			"files": {},
+			"totalDelta": 2821
+		  }
+		},
+		"previous-device-02": {
+		  "2024-12-26": {
+			"files": {},
+			"totalDelta": 75
+		  },
+		  "2024-12-27": {
+			"files": {},
+			"totalDelta": 1599
+		  },
+		  "2024-12-28": {
+			"files": {},
+			"totalDelta": 1726
+		  },
+		  "2024-12-29": {
+			"files": {
+			  "notes/Projects.md": {
+				"initial": 268,
+				"current": 268
+			  },
+			  "content/journal/2024-12-29.md": {
+				"initial": 36,
+				"current": 36
+			  },
+			  "content/journal/2024-12-28.md": {
+				"initial": 36,
+				"current": 36
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2024-12-30": {
+			"files": {
+			  "content/journal/2024-12-28.md": {
+				"initial": 36,
+				"current": 36
+			  },
+			  "notes/Obsidian Theme.md": {
+				"initial": 1099,
+				"current": 1099
+			  },
+			  "content/notes/Tropa de Gatinhos.md": {
+				"initial": 337,
+				"current": 337
+			  },
+			  "content/journal/2024-12-27.md": {
+				"initial": 1176,
+				"current": 1176
+			  },
+			  "content/journal/2024-12-29.md": {
+				"initial": 550,
+				"current": 550
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2024-12-31": {
+			"files": {},
+			"totalDelta": 277
+		  },
+		  "2025-01-01": {
+			"files": {},
+			"totalDelta": 1119
+		  },
+		  "2025-01-02": {
+			"files": {},
+			"totalDelta": 4279
+		  },
+		  "2025-01-03": {
+			"files": {},
+			"totalDelta": 2032
+		  },
+		  "2025-01-04": {
+			"files": {},
+			"totalDelta": 2959
+		  },
+		  "2025-01-05": {
+			"files": {},
+			"totalDelta": 2431
+		  },
+		  "2025-01-06": {
+			"files": {},
+			"totalDelta": 1648
+		  },
+		  "2025-01-07": {
+			"files": {},
+			"totalDelta": 3298
+		  },
+		  "2025-01-08": {
+			"files": {},
+			"totalDelta": 1659
+		  },
+		  "2025-01-09": {
+			"files": {},
+			"totalDelta": 5
+		  },
+		  "2025-01-10": {
+			"files": {},
+			"totalDelta": 1886
+		  },
+		  "2025-01-11": {
+			"files": {},
+			"totalDelta": 1932
+		  },
+		  "2025-01-12": {
+			"files": {},
+			"totalDelta": 3607
+		  },
+		  "2025-01-13": {
+			"files": {},
+			"totalDelta": 2637
+		  },
+		  "2025-01-14": {
+			"files": {},
+			"totalDelta": 2146
+		  }
+		},
+		"previous-device-03": {
+		  "2024-12-28": {
+			"files": {},
+			"totalDelta": 693
+		  },
+		  "2024-12-29": {
+			"files": {},
+			"totalDelta": 1068
+		  },
+		  "2024-12-30": {
+			"files": {
+			  "notes/Projects.md": {
+				"initial": 268,
+				"current": 268
+			  },
+			  "content/journal/2024-12-29.md": {
+				"initial": 550,
+				"current": 550
+			  },
+			  "content/notes/Tropa de Gatinhos.md": {
+				"initial": 337,
+				"current": 337
+			  }
+			},
+			"totalDelta": 0
+		  }
+		},
+		"previous-device-04": {
+		  "2024-12-26": {
+			"files": {},
+			"totalDelta": 46
+		  },
+		  "2024-12-27": {
+			"files": {
+			  "content/journal/2024-12-26.md": {
+				"initial": 329,
+				"current": 329
+			  },
+			  "content/notes/WordCounter for Obsidian.md": {
+				"initial": 1303,
+				"current": 1303
+			  },
+			  "notes/Obsidian Theme.md": {
+				"initial": 277,
+				"current": 277
+			  },
+			  "content/journal/2024-12-27.md": {
+				"initial": 38,
+				"current": 38
+			  },
+			  "notes/FontGuesser Game.md": {
+				"initial": 85,
+				"current": 85
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2024-12-29": {
+			"files": {
+			  "content/journal/2024-12-29.md": {
+				"initial": 38,
+				"current": 38
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2024-12-30": {
+			"files": {
+			  "content/journal/2024-12-29.md": {
+				"initial": 38,
+				"current": 38
+			  },
+			  "content/journal/2024-12-30.md": {
+				"initial": 38,
+				"current": 38
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2024-12-31": {
+			"files": {
+			  "content/journal/2024-12-30.md": {
+				"initial": 38,
+				"current": 38
+			  },
+			  "notes/2023-12-25 Braindump sobre coisas que gostaria de fazer ou organizar para facilitar a minha vida pensando no ano que vem.md": {
+				"initial": 787,
+				"current": 787
+			  },
+			  "notes/Twenty One Pilots 2025.md": {
+				"initial": 804,
+				"current": 804
+			  },
+			  "notes/Obsidian Theme.md": {
+				"initial": 1099,
+				"current": 1099
+			  },
+			  "content/notes/Tropa de Gatinhos.md": {
+				"initial": 337,
+				"current": 337
+			  },
+			  "notes/Personal Website.md": {
+				"initial": 510,
+				"current": 510
+			  },
+			  "content/notes/styling test note.md": {
+				"initial": 748,
+				"current": 748
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2025-01-06": {
+			"files": {},
+			"totalDelta": 289
+		  },
+		  "2025-01-08": {
+			"files": {},
+			"totalDelta": 1566
+		  },
+		  "2025-01-09": {
+			"files": {},
+			"totalDelta": 1070
+		  },
+		  "2025-01-10": {
+			"files": {
+			  "content/journal/2025-01-10.md": {
+				"initial": 36,
+				"current": 36
+			  },
+			  "notes/Playground.md": {
+				"initial": 1518,
+				"current": 1518
+			  },
+			  "content/notes/2025-01-10 Webapps para organizar e trackear e cacular horas de trabalho com as regras CLT .md": {
+				"initial": 7,
+				"current": 7
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2025-01-12": {
+			"files": {
+			  "notes/Master Degree In Design.md": {
+				"initial": 95,
+				"current": 95
+			  },
+			  "notes/600 Industry, commerce and business.md": {
+				"initial": 68,
+				"current": 68
+			  },
+			  "content/journal/2025-01-10.md": {
+				"initial": 1399,
+				"current": 1399
+			  },
+			  "content/notes/Fazer um site de testar teclado com vários layouts diferentes para linguagens diferentes e tamanhos alternativos como 75 80 100.md": {
+				"initial": 10,
+				"current": 10
+			  },
+			  "_utils/templates/Journal Template.md": {
+				"initial": 26,
+				"current": 26
+			  },
+			  "content/journal/2022-08-25.md": {
+				"initial": 1159,
+				"current": 1159
+			  },
+			  "content/journal/2024-07-06.md": {
+				"initial": 684,
+				"current": 684
+			  },
+			  "content/journal/2024-10-10.md": {
+				"initial": 598,
+				"current": 598
+			  },
+			  "content/notes/2024-10-07 Pesquisa norturna do ux-design roadmap.md": {
+				"initial": 270,
+				"current": 270
+			  },
+			  "content/notes/Arduino.md": {
+				"initial": 259,
+				"current": 259
+			  },
+			  "notes/Encontar um novo psicólogo para Elizabeth.md": {
+				"initial": 35,
+				"current": 35
+			  },
+			  "content/notes/Direciona - consultorias de design.md": {
+				"initial": 378,
+				"current": 378
+			  },
+			  "content/notes/Get things organized.md": {
+				"initial": 129,
+				"current": 129
+			  },
+			  "content/notes/Rolês Fitness.md": {
+				"initial": 678,
+				"current": 678
+			  },
+			  "notes/Projects.md": {
+				"initial": 278,
+				"current": 278
+			  },
+			  "content/journal/2024-11-17.md": {
+				"initial": 1415,
+				"current": 1415
+			  },
+			  "notes/Playground.md": {
+				"initial": 2179,
+				"current": 2179
+			  },
+			  "content/notes/UAL 2025.md": {
+				"initial": 105,
+				"current": 105
+			  }
+			},
+			"totalDelta": 0
+		  },
+		  "2025-01-13": {
+			"files": {},
+			"totalDelta": 56
+		  }
+		},
+		"restored-curitiba-trip-2025": {
+		  "2025-01-22": {
+			"files": {},
+			"totalDelta": 1282
+		  },
+		  "2025-01-23": {
+			"files": {},
+			"totalDelta": 1189
+		  }
+		},
+		"a48bcb7f-f05d-4223-82ac-a1334c2bf756": {
+		  "2025-01-25": {
+			"totalDelta": 1393,
+			"files": {
+			  "content/journal/2025-01-25.md": {
+				"initial": 37,
+				"current": 450
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 3996,
+				"current": 4033
+			  },
+			  "content/journal/2025-01-24.md": {
+				"initial": 1607,
+				"current": 1607
+			  },
+			  "Clippings/The Jagged, Monstrous Function That Broke Calculus  Quanta Magazine.md": {
+				"initial": 1281,
+				"current": 1281
+			  },
+			  "Clippings/Never Forgive Them.md": {
+				"initial": 11404,
+				"current": 11404
+			  },
+			  "notes/Piano.md": {
+				"initial": 9,
+				"current": 161
+			  },
+			  "notes/Projects.md": {
+				"initial": 278,
+				"current": 282
+			  },
+			  "content/notes/Personal.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Atualização de Identidade Uruguaia.md": {
+				"initial": 149,
+				"current": 181
+			  },
+			  "content/notes/Favorites clean up.md": {
+				"initial": 547,
+				"current": 547
+			  },
+			  "content/notes/Arduino.md": {
+				"initial": 259,
+				"current": 258
+			  },
+			  "content/notes/Home lab.md": {
+				"initial": 646,
+				"current": 646
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 800,
+				"current": 892
+			  },
+			  "content/notes/bug trying to upload and download stuff on browser.md": {
+				"initial": 0,
+				"current": 28
+			  },
+			  "notes/Acompanhamento psicológico.md": {
+				"initial": 993,
+				"current": 1087
+			  },
+			  "notes/Twenty One Pilots 2025.md": {
+				"initial": 1159,
+				"current": 1261
+			  },
+			  "notes/FontGuesser Game.md": {
+				"initial": 85,
+				"current": 169
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 2015,
+				"current": 2196
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 99,
+				"current": 100
+			  },
+			  "content/notes/Master Degree In Design Updates.md": {
+				"initial": 812,
+				"current": 985
+			  },
+			  "References/The Wild Robot.md": {
+				"initial": 177,
+				"current": 178
+			  },
+			  "Clippings/Brandon Sanderson – The Philosophy of Professional Writing Brandon Sanderson's Writing Lecture 1 (2025).md": {
+				"initial": 40,
+				"current": 42
+			  },
+			  "Clippings/3Blue1Brown – How are holograms possible.md": {
+				"initial": 25,
+				"current": 25
+			  },
+			  "content/journal/2024-10-05.md": {
+				"initial": 810,
+				"current": 808
+			  }
+			}
+		  },
+		  "2025-01-26": {
+			"totalDelta": 3649,
+			"files": {
+			  "content/journal/2025-01-25.md": {
+				"initial": 450,
+				"current": 450
+			  },
+			  "content/journal/2025-01-26.md": {
+				"initial": 26,
+				"current": 2876
+			  },
+			  "content/journal/2025-01-24.md": {
+				"initial": 1604,
+				"current": 1604
+			  },
+			  "notes/Projects.md": {
+				"initial": 282,
+				"current": 282
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 100,
+				"current": 100
+			  },
+			  "References/Manage Your Day-to-Day Build Your Routine, Find Your Focus, and Sharpen Your Creative Mind.md": {
+				"initial": 322,
+				"current": 328
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2019,
+				"current": 2021
+			  },
+			  "notes/Doorstep.md": {
+				"initial": 1251,
+				"current": 1253
+			  },
+			  "content/notes/MBOCHIP.md": {
+				"initial": 407,
+				"current": 409
+			  },
+			  "content/notes/710 Design.md": {
+				"initial": 43,
+				"current": 244
+			  },
+			  "content/notes/Making inteligent tools and objects.md": {
+				"initial": 0,
+				"current": 94
+			  },
+			  "notes/761 Music.md": {
+				"initial": 5,
+				"current": 160
+			  },
+			  "notes/Taking a Look on Colors.md": {
+				"initial": 458,
+				"current": 457
+			  },
+			  "content/notes/Favorites clean up.md": {
+				"initial": 547,
+				"current": 547
+			  },
+			  "content/notes/Letra.md": {
+				"initial": 191,
+				"current": 190
+			  },
+			  "content/notes/WordCounter Widget for Website.md": {
+				"initial": 14,
+				"current": 14
+			  },
+			  "content/notes/VS Code Theme.md": {
+				"initial": 14,
+				"current": 14
+			  },
+			  "notes/Portfólio profissional.md": {
+				"initial": 499,
+				"current": 499
+			  },
+			  "notes/School Planner.md": {
+				"initial": 89,
+				"current": 89
+			  },
+			  "notes/Lançamento de marca pessoal.md": {
+				"initial": 625,
+				"current": 625
+			  },
+			  "content/notes/Tropa de Gatinhos.md": {
+				"initial": 337,
+				"current": 338
+			  },
+			  "content/notes/Pokemon Collection.md": {
+				"initial": 15,
+				"current": 16
+			  },
+			  "content/notes/2nd Piano Renovation.md": {
+				"initial": 14,
+				"current": 15
+			  },
+			  "notes/Primeira Campanha de RPG.md": {
+				"initial": 166,
+				"current": 166
+			  },
+			  "notes/Coral Escola.md": {
+				"initial": 1193,
+				"current": 1382
+			  },
+			  "content/notes/Coral da UFRGS.md": {
+				"initial": 90,
+				"current": 191
+			  },
+			  "content/notes/vAscii.md": {
+				"initial": 22,
+				"current": 21
+			  },
+			  "notes/One-shot de Ordem Paranormal.md": {
+				"initial": 380,
+				"current": 380
+			  },
+			  "content/notes/Running.md": {
+				"initial": 16,
+				"current": 16
+			  },
+			  "content/notes/Fisioterapia.md": {
+				"initial": 14,
+				"current": 14
+			  },
+			  "content/notes/Carteira de Motorista.md": {
+				"initial": 14,
+				"current": 14
+			  },
+			  "notes/Panorama.md": {
+				"initial": 141,
+				"current": 141
+			  },
+			  "References/The Dark Tower.md": {
+				"initial": 128,
+				"current": 175
+			  },
+			  "Clippings/🚀⚙️ JavaScript Visualized the JavaScript Engine.md": {
+				"initial": 840,
+				"current": 840
+			  },
+			  "Clippings/getifyYou-Dont-Know-JS A book series on JavaScript. @YDKJS on twitter.md": {
+				"initial": 496,
+				"current": 496
+			  },
+			  "Clippings/Scott Hanselman – Building a CPU from Scratch with Ben Eater.md": {
+				"initial": 34,
+				"current": 34
+			  }
+			}
+		  },
+		  "2025-01-27": {
+			"totalDelta": 3904,
+			"files": {
+			  "content/journal/2025-01-26.md": {
+				"initial": 2876,
+				"current": 3831
+			  },
+			  "content/notes/REST API.md": {
+				"initial": 0,
+				"current": 79
+			  },
+			  "content/notes/Untitled 30.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "Clippings/Claude.md": {
+				"initial": 609,
+				"current": 0
+			  },
+			  "Clippings/Claude 2025-01-27T004502-0300.md": {
+				"initial": 1141,
+				"current": 1141
+			  },
+			  "content/journal/2025-01-27.md": {
+				"initial": 26,
+				"current": 2827
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4033,
+				"current": 4102
+			  },
+			  "References/Learning by Expanding An Activity-Theoretical Approach to Developmental Research.md": {
+				"initial": 151,
+				"current": 151
+			  },
+			  "References/Cognitive Work Analysis Toward Safe, Productive, and Healthy Computer-Based Work.md": {
+				"initial": 295,
+				"current": 295
+			  },
+			  "References/Human-Machine Reconfigurations Plans and Situated Actions.md": {
+				"initial": 202,
+				"current": 202
+			  },
+			  "References/Visual Complexity Mapping Patterns of Information.md": {
+				"initial": 144,
+				"current": 144
+			  },
+			  "References/Information Visualization Perception for Design.md": {
+				"initial": 400,
+				"current": 400
+			  },
+			  "References/How to Make Sense of Any Mess.md": {
+				"initial": 222,
+				"current": 222
+			  },
+			  "References/The Ecological Approach to Visual Perception.md": {
+				"initial": 211,
+				"current": 211
+			  },
+			  "References/The Sciences of the Artificial.md": {
+				"initial": 270,
+				"current": 270
+			  },
+			  "References/The Image of the City.md": {
+				"initial": 164,
+				"current": 164
+			  },
+			  "References/A Pattern Language Towns, Buildings, Construction.md": {
+				"initial": 282,
+				"current": 282
+			  },
+			  "References/Notes on the Synthesis of Form.md": {
+				"initial": 376,
+				"current": 376
+			  },
+			  "notes/Wheel of Life.md": {
+				"initial": 135,
+				"current": 135
+			  }
+			}
+		  },
+		  "2025-01-28": {
+			"totalDelta": 4073,
+			"files": {
+			  "content/journal/2025-01-28.md": {
+				"initial": 26,
+				"current": 1878
+			  },
+			  "notes/Projects.md": {
+				"initial": 282,
+				"current": 282
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 892,
+				"current": 970
+			  },
+			  "Clippings/Claude 2025-01-28T200006-0300.md": {
+				"initial": 8530,
+				"current": 8530
+			  },
+			  "notes/Emotional Design.md": {
+				"initial": 453,
+				"current": 2596
+			  }
+			}
+		  },
+		  "2025-01-29": {
+			"totalDelta": 1665,
+			"files": {
+			  "content/journal/2025-01-29.md": {
+				"initial": 26,
+				"current": 1477
+			  },
+			  "content/notes/Primeagen.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "References/Jung Vida e obra.md": {
+				"initial": 298,
+				"current": 304
+			  },
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1530,
+				"current": 1738
+			  }
+			}
+		  },
+		  "2025-01-30": {
+			"totalDelta": 3364,
+			"files": {
+			  "notes/Acompanhamento psicológico.md": {
+				"initial": 1091,
+				"current": 1091
+			  },
+			  "content/notes/Untitled 31.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-01-30.md": {
+				"initial": 26,
+				"current": 1048
+			  },
+			  "Clippings/Claude 2025-01-30T210127-0300.md": {
+				"initial": 1985,
+				"current": 1985
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 0,
+				"current": 355
+			  },
+			  "content/notes/Study plan.md": {
+				"initial": 0,
+				"current": 1397
+			  },
+			  "content/notes/{{title}} Study plan.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "References/Computer Systems A Programmer's Perspective.md": {
+				"initial": 143,
+				"current": 733
+			  }
+			}
+		  },
+		  "2025-01-31": {
+			"totalDelta": 2490,
+			"files": {
+			  "content/journal/2025-01-30.md": {
+				"initial": 1065,
+				"current": 1065
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 366,
+				"current": 366
+			  },
+			  "References/Computer Systems A Programmer's Perspective.md": {
+				"initial": 718,
+				"current": 1204
+			  },
+			  "content/journal/2025-01-31.md": {
+				"initial": 57,
+				"current": 1018
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4186,
+				"current": 4591
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2025,
+				"current": 2302
+			  },
+			  "⭕ Home.md": {
+				"initial": 2,
+				"current": 2
+			  },
+			  "content/notes/operating system.md": {
+				"initial": 0,
+				"current": 2
+			  },
+			  "content/notes/kernel.md": {
+				"initial": 0,
+				"current": 51
+			  },
+			  "content/notes/kenrel.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Threads.md": {
+				"initial": 0,
+				"current": 70
+			  },
+			  "content/notes/Virtual Memory.md": {
+				"initial": 0,
+				"current": 110
+			  },
+			  "content/notes/Processes.md": {
+				"initial": 0,
+				"current": 128
+			  }
+			}
+		  },
+		  "2025-02-01": {
+			"totalDelta": 4268,
+			"files": {
+			  "content/notes/Virtual Memory.md": {
+				"initial": 111,
+				"current": 137
+			  },
+			  "References/Computer Systems A Programmer's Perspective.md": {
+				"initial": 1204,
+				"current": 1739
+			  },
+			  "content/notes/Files.md": {
+				"initial": 0,
+				"current": 38
+			  },
+			  "content/notes/Amdahl's Law.md": {
+				"initial": 0,
+				"current": 88
+			  },
+			  "content/notes/CSAPP - PP 1.1 1.2.md": {
+				"initial": 0,
+				"current": 328
+			  },
+			  "content/notes/Conccurency.md": {
+				"initial": 0,
+				"current": 9
+			  },
+			  "content/notes/Paralallelism.md": {
+				"initial": 0,
+				"current": 9
+			  },
+			  "content/notes/The Curious Case of User Interfaces.md": {
+				"initial": 284,
+				"current": 284
+			  },
+			  "content/notes/2024-06-28 fazer brainstorm sobre tópicos importantes pra discutir com os heads sobre o silicon - visão do produto diferenciais benefícios modelo de negócio divisão etc.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 366,
+				"current": 529
+			  },
+			  "content/notes/Threads.md": {
+				"initial": 70,
+				"current": 70
+			  },
+			  "content/journal/2025-02-01.md": {
+				"initial": 29,
+				"current": 1159
+			  },
+			  "notes/Computer science and programming concepts.md": {
+				"initial": 21,
+				"current": 21
+			  },
+			  "content/journal/2025-01-30.md": {
+				"initial": 1065,
+				"current": 1065
+			  },
+			  "Clippings/Claude 2025-01-30T210127-0300.md": {
+				"initial": 1969,
+				"current": 1969
+			  },
+			  "content/journal/2023-02-11.md": {
+				"initial": 119,
+				"current": 119
+			  },
+			  "content/journal/2023-02-17.md": {
+				"initial": 170,
+				"current": 170
+			  },
+			  "content/journal/2023-02-26.md": {
+				"initial": 381,
+				"current": 381
+			  },
+			  "content/journal/2023-02-28.md": {
+				"initial": 75,
+				"current": 75
+			  },
+			  "notes/The Creative Faucet.md": {
+				"initial": 201,
+				"current": 201
+			  },
+			  "content/refs/Books/The Design of Everyday Things.md": {
+				"initial": 7676,
+				"current": 7676
+			  },
+			  "_archive/old templates/year.md": {
+				"initial": 43,
+				"current": 43
+			  },
+			  "notes/How the senior designers I trained at Apple & Meta developed faster than others.md": {
+				"initial": 164,
+				"current": 164
+			  },
+			  "notes/Computer Graphics.md": {
+				"initial": 24,
+				"current": 24
+			  },
+			  "notes/COOL STUFF - WEEK 1.md": {
+				"initial": 665,
+				"current": 665
+			  },
+			  "Clippings/Scott Hanselman – Building a CPU from Scratch with Ben Eater.md": {
+				"initial": 58,
+				"current": 58
+			  },
+			  "Clippings/Claude 2025-01-27T004502-0300.md": {
+				"initial": 1114,
+				"current": 1114
+			  },
+			  "notes/Vue.js - The Complete Guide.md": {
+				"initial": 250,
+				"current": 250
+			  },
+			  "content/notes/Computer Science.md": {
+				"initial": 191,
+				"current": 191
+			  },
+			  "notes/Computer Science.md": {
+				"initial": 40,
+				"current": 40
+			  },
+			  "notes/brainstorm de coisas que eu gostaria de estudar.md": {
+				"initial": 1044,
+				"current": 1044
+			  },
+			  "notes/500 Technology and engineering.md": {
+				"initial": 55,
+				"current": 55
+			  },
+			  "notes/OOUX - Section 2 - Say hello to OOUX and ORCA.md": {
+				"initial": 1804,
+				"current": 1804
+			  },
+			  "content/notes/Teaching Myself Computer Science -- Study plan.md": {
+				"initial": 1176,
+				"current": 1244
+			  },
+			  "categories/Books.md": {
+				"initial": 104,
+				"current": 107
+			  },
+			  "content/refs/Books/Intuição, Ação, Criação - Graphic Design Thinking.md": {
+				"initial": 46,
+				"current": 46
+			  },
+			  "categories/Inbox.md": {
+				"initial": 25,
+				"current": 26
+			  },
+			  "content/notes/2025-02-01 aplicativo de teclado pra android com layout customizado e otimizado p aumentar typing speed.md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/2024-08-26 aplicativo de tracking de stats como quanto o mouse andou, heatmap do teclado e esse tipo de coisa .md": {
+				"initial": 6,
+				"current": 0
+			  },
+			  "content/notes/2024-08-26 aplicativo de tracking de stats como quanto o mouse andou, heatmap do teclado e esse tipo de coisa.md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/2024-08-27 Superluminal - name idea based on Kurzgesagt vídeo .md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 0,
+				"current": 1643
+			  },
+			  "content/notes/Multi-threading.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/boolean operations.md": {
+				"initial": 3,
+				"current": 23
+			  },
+			  "content/notes/Logic Gates.md": {
+				"initial": 0,
+				"current": 3
+			  },
+			  "content/notes/Hardware Description Language - HDL.md": {
+				"initial": 0,
+				"current": 5
+			  },
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1754,
+				"current": 1953
+			  },
+			  "notes/The phsyical nature of light.md": {
+				"initial": 141,
+				"current": 141
+			  },
+			  "notes/You are burned out and don't even know it.md": {
+				"initial": 618,
+				"current": 618
+			  },
+			  "content/journal/2025-01-19.md": {
+				"initial": 1562,
+				"current": 1562
+			  }
+			}
+		  },
+		  "2025-02-02": {
+			"totalDelta": 3023,
+			"files": {
+			  "content/journal/2025-02-01.md": {
+				"initial": 1159,
+				"current": 1159
+			  },
+			  "content/journal/2025-02-02.md": {
+				"initial": 29,
+				"current": 2022
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 1643,
+				"current": 2246
+			  },
+			  "References/Jung Vida e obra.md": {
+				"initial": 315,
+				"current": 742
+			  }
+			}
+		  },
+		  "2025-02-03": {
+			"totalDelta": 505,
+			"files": {
+			  "content/journal/2025-02-03.md": {
+				"initial": 61,
+				"current": 566
+			  }
+			}
+		  },
+		  "2025-02-04": {
+			"totalDelta": 2614,
+			"files": {
+			  "content/journal/2025-02-04.md": {
+				"initial": 0,
+				"current": 1464
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 529,
+				"current": 605
+			  },
+			  "content/notes/Teaching Myself Computer Science -- Study plan.md": {
+				"initial": 1244,
+				"current": 1268
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 2246,
+				"current": 2931
+			  },
+			  "content/journal/2025-02-03.md": {
+				"initial": 566,
+				"current": 566
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 985,
+				"current": 1334
+			  }
+			}
+		  },
+		  "2025-02-05": {
+			"totalDelta": 2151,
+			"files": {
+			  "content/journal/2025-02-04.md": {
+				"initial": 1466,
+				"current": 1466
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1632,
+				"current": 1632
+			  },
+			  "content/journal/2025-02-05.md": {
+				"initial": 105,
+				"current": 1416
+			  },
+			  "content/notes/2025-02-05 hand tracking application that identifies a set of gestures while typing to have physical shorcuts .md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/2025-02-05 Ferramenta de criar text cutouts pegando um set de pngs pronto e você só escreve o texto num input e pode randomizar as letras ou trocar algumas específicas, acho que ia ficar legal .md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 2931,
+				"current": 3771
+			  }
+			}
+		  },
+		  "2025-02-06": {
+			"totalDelta": 3038,
+			"files": {
+			  "content/notes/nand2tetris.md": {
+				"initial": 3771,
+				"current": 4377
+			  },
+			  "content/journal/2025-02-05.md": {
+				"initial": 1416,
+				"current": 1416
+			  },
+			  "teste.md": {
+				"initial": 2,
+				"current": 0
+			  },
+			  "content/journal/2025-02-06.md": {
+				"initial": 29,
+				"current": 2462
+			  },
+			  "notes/Projects.md": {
+				"initial": 302,
+				"current": 302
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 2194,
+				"current": 2193
+			  },
+			  "References/The Elements Of Computing Systems Building A Modern Computer From First Principles.md": {
+				"initial": 280,
+				"current": 280
+			  },
+			  "References/Eloquent JavaScript A Modern Introduction to Programming.md": {
+				"initial": 291,
+				"current": 291
+			  }
+			}
+		  },
+		  "2025-02-07": {
+			"totalDelta": 1015,
+			"files": {
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1953,
+				"current": 1954
+			  },
+			  "content/notes/vAscii.md": {
+				"initial": 22,
+				"current": 263
+			  },
+			  "content/journal/2025-02-07.md": {
+				"initial": 29,
+				"current": 802
+			  }
+			}
+		  },
+		  "2025-02-08": {
+			"totalDelta": 2768,
+			"files": {
+			  "content/journal/2025-02-07.md": {
+				"initial": 802,
+				"current": 802
+			  },
+			  "content/journal/2025-02-08.md": {
+				"initial": 29,
+				"current": 2285
+			  },
+			  "content/notes/vAscii.md": {
+				"initial": 263,
+				"current": 263
+			  },
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1954,
+				"current": 1954
+			  },
+			  "References/Mind in Society The Development of Higher Psychological Processes.md": {
+				"initial": 283,
+				"current": 283
+			  },
+			  "content/notes/fixing my mystakes.md": {
+				"initial": 0,
+				"current": 87
+			  },
+			  "content/journal/2025-01-01.md": {
+				"initial": 1555,
+				"current": 1555
+			  },
+			  "content/journal/2025-01-02.md": {
+				"initial": 571,
+				"current": 571
+			  },
+			  "content/journal/2025-01-03.md": {
+				"initial": 1134,
+				"current": 1132
+			  },
+			  "content/journal/2025-01-04.md": {
+				"initial": 2179,
+				"current": 2179
+			  },
+			  "content/journal/2025-01-05.md": {
+				"initial": 1348,
+				"current": 1346
+			  },
+			  "_utils/templates/Journal Template.md": {
+				"initial": 29,
+				"current": 29
+			  },
+			  "content/journal/2025-01-06.md": {
+				"initial": 1339,
+				"current": 1337
+			  },
+			  "content/journal/2025-01-07.md": {
+				"initial": 2331,
+				"current": 2329
+			  },
+			  "content/journal/2025-01-09.md": {
+				"initial": 1060,
+				"current": 1058
+			  },
+			  "content/journal/2025-01-12.md": {
+				"initial": 2741,
+				"current": 2739
+			  },
+			  "content/journal/2025-01-10.md": {
+				"initial": 1404,
+				"current": 1402
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 4377,
+				"current": 4816
+			  }
+			}
+		  },
+		  "2025-02-09": {
+			"totalDelta": 1161,
+			"files": {
+			  "content/notes/nand2tetris.md": {
+				"initial": 4816,
+				"current": 5059
+			  },
+			  "content/journal/2025-02-08.md": {
+				"initial": 2285,
+				"current": 2285
+			  },
+			  "content/journal/2025-02-09.md": {
+				"initial": 27,
+				"current": 945
+			  },
+			  "content/journal/2025-01-31.md": {
+				"initial": 1018,
+				"current": 1018
+			  }
+			}
+		  },
+		  "2025-02-10": {
+			"totalDelta": 1054,
+			"files": {
+			  "content/journal/2025-01-31.md": {
+				"initial": 1018,
+				"current": 1018
+			  },
+			  "content/journal/2025-02-10.md": {
+				"initial": 27,
+				"current": 877
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 5059,
+				"current": 5263
+			  }
+			}
+		  },
+		  "2025-02-11": {
+			"totalDelta": 1813,
+			"files": {
+			  "content/journal/2025-02-10.md": {
+				"initial": 877,
+				"current": 877
+			  },
+			  "content/journal/2025-02-11.md": {
+				"initial": 27,
+				"current": 989
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4591,
+				"current": 4591
+			  },
+			  "Clippings/AI needs design consciousness.md": {
+				"initial": 4862,
+				"current": 4862
+			  },
+			  "content/notes/2025-02-11 Post About Playground.md": {
+				"initial": 0,
+				"current": 646
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 5263,
+				"current": 5468
+			  },
+			  "Clippings/Tools for not-thinking.md": {
+				"initial": 1614,
+				"current": 1614
+			  }
+			}
+		  },
+		  "2025-02-12": {
+			"totalDelta": 1763,
+			"files": {
+			  "content/notes/nand2tetris.md": {
+				"initial": 5468,
+				"current": 5468
+			  },
+			  "Clippings/Tools for not-thinking.md": {
+				"initial": 1614,
+				"current": 1614
+			  },
+			  "content/journal/2025-02-12.md": {
+				"initial": 27,
+				"current": 1490
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4591,
+				"current": 4891
+			  }
+			}
+		  },
+		  "2025-02-13": {
+			"totalDelta": 3292,
+			"files": {
+			  "content/journal/2025-02-13.md": {
+				"initial": 27,
+				"current": 3126
+			  },
+			  "_utils/templates/Journal Template.md": {
+				"initial": 29,
+				"current": 8
+			  },
+			  "content/notes/MBOCHIP - Novembro 2022.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Saimon Brum.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Keep the Rhythm 0.1.8 Release.md": {
+				"initial": 0,
+				"current": 214
+			  },
+			  "notes/Projects.md": {
+				"initial": 302,
+				"current": 302
+			  },
+			  "notes/Tudo que eu quero fazer - 08-2022.md": {
+				"initial": 169,
+				"current": 169
+			  },
+			  "notes/Portal Bullet Hell.md": {
+				"initial": 27,
+				"current": 27
+			  }
+			}
+		  },
+		  "2025-02-14": {
+			"totalDelta": 1319,
+			"files": {
+			  "content/journal/2025-02-14.md": {
+				"initial": 6,
+				"current": 1325
+			  }
+			}
+		  },
+		  "2025-02-15": {
+			"totalDelta": 2564,
+			"files": {
+			  "content/journal/2025-02-14.md": {
+				"initial": 1325,
+				"current": 1325
+			  },
+			  "Clippings/🚀⚙️ JavaScript Visualized the JavaScript Engine.md": {
+				"initial": 1332,
+				"current": 1332
+			  },
+			  "content/journal/2025-02-15.md": {
+				"initial": 6,
+				"current": 1298
+			  },
+			  "Clippings/Low fidelity design is higher up the value chain.md": {
+				"initial": 1980,
+				"current": 2323
+			  },
+			  "Clippings/Design without process, or the form factor trap.md": {
+				"initial": 2658,
+				"current": 3587
+			  }
+			}
+		  },
+		  "2025-02-16": {
+			"totalDelta": 1779,
+			"files": {
+			  "content/journal/2025-02-16.md": {
+				"initial": 6,
+				"current": 805
+			  },
+			  "Clippings/The fastest gun in UX Why your team is telling the wrong story.md": {
+				"initial": 1958,
+				"current": 2133
+			  },
+			  "content/notes/2025-02-16 Ideias MBOCHIP.md": {
+				"initial": 0,
+				"current": 718
+			  },
+			  "content/notes/MediaPipe Gestures Experiment.md": {
+				"initial": 0,
+				"current": 83
+			  },
+			  "notes/Projects.md": {
+				"initial": 302,
+				"current": 306
+			  },
+			  "content/notes/Masterchef.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "Clippings/On Theme Design Systems in Depth.md": {
+				"initial": 335,
+				"current": 335
+			  }
+			}
+		  },
+		  "2025-02-17": {
+			"totalDelta": 1515,
+			"files": {
+			  "content/journal/2025-02-16.md": {
+				"initial": 805,
+				"current": 805
+			  },
+			  "content/journal/2025-02-17.md": {
+				"initial": 6,
+				"current": 1521
+			  }
+			}
+		  },
+		  "2025-02-18": {
+			"totalDelta": 1204,
+			"files": {
+			  "content/journal/2025-02-17.md": {
+				"initial": 1521,
+				"current": 1533
+			  },
+			  "content/journal/2025-02-18.md": {
+				"initial": 6,
+				"current": 142
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/notes/Master Degree In Design Updates.md": {
+				"initial": 1046,
+				"current": 2099
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "content/journal/2025-01-14.md": {
+				"initial": 2034,
+				"current": 2034
+			  },
+			  "notes/Next Tasks.md": {
+				"initial": 45,
+				"current": 45
+			  },
+			  "notes/Playground.md": {
+				"initial": 2266,
+				"current": 2268
+			  },
+			  "notes/Lançamento de marca pessoal.md": {
+				"initial": 643,
+				"current": 643
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 2193,
+				"current": 2194
+			  }
+			}
+		  },
+		  "2025-02-19": {
+			"totalDelta": 1260,
+			"files": {
+			  "notes/Setting up performance reviews for Product Designers - UX Cabin.md": {
+				"initial": 865,
+				"current": 865
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/journal/2025-02-18.md": {
+				"initial": 142,
+				"current": 142
+			  },
+			  "content/journal/2025-02-19.md": {
+				"initial": 6,
+				"current": 1085
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4891,
+				"current": 5072
+			  }
+			}
+		  },
+		  "2025-02-20": {
+			"totalDelta": 1355,
+			"files": {
+			  "content/journal/2025-02-19.md": {
+				"initial": 1085,
+				"current": 1085
+			  },
+			  "content/journal/2025-02-20.md": {
+				"initial": 6,
+				"current": 796
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5072,
+				"current": 5072
+			  },
+			  "notes/Projects.md": {
+				"initial": 306,
+				"current": 306
+			  },
+			  "content/notes/Coral da UFRGS.md": {
+				"initial": 197,
+				"current": 413
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1632,
+				"current": 1646
+			  },
+			  "content/notes/dentista.md": {
+				"initial": 0,
+				"current": 12
+			  },
+			  "References/How to Make Sense of Any Mess.md": {
+				"initial": 230,
+				"current": 230
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2302,
+				"current": 2625
+			  }
+			}
+		  },
+		  "2025-02-21": {
+			"totalDelta": 1764,
+			"files": {
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2625,
+				"current": 2625
+			  },
+			  "content/journal/2025-02-20.md": {
+				"initial": 796,
+				"current": 796
+			  },
+			  "content/journal/2025-02-21.md": {
+				"initial": 6,
+				"current": 613
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 5468,
+				"current": 5468
+			  },
+			  "content/notes/Coral da UFRGS.md": {
+				"initial": 413,
+				"current": 1271
+			  },
+			  "notes/Playground.md": {
+				"initial": 2268,
+				"current": 2441
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5072,
+				"current": 5198
+			  },
+			  "clippings/youtube/minutephysics – Computer Color is Broken.md": {
+				"initial": 45,
+				"current": 45
+			  },
+			  "Clippings/youtube/minutephysics – Computer Color is Broken.md": {
+				"initial": 45,
+				"current": 45
+			  },
+			  "notes/Design principles.md": {
+				"initial": 359,
+				"current": 359
+			  }
+			}
+		  },
+		  "2025-02-23": {
+			"totalDelta": 1477,
+			"files": {
+			  "content/journal/2025-02-23.md": {
+				"initial": 6,
+				"current": 1483
+			  }
+			}
+		  },
+		  "2025-02-26": {
+			"totalDelta": 1148,
+			"files": {
+			  "content/journal/2025-02-23.md": {
+				"initial": 1483,
+				"current": 1483
+			  },
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-02-26.md": {
+				"initial": 6,
+				"current": 1154
+			  }
+			}
+		  },
+		  "2025-02-28": {
+			"totalDelta": 995,
+			"files": {
+			  "content/journal/2025-02-28.md": {
+				"initial": 6,
+				"current": 1001
+			  },
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  }
+			}
+		  },
+		  "2025-03-01": {
+			"totalDelta": 1022,
+			"files": {
+			  "content/journal/2025-02-28.md": {
+				"initial": 1001,
+				"current": 1001
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/journal/2025-03-01.md": {
+				"initial": 6,
+				"current": 1028
+			  }
+			}
+		  },
+		  "2025-03-02": {
+			"totalDelta": 1254,
+			"files": {
+			  "content/journal/2025-03-01.md": {
+				"initial": 1028,
+				"current": 1028
+			  },
+			  "content/journal/2025-03-02.md": {
+				"initial": 6,
+				"current": 1260
+			  }
+			}
+		  },
+		  "2025-03-03": {
+			"totalDelta": 1018,
+			"files": {
+			  "content/journal/2025-03-03.md": {
+				"initial": 6,
+				"current": 991
+			  },
+			  "notes/One-shot de Ordem Paranormal.md": {
+				"initial": 389,
+				"current": 422
+			  }
+			}
+		  },
+		  "2025-03-04": {
+			"totalDelta": 1028,
+			"files": {
+			  "content/journal/2025-03-03.md": {
+				"initial": 991,
+				"current": 991
+			  },
+			  "content/journal/2025-03-04.md": {
+				"initial": 6,
+				"current": 123
+			  },
+			  "notes/One-shot de Ordem Paranormal.md": {
+				"initial": 422,
+				"current": 422
+			  },
+			  "content/notes/2025-03-04---08-08 Anotações RPG One-shot.md": {
+				"initial": 0,
+				"current": 53
+			  },
+			  "content/notes/2025-03-04---08-09 Experiência jogando RPG e fazendo um rolê aqui em casa.md": {
+				"initial": 0,
+				"current": 387
+			  },
+			  "content/notes/2025-03-04---08-14 Sobre me sentir diferente.md": {
+				"initial": 0,
+				"current": 471
+			  }
+			}
+		  },
+		  "2025-03-05": {
+			"totalDelta": 3557,
+			"files": {
+			  "content/journal/2025-03-04.md": {
+				"initial": 125,
+				"current": 125
+			  },
+			  "content/notes/2025-03-05---08-02 Not feeling awake.md": {
+				"initial": 0,
+				"current": 258
+			  },
+			  "content/journal/2025-03-05.md": {
+				"initial": 6,
+				"current": 614
+			  },
+			  "content/notes/2025-03-04---08-09 Experiência jogando RPG e fazendo um rolê aqui em casa.md": {
+				"initial": 387,
+				"current": 387
+			  },
+			  "content/notes/2025-03-04---08-08 Anotações RPG One-shot.md": {
+				"initial": 53,
+				"current": 53
+			  },
+			  "content/notes/2025-03-05---08-06 Fuck social media.md": {
+				"initial": 0,
+				"current": 110
+			  },
+			  "content/notes/2025-03-05---08-51 Feeling alone.md": {
+				"initial": 0,
+				"current": 260
+			  },
+			  "content/notes/I spend too much time thinking about what I think other people will think.md": {
+				"initial": 0,
+				"current": 94
+			  },
+			  "content/notes/2025-03-05---09-04 Cansando de não estar bem.md": {
+				"initial": 0,
+				"current": 222
+			  },
+			  "content/notes/2025-03-05---09-08 Writing short notes.md": {
+				"initial": 0,
+				"current": 101
+			  },
+			  "notes/I must not fear.md": {
+				"initial": 798,
+				"current": 798
+			  },
+			  "content/notes/2025-03-05---09-13 Stretching your mind.md": {
+				"initial": 0,
+				"current": 419
+			  },
+			  "content/refs/Books/Creativity, Inc..md": {
+				"initial": 5837,
+				"current": 5837
+			  },
+			  "content/notes/2025-03-05---09-19 Reading without taking notes.md": {
+				"initial": 0,
+				"current": 78
+			  },
+			  "content/notes/2025-03-05---09-20 Sometimes typing slows me down.md": {
+				"initial": 0,
+				"current": 248
+			  },
+			  "content/notes/🌐 Website pessoal Archive.md": {
+				"initial": 1022,
+				"current": 1022
+			  },
+			  "notes/Espanso.md": {
+				"initial": 178,
+				"current": 321
+			  },
+			  "clippings/goodreads/The Undiscovered Self.md": {
+				"initial": 208,
+				"current": 208
+			  },
+			  "Clippings/goodreads/The Undiscovered Self.md": {
+				"initial": 208,
+				"current": 1185
+			  },
+			  "content/notes/unreflecting belief.md": {
+				"initial": 0,
+				"current": 39
+			  }
+			}
+		  },
+		  "2025-03-06": {
+			"totalDelta": 2382,
+			"files": {
+			  "content/journal/2025-03-06.md": {
+				"initial": 6,
+				"current": 955
+			  },
+			  "content/notes/2025-03-06---07-23 Feeling depressed.md": {
+				"initial": 0,
+				"current": 104
+			  },
+			  "content/notes/2025-03-06---07-26 Finding meaning and purpose.md": {
+				"initial": 0,
+				"current": 182
+			  },
+			  "content/notes/2025-03-06---07-31 I want to do stuff publicly.md": {
+				"initial": 0,
+				"current": 148
+			  },
+			  "content/notes/2025-03-06---07-33 lack of external validation.md": {
+				"initial": 0,
+				"current": 332
+			  },
+			  "content/refs/Books/The Denial of Death.md": {
+				"initial": 62,
+				"current": 62
+			  },
+			  "content/notes/2025-03-06---07-44 Maybe its just my emotional state influencing my perception.md": {
+				"initial": 0,
+				"current": 178
+			  },
+			  "Clippings/goodreads/The Undiscovered Self.md": {
+				"initial": 1185,
+				"current": 1674
+			  }
+			}
+		  },
+		  "2025-03-07": {
+			"totalDelta": 366,
+			"files": {
+			  "Clippings/goodreads/The Undiscovered Self.md": {
+				"initial": 1679,
+				"current": 1757
+			  },
+			  "content/journal/2025-03-07.md": {
+				"initial": 6,
+				"current": 121
+			  },
+			  "content/journal/2025-03-06.md": {
+				"initial": 955,
+				"current": 1128
+			  }
+			}
+		  },
+		  "2025-03-08": {
+			"totalDelta": 875,
+			"files": {
+			  "content/journal/2025-03-07.md": {
+				"initial": 121,
+				"current": 121
+			  },
+			  "content/journal/2025-03-08.md": {
+				"initial": 6,
+				"current": 285
+			  },
+			  "content/notes/2025-03-08---03-20 Passionate about science.md": {
+				"initial": 0,
+				"current": 252
+			  },
+			  "content/notes/2025-03-08---03-25 Hornier than usual and most.md": {
+				"initial": 0,
+				"current": 344
+			  }
+			}
+		  },
+		  "2025-03-09": {
+			"totalDelta": 870,
+			"files": {
+			  "content/journal/2025-03-08.md": {
+				"initial": 285,
+				"current": 285
+			  },
+			  "content/journal/2025-03-09.md": {
+				"initial": 6,
+				"current": 357
+			  },
+			  "content/notes/2.md": {
+				"initial": 101,
+				"current": 101
+			  },
+			  "content/journal/2025-03-05.md": {
+				"initial": 609,
+				"current": 614
+			  },
+			  "content/notes/2025-03-05---09-08 Writing short notes.md": {
+				"initial": 0,
+				"current": 66
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5198,
+				"current": 5341
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/notes/2025-03-09---12-53 Intelectual fetishism.md": {
+				"initial": 0,
+				"current": 83
+			  },
+			  "content/notes/2025-03-09---12-59 Maybe travelling will make me more sociable.md": {
+				"initial": 126,
+				"current": 135
+			  },
+			  "content/notes/The Product Picnic.md": {
+				"initial": 0,
+				"current": 70
+			  },
+			  "content/notes/2025-03-09---01-20 Difficulties finding great UX and product design content.md": {
+				"initial": 0,
+				"current": 79
+			  },
+			  "content/notes/my own UX design youtube channel.md": {
+				"initial": 0,
+				"current": 64
+			  },
+			  "Clippings/The bounty of the commons.md": {
+				"initial": 1440,
+				"current": 1440
+			  }
+			}
+		  },
+		  "2025-03-10": {
+			"totalDelta": 0,
+			"files": {
+			  "Clippings/The bounty of the commons.md": {
+				"initial": 1440,
+				"current": 1440
+			  },
+			  "content/journal/2025-03-10.md": {
+				"initial": 6,
+				"current": 6
+			  }
+			}
+		  },
+		  "2025-03-11": {
+			"totalDelta": 1545,
+			"files": {
+			  "Clippings/(At least) 4 Xs that aren't UX.md": {
+				"initial": 2267,
+				"current": 2267
+			  },
+			  "content/journal/2025-03-11.md": {
+				"initial": 6,
+				"current": 822
+			  },
+			  "content/notes/2025-03-11---09-28 I have trouble working on priorities.md": {
+				"initial": 0,
+				"current": 159
+			  },
+			  "content/notes/2025-03-11---11-48 Daredevil made me feel stuff.md": {
+				"initial": 0,
+				"current": 199
+			  },
+			  "content/notes/2025-03-11---11-52 Cata vai fazer um TCC sobre cristianismo.md": {
+				"initial": 0,
+				"current": 215
+			  },
+			  "content/notes/2025-03-11---11-57 Primeiras pesquisas sobre meditação.md": {
+				"initial": 0,
+				"current": 156
+			  },
+			  "content/notes/Man and his Symbols.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-12": {
+			"totalDelta": 1065,
+			"files": {
+			  "content/notes/2025-03-11---11-57 Primeiras pesquisas sobre meditação.md": {
+				"initial": 157,
+				"current": 593
+			  },
+			  "content/journal/2025-03-12.md": {
+				"initial": 6,
+				"current": 290
+			  },
+			  "content/journal/2025-03-11.md": {
+				"initial": 822,
+				"current": 877
+			  },
+			  "content/notes/2025-03-12---12-08 I should identify and saciate a little bit of my desires and curiosities.md": {
+				"initial": 0,
+				"current": 290
+			  },
+			  "content/notes/Man and his Symbols.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-15": {
+			"totalDelta": 1328,
+			"files": {
+			  "content/journal/2025-03-14.md": {
+				"initial": 17,
+				"current": 17
+			  },
+			  "notes/'Currently reading' widget for personal website.md": {
+				"initial": 15,
+				"current": 15
+			  },
+			  "notes/(ARCHIVED) 00 🏠 Homepage.md": {
+				"initial": 41,
+				"current": 41
+			  },
+			  "notes/'currently reading' widget for website.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "notes/(RESEARCH) How computers work.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "notes/(RESEARCH) How Master Degrees works.md": {
+				"initial": 17,
+				"current": 17
+			  },
+			  "notes/(RESEARCH) Psychology, Productivity and Mental Health.md": {
+				"initial": 356,
+				"current": 356
+			  },
+			  "notes/09 September 2022.md": {
+				"initial": 23,
+				"current": 23
+			  },
+			  "notes/420 Physics.md": {
+				"initial": 7,
+				"current": 7
+			  },
+			  "notes/2024-04-16 Academia.md": {
+				"initial": 46,
+				"current": 46
+			  },
+			  "notes/2024-05-22 Checar essa documentação.md": {
+				"initial": 63,
+				"current": 63
+			  },
+			  "notes/A ascensão da Death Tech.md": {
+				"initial": 51,
+				"current": 51
+			  },
+			  "notes/Academia Tipográfica.md": {
+				"initial": 37,
+				"current": 37
+			  },
+			  "notes/April 2023.md": {
+				"initial": 19,
+				"current": 19
+			  },
+			  "notes/August 2023.md": {
+				"initial": 41,
+				"current": 41
+			  },
+			  "notes/Biases, mental models, personal perspective.md": {
+				"initial": 248,
+				"current": 248
+			  },
+			  "notes/Brainstorming.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "notes/Call-to-Action Discover.md": {
+				"initial": 16,
+				"current": 16
+			  },
+			  "notes/chromaticity.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-03-15.md": {
+				"initial": 6,
+				"current": 176
+			  },
+			  "content/notes/2025-03-15 Sessão com psico de ontem.md": {
+				"initial": 0,
+				"current": 470
+			  },
+			  "content/notes/2025-03-15 Sobre ser chato.md": {
+				"initial": 0,
+				"current": 487
+			  },
+			  "content/notes/performing different me's.md": {
+				"initial": 0,
+				"current": 201
+			  }
+			}
+		  },
+		  "2025-03-16": {
+			"totalDelta": 1940,
+			"files": {
+			  "content/journal/2025-03-16.md": {
+				"initial": 6,
+				"current": 1412
+			  },
+			  "content/notes/2025-03-16---08-14 Visita no pai da Marina (Fabiano).md": {
+				"initial": 0,
+				"current": 360
+			  },
+			  "content/notes/2025-03-16 Atualizando KTR com databases.md": {
+				"initial": 0,
+				"current": 169
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5341,
+				"current": 5346
+			  },
+			  "content/notes/Samir Zampiva.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-17": {
+			"totalDelta": 1031,
+			"files": {
+			  "content/journal/2025-03-17.md": {
+				"initial": 6,
+				"current": 822
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "content/journal/2025-02-20.md": {
+				"initial": 796,
+				"current": 796
+			  },
+			  "notes/Portfólio profissional.md": {
+				"initial": 517,
+				"current": 518
+			  },
+			  "notes/Playground.md": {
+				"initial": 2443,
+				"current": 2441
+			  },
+			  "notes/One-shot de Ordem Paranormal.md": {
+				"initial": 426,
+				"current": 426
+			  },
+			  "notes/LeetCode.md": {
+				"initial": 54,
+				"current": 54
+			  },
+			  "notes/Lançamento de marca pessoal.md": {
+				"initial": 643,
+				"current": 643
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2627,
+				"current": 2627
+			  },
+			  "content/journal/2025-03-03.md": {
+				"initial": 995,
+				"current": 995
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 0,
+				"current": 79
+			  },
+			  "content/notes/Glasgow 2025.md": {
+				"initial": 739,
+				"current": 739
+			  },
+			  "content/journal/2025-02-16.md": {
+				"initial": 804,
+				"current": 804
+			  },
+			  "content/notes/2025-03-16---08-14 Visita no pai da Marina (Fabiano).md": {
+				"initial": 363,
+				"current": 360
+			  },
+			  "notes/Taking a Look on Colors.md": {
+				"initial": 471,
+				"current": 471
+			  },
+			  "content/notes/School Planner Inbox.md": {
+				"initial": 349,
+				"current": 348
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5345,
+				"current": 5338
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 5467,
+				"current": 5467
+			  },
+			  "content/notes/Get things organized.md": {
+				"initial": 120,
+				"current": 120
+			  },
+			  "content/notes/Favorites clean up.md": {
+				"initial": 548,
+				"current": 539
+			  },
+			  "content/notes/UCA 2025.md": {
+				"initial": 306,
+				"current": 305
+			  },
+			  "content/notes/UAL 2025.md": {
+				"initial": 505,
+				"current": 505
+			  },
+			  "notes/600 Industry, commerce and business.md": {
+				"initial": 60,
+				"current": 60
+			  },
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1953,
+				"current": 1953
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1646,
+				"current": 1646
+			  },
+			  "content/notes/Maybe Tasks.md": {
+				"initial": 0,
+				"current": 77
+			  },
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/High Priority Tasks.md": {
+				"initial": 0,
+				"current": 81
+			  }
+			}
+		  },
+		  "2025-03-22": {
+			"totalDelta": 552,
+			"files": {
+			  "content/journal/2025-03-17.md": {
+				"initial": 822,
+				"current": 822
+			  },
+			  "content/journal/2025-03-14.md": {
+				"initial": 17,
+				"current": 17
+			  },
+			  "notes/Informações coletadas através dos inputs.md": {
+				"initial": 1189,
+				"current": 1189
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 79,
+				"current": 79
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/journal/2025-03-22.md": {
+				"initial": 6,
+				"current": 358
+			  },
+			  "content/notes/2025-03-22---02-35 Alongamentos por 15 minutos.md": {
+				"initial": 0,
+				"current": 106
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "content/notes/2025-03-22---02-37 Uma coisa de cada vez.md": {
+				"initial": 0,
+				"current": 94
+			  },
+			  "content/notes/Maybe Tasks.md": {
+				"initial": 77,
+				"current": 77
+			  }
+			}
+		  },
+		  "2025-03-23": {
+			"totalDelta": 3102,
+			"files": {
+			  "content/journal/2025-03-22.md": {
+				"initial": 358,
+				"current": 358
+			  },
+			  "content/journal/2025-03-23.md": {
+				"initial": 6,
+				"current": 787
+			  },
+			  "content/notes/2025-03-23---09-25 Double Date com amiga da Marina.md": {
+				"initial": 0,
+				"current": 440
+			  },
+			  "content/notes/2025-03-23---09-38 Primeiras Impressões do curso de meditação do Dr K.md": {
+				"initial": 0,
+				"current": 293
+			  },
+			  "content/notes/2025-03-23 Usando timers.md": {
+				"initial": 0,
+				"current": 315
+			  },
+			  "notes/All Tasks.md": {
+				"initial": 82,
+				"current": 82
+			  },
+			  "content/notes/Man and his Symbols.md": {
+				"initial": 0,
+				"current": 1008
+			  },
+			  "content/notes/2025-03-23---10-08 Doing manual stuff probably moves different parts of the brain.md": {
+				"initial": 0,
+				"current": 265
+			  },
+			  "content/notes/Maybe Tasks.md": {
+				"initial": 77,
+				"current": 77
+			  }
+			}
+		  },
+		  "2025-03-24": {
+			"totalDelta": 1808,
+			"files": {
+			  "content/notes/Man and his Symbols.md": {
+				"initial": 1008,
+				"current": 1008
+			  },
+			  "content/journal/2025-03-23.md": {
+				"initial": 787,
+				"current": 787
+			  },
+			  "content/journal/2025-03-24.md": {
+				"initial": 6,
+				"current": 788
+			  },
+			  "content/notes/2025-03-24---06-42 Sensibilidade às emoções do outro.md": {
+				"initial": 0,
+				"current": 429
+			  },
+			  "content/notes/Last Notes.md": {
+				"initial": 0,
+				"current": 19
+			  },
+			  "content/notes/2025-03-24---09-49 Reunião da Doorstep foi okay porque eu fui sincero.md": {
+				"initial": 0,
+				"current": 206
+			  },
+			  "References/Jung Vida e obra.md": {
+				"initial": 742,
+				"current": 1114
+			  },
+			  "notes/600 Industry, commerce and business.md": {
+				"initial": 60,
+				"current": 60
+			  },
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-25": {
+			"totalDelta": 1020,
+			"files": {
+			  "content/journal/2025-03-24.md": {
+				"initial": 788,
+				"current": 791
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 79,
+				"current": 79
+			  },
+			  "content/journal/2025-03-17.md": {
+				"initial": 826,
+				"current": 834
+			  },
+			  "content/notes/Last Notes.md": {
+				"initial": 19,
+				"current": 19
+			  },
+			  "content/journal/2025-03-25.md": {
+				"initial": 6,
+				"current": 564
+			  },
+			  "content/notes/Personal Statement UAL 2025.md": {
+				"initial": 0,
+				"current": 451
+			  }
+			}
+		  },
+		  "2025-03-26": {
+			"totalDelta": 1034,
+			"files": {
+			  "content/journal/2025-03-25.md": {
+				"initial": 564,
+				"current": 564
+			  },
+			  "content/journal/2025-03-26.md": {
+				"initial": 6,
+				"current": 520
+			  },
+			  "content/notes/2025-03-24---06-42 Sensibilidade às emoções do outro.md": {
+				"initial": 429,
+				"current": 547
+			  },
+			  "content/notes/2025-03-26---11-16 O Coral foi meio blé.md": {
+				"initial": 0,
+				"current": 402
+			  }
+			}
+		  },
+		  "2025-03-27": {
+			"totalDelta": 1064,
+			"files": {
+			  "content/journal/2025-03-26.md": {
+				"initial": 520,
+				"current": 520
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 79,
+				"current": 79
+			  },
+			  "content/journal/2025-03-27.md": {
+				"initial": 6,
+				"current": 70
+			  },
+			  "content/notes/2025-03-27---11-31 Marina foi demitida.md": {
+				"initial": 0,
+				"current": 1000
+			  }
+			}
+		  },
+		  "2025-04-03": {
+			"totalDelta": 1544,
+			"files": {
+			  "content/notes/2025-03-27---11-31 Marina foi demitida.md": {
+				"initial": 1000,
+				"current": 1000
+			  },
+			  "notes/Master Degree In Design.md": {
+				"initial": 81,
+				"current": 81
+			  },
+			  "content/journal/2023-08-26.md": {
+				"initial": 1125,
+				"current": 1125
+			  },
+			  "content/notes/Deuses Americanos.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-04-03.md": {
+				"initial": 6,
+				"current": 395
+			  },
+			  "content/notes/2025-04-03---07-45 Parei de escrever por uma semana.md": {
+				"initial": 0,
+				"current": 694
+			  },
+			  "content/notes/2025-04-03---08-29 Dilema da MBOCHIP.md": {
+				"initial": 0,
+				"current": 461
+			  }
+			}
+		  },
+		  "2025-04-08": {
+			"totalDelta": 1633,
+			"files": {
+			  "content/journal/2025-04-03.md": {
+				"initial": 395,
+				"current": 395
+			  },
+			  "content/journal/2025-04-08.md": {
+				"initial": 6,
+				"current": 393
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 79,
+				"current": 79
+			  },
+			  "content/notes/2024-11-04 Chevening Applicaton.md": {
+				"initial": 24,
+				"current": 24
+			  },
+			  "content/notes/Chevening Supporting Statements.md": {
+				"initial": 30,
+				"current": 30
+			  },
+			  "content/notes/Leadership and influence.md": {
+				"initial": 787,
+				"current": 787
+			  },
+			  "content/notes/league of legends.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/2025-04-08---12-15 KTR Como o twitter me afeta.md": {
+				"initial": 0,
+				"current": 279
+			  },
+			  "content/notes/2025-04-08---12-10 Continuo não escrevendo.md": {
+				"initial": 0,
+				"current": 227
+			  },
+			  "content/notes/2025-04-08---12-20 Meus hábitos.md": {
+				"initial": 0,
+				"current": 740
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5338,
+				"current": 5338
+			  }
+			}
+		  },
+		  "2025-04-09": {
+			"totalDelta": 1180,
+			"files": {
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5338,
+				"current": 5338
+			  },
+			  "content/journal/2025-01-13.md": {
+				"initial": 2718,
+				"current": 2718
+			  },
+			  "content/journal/2025-04-09.md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/notes/2025-04-09---01-53 Roteiro video task UAL.md": {
+				"initial": 0,
+				"current": 1180
+			  },
+			  "content/notes/Chevening Supporting Statements.md": {
+				"initial": 30,
+				"current": 30
+			  },
+			  "content/notes/Leadership and influence.md": {
+				"initial": 787,
+				"current": 787
+			  },
+			  "content/notes/Final version Leadership and Influence.md": {
+				"initial": 503,
+				"current": 503
+			  },
+			  "content/notes/2025-04-08---12-15 KTR Como o twitter me afeta.md": {
+				"initial": 279,
+				"current": 279
+			  },
+			  "content/notes/Relationship building and shared learning.md": {
+				"initial": 8,
+				"current": 8
+			  },
+			  "content/notes/Relationship building and shared learning - desenvolvimento do texto.md": {
+				"initial": 1822,
+				"current": 1822
+			  },
+			  "content/notes/final version relationship building.md": {
+				"initial": 491,
+				"current": 491
+			  },
+			  "content/notes/Studying in the UK.md": {
+				"initial": 982,
+				"current": 982
+			  },
+			  "content/notes/Studying in the UK iteration 1.md": {
+				"initial": 510,
+				"current": 510
+			  },
+			  "content/notes/Career plan.md": {
+				"initial": 944,
+				"current": 944
+			  },
+			  "content/notes/iteration 1 career plan.md": {
+				"initial": 492,
+				"current": 492
+			  },
+			  "content/notes/2025-04-08---12-10 Continuo não escrevendo.md": {
+				"initial": 227,
+				"current": 227
+			  },
+			  "content/notes/Open Tasks.md": {
+				"initial": 79,
+				"current": 79
+			  }
+			}
+		  },
+		  "2025-04-10": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Studying in the UK iteration 1.md": {
+				"initial": 510,
+				"current": 510
+			  },
+			  "content/notes/final version relationship building.md": {
+				"initial": 491,
+				"current": 491
+			  },
+			  "content/notes/Chevening Supporting Statements.md": {
+				"initial": 30,
+				"current": 30
+			  },
+			  "content/notes/Leadership and influence.md": {
+				"initial": 787,
+				"current": 787
+			  },
+			  "content/notes/Relationship building and shared learning.md": {
+				"initial": 8,
+				"current": 8
+			  },
+			  "content/notes/Career plan.md": {
+				"initial": 944,
+				"current": 944
+			  },
+			  "content/notes/iteration 1 career plan.md": {
+				"initial": 492,
+				"current": 492
+			  }
+			}
+		  },
+		  "2025-04-12": {
+			"totalDelta": 252,
+			"files": {
+			  "content/notes/iteration 1 career plan.md": {
+				"initial": 492,
+				"current": 492
+			  },
+			  "content/notes/Studying in the UK iteration 1.md": {
+				"initial": 510,
+				"current": 510
+			  },
+			  "content/notes/final version relationship building.md": {
+				"initial": 491,
+				"current": 491
+			  },
+			  "content/journal/2025-04-12.md": {
+				"initial": 6,
+				"current": 258
+			  }
+			}
+		  }
+		},
+		"046412bc-9a1c-4108-9f5a-5bf096e612ea": {
+		  "2025-01-25": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-01-24.md": {
+				"initial": 1604,
+				"current": 1604
+			  }
+			}
+		  },
+		  "2025-01-26": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 28.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Untitled 29.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4033,
+				"current": 4033
+			  },
+			  "notes/Piano.md": {
+				"initial": 161,
+				"current": 161
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 892,
+				"current": 892
+			  },
+			  "notes/FontGuesser Game.md": {
+				"initial": 169,
+				"current": 169
+			  },
+			  "content/notes/Master Degree In Design Updates.md": {
+				"initial": 985,
+				"current": 985
+			  },
+			  "content/journal/2024-10-05.md": {
+				"initial": 808,
+				"current": 808
+			  }
+			}
+		  },
+		  "2025-01-27": {
+			"totalDelta": 0,
+			"files": {
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2021,
+				"current": 2021
+			  },
+			  "content/notes/Favorites clean up.md": {
+				"initial": 547,
+				"current": 547
+			  },
+			  "notes/Portfólio profissional.md": {
+				"initial": 499,
+				"current": 499
+			  },
+			  "content/notes/Pokemon Collection.md": {
+				"initial": 16,
+				"current": 16
+			  },
+			  "content/notes/Coral da UFRGS.md": {
+				"initial": 191,
+				"current": 191
+			  },
+			  "content/notes/Fisioterapia.md": {
+				"initial": 14,
+				"current": 14
+			  },
+			  "notes/Panorama.md": {
+				"initial": 141,
+				"current": 141
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 4102,
+				"current": 4102
+			  }
+			}
+		  },
+		  "2025-01-28": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-01-27.md": {
+				"initial": 2827,
+				"current": 2827
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 970,
+				"current": 970
+			  },
+			  "notes/Emotional Design.md": {
+				"initial": 2596,
+				"current": 2596
+			  },
+			  "content/notes/Untitled 29.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-01-29": {
+			"totalDelta": 0,
+			"files": {
+			  "categories/Books.md": {
+				"initial": 99,
+				"current": 99
+			  },
+			  "content/notes/J M barrie.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "References/Cognitive Work Analysis Toward Safe, Productive, and Healthy Computer-Based Work.md": {
+				"initial": 295,
+				"current": 295
+			  },
+			  "References/The Sciences of the Artificial.md": {
+				"initial": 270,
+				"current": 270
+			  }
+			}
+		  },
+		  "2025-01-30": {
+			"totalDelta": 4,
+			"files": {
+			  "References/The Sciences of the Artificial.md": {
+				"initial": 270,
+				"current": 270
+			  },
+			  "content/journal/2025-01-03.md": {
+				"initial": 1115,
+				"current": 1115
+			  },
+			  "content/journal/2025-01-05.md": {
+				"initial": 1325,
+				"current": 1325
+			  },
+			  "content/journal/2025-01-07.md": {
+				"initial": 2302,
+				"current": 2302
+			  },
+			  "notes/benjaminezequiel.com.md": {
+				"initial": 1738,
+				"current": 1738
+			  },
+			  "notes/Acompanhamento psicológico.md": {
+				"initial": 1087,
+				"current": 1091
+			  },
+			  "content/notes/Having difficulties connecting with other people.md": {
+				"initial": 1457,
+				"current": 1457
+			  }
+			}
+		  },
+		  "2025-01-31": {
+			"totalDelta": 24,
+			"files": {
+			  "content/journal/2025-01-31.md": {
+				"initial": 26,
+				"current": 50
+			  }
+			}
+		  },
+		  "2025-02-01": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-01-31.md": {
+				"initial": 50,
+				"current": 50
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 511,
+				"current": 511
+			  },
+			  "categories/Inbox.md": {
+				"initial": 24,
+				"current": 24
+			  },
+			  "content/notes/Untitled 32.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-02-02": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 32.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Teaching myself computer science.md": {
+				"initial": 529,
+				"current": 529
+			  },
+			  "content/journal/2025-02-01.md": {
+				"initial": 1159,
+				"current": 1159
+			  }
+			}
+		  },
+		  "2025-02-03": {
+			"totalDelta": 537,
+			"files": {
+			  "content/notes/Untitled 32.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "References/Jung Vida e obra.md": {
+				"initial": 742,
+				"current": 742
+			  },
+			  "content/journal/2025-02-02.md": {
+				"initial": 2022,
+				"current": 2022
+			  },
+			  "content/journal/2025-02-03.md": {
+				"initial": 29,
+				"current": 566
+			  }
+			}
+		  },
+		  "2025-02-04": {
+			"totalDelta": 453,
+			"files": {
+			  "content/journal/2025-02-03.md": {
+				"initial": 566,
+				"current": 566
+			  },
+			  "content/journal/2025-02-04.md": {
+				"initial": 29,
+				"current": 482
+			  }
+			}
+		  },
+		  "2025-02-05": {
+			"totalDelta": 374,
+			"files": {
+			  "content/journal/2025-01-04.md": {
+				"initial": 2179,
+				"current": 2179
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 2931,
+				"current": 2931
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1334,
+				"current": 1632
+			  },
+			  "content/notes/Untitled 33.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-02-05.md": {
+				"initial": 29,
+				"current": 105
+			  }
+			}
+		  },
+		  "2025-02-07": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-05.md": {
+				"initial": 105,
+				"current": 105
+			  },
+			  "content/notes/Untitled 34.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-02-08": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 34.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-02-04.md": {
+				"initial": 1466,
+				"current": 1466
+			  }
+			}
+		  },
+		  "2025-02-09": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 34.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/journal/2025-02-05.md": {
+				"initial": 1416,
+				"current": 1416
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 2193,
+				"current": 2193
+			  },
+			  "content/notes/vAscii.md": {
+				"initial": 263,
+				"current": 263
+			  },
+			  "content/journal/2025-01-03.md": {
+				"initial": 1132,
+				"current": 1132
+			  },
+			  "content/journal/2025-01-06.md": {
+				"initial": 1337,
+				"current": 1337
+			  },
+			  "content/journal/2025-01-10.md": {
+				"initial": 1402,
+				"current": 1402
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 4994,
+				"current": 4994
+			  }
+			}
+		  },
+		  "2025-02-12": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 34.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/nand2tetris.md": {
+				"initial": 5468,
+				"current": 5468
+			  }
+			}
+		  },
+		  "2025-02-13": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 34.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "Clippings/Tools for not-thinking.md": {
+				"initial": 1614,
+				"current": 1614
+			  },
+			  "_utils/templates/Journal Template.md": {
+				"initial": 8,
+				"current": 8
+			  },
+			  "content/journal/2025-02-02.md": {
+				"initial": 2022,
+				"current": 2022
+			  },
+			  "notes/cognitive science.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Keep the Rhythm 0.1.8 Release.md": {
+				"initial": 214,
+				"current": 214
+			  }
+			}
+		  },
+		  "2025-02-14": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Keep the Rhythm 0.1.8 Release.md": {
+				"initial": 214,
+				"current": 214
+			  }
+			}
+		  },
+		  "2025-02-16": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Keep the Rhythm 0.1.8 Release.md": {
+				"initial": 214,
+				"current": 214
+			  },
+			  "notes/Projects.md": {
+				"initial": 306,
+				"current": 306
+			  }
+			}
+		  },
+		  "2025-02-17": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Keep the Rhythm 0.1.8 Release.md": {
+				"initial": 214,
+				"current": 214
+			  },
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-02-18": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Master Degree In Design Updates.md": {
+				"initial": 2099,
+				"current": 2099
+			  },
+			  "content/journal/2025-01-14.md": {
+				"initial": 2034,
+				"current": 2034
+			  },
+			  "content/notes/Pirate Jam 16.md": {
+				"initial": 2194,
+				"current": 2194
+			  }
+			}
+		  },
+		  "2025-02-19": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-02-22": {
+			"totalDelta": 1021,
+			"files": {
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1646,
+				"current": 1646
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2625,
+				"current": 2625
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5198,
+				"current": 5198
+			  },
+			  "content/journal/2025-02-22.md": {
+				"initial": 6,
+				"current": 1027
+			  }
+			}
+		  },
+		  "2025-02-23": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-22.md": {
+				"initial": 1027,
+				"current": 1027
+			  }
+			}
+		  },
+		  "2025-02-24": {
+			"totalDelta": 1251,
+			"files": {
+			  "content/journal/2025-02-22.md": {
+				"initial": 1027,
+				"current": 1027
+			  },
+			  "content/journal/2025-02-24.md": {
+				"initial": 6,
+				"current": 1257
+			  },
+			  "content/notes/710 Design.md": {
+				"initial": 241,
+				"current": 241
+			  },
+			  "notes/711 What is design.md": {
+				"initial": 504,
+				"current": 504
+			  },
+			  "notes/Projects.md": {
+				"initial": 306,
+				"current": 306
+			  }
+			}
+		  },
+		  "2025-02-25": {
+			"totalDelta": 1267,
+			"files": {
+			  "content/journal/2025-02-24.md": {
+				"initial": 1257,
+				"current": 1257
+			  },
+			  "content/journal/2025-02-25.md": {
+				"initial": 6,
+				"current": 1273
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1646,
+				"current": 1646
+			  },
+			  "notes/711 What is design.md": {
+				"initial": 504,
+				"current": 504
+			  },
+			  "notes/Projects.md": {
+				"initial": 306,
+				"current": 306
+			  },
+			  "content/notes/Pavel Samsonov.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-02-26": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-25.md": {
+				"initial": 1273,
+				"current": 1273
+			  }
+			}
+		  },
+		  "2025-02-27": {
+			"totalDelta": 27,
+			"files": {
+			  "content/journal/2025-02-25.md": {
+				"initial": 1273,
+				"current": 1273
+			  },
+			  "content/journal/2025-02-27.md": {
+				"initial": 6,
+				"current": 33
+			  }
+			}
+		  },
+		  "2025-02-28": {
+			"totalDelta": 9,
+			"files": {
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  },
+			  "content/journal/2025-02-28.md": {
+				"initial": 21,
+				"current": 30
+			  }
+			}
+		  },
+		  "2025-03-03": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  }
+			}
+		  },
+		  "2025-03-05": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  }
+			}
+		  },
+		  "2025-03-08": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  },
+			  "content/journal/2025-02-28.md": {
+				"initial": 1001,
+				"current": 1001
+			  },
+			  "notes/One-shot de Ordem Paranormal.md": {
+				"initial": 422,
+				"current": 422
+			  },
+			  "notes/Duna.md": {
+				"initial": 35,
+				"current": 35
+			  },
+			  "content/journal/2024-03-16.md": {
+				"initial": 2397,
+				"current": 2397
+			  },
+			  "notes/Espanso.md": {
+				"initial": 321,
+				"current": 321
+			  },
+			  "content/refs/Books/The Denial of Death.md": {
+				"initial": 62,
+				"current": 62
+			  }
+			}
+		  },
+		  "2025-03-09": {
+			"totalDelta": 0,
+			"files": {
+			  "content/journal/2025-02-27.md": {
+				"initial": 33,
+				"current": 33
+			  },
+			  "content/notes/2025-03-05---09-08 Writing short notes.md": {
+				"initial": 66,
+				"current": 66
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5341,
+				"current": 5341
+			  },
+			  "categories/✅ Finished Books.md": {
+				"initial": 48,
+				"current": 48
+			  }
+			}
+		  },
+		  "2025-03-13": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 35.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-14": {
+			"totalDelta": 11,
+			"files": {
+			  "content/notes/Untitled 35.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "Clippings/The bounty of the commons.md": {
+				"initial": 1440,
+				"current": 1440
+			  },
+			  "content/journal/2025-03-14.md": {
+				"initial": 6,
+				"current": 17
+			  },
+			  "content/notes/2025-03-11---11-52 Cata vai fazer um TCC sobre cristianismo.md": {
+				"initial": 215,
+				"current": 215
+			  },
+			  "content/notes/2025-03-05---09-13 Stretching your mind.md": {
+				"initial": 419,
+				"current": 419
+			  },
+			  "content/notes/2025-03-12---12-08 I should identify and saciate a little bit of my desires and curiosities.md": {
+				"initial": 290,
+				"current": 290
+			  }
+			}
+		  },
+		  "2025-03-18": {
+			"totalDelta": 1317,
+			"files": {
+			  "content/journal/2025-03-14.md": {
+				"initial": 17,
+				"current": 17
+			  },
+			  "content/journal/2025-03-18.md": {
+				"initial": 6,
+				"current": 1028
+			  },
+			  "notes/Aulas de Canto Particular.md": {
+				"initial": 2627,
+				"current": 2627
+			  },
+			  "content/journal/2025-02-16.md": {
+				"initial": 804,
+				"current": 804
+			  },
+			  "content/notes/School Planner Inbox.md": {
+				"initial": 348,
+				"current": 348
+			  },
+			  "content/notes/Keep the Rhythm.md": {
+				"initial": 5338,
+				"current": 5338
+			  },
+			  "content/journal/2025-03-03.md": {
+				"initial": 995,
+				"current": 995
+			  },
+			  "content/notes/UAL 2025.md": {
+				"initial": 505,
+				"current": 505
+			  },
+			  "content/notes/Naturalização.md": {
+				"initial": 1646,
+				"current": 1646
+			  },
+			  "content/notes/2025-03-18 sometimes I think I could solve global warming.md": {
+				"initial": 0,
+				"current": 118
+			  },
+			  "content/notes/2025-03-18 All problems are my problems.md": {
+				"initial": 0,
+				"current": 177
+			  }
+			}
+		  },
+		  "2025-03-19": {
+			"totalDelta": 1404,
+			"files": {
+			  "content/journal/2025-03-18.md": {
+				"initial": 1028,
+				"current": 1039
+			  },
+			  "content/journal/2025-03-19.md": {
+				"initial": 6,
+				"current": 84
+			  },
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 0,
+				"current": 1315
+			  }
+			}
+		  },
+		  "2025-03-20": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 1315,
+				"current": 1315
+			  }
+			}
+		  },
+		  "2025-03-21": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 1315,
+				"current": 1315
+			  }
+			}
+		  },
+		  "2025-03-25": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 1315,
+				"current": 1315
+			  },
+			  "content/journal/2025-03-17.md": {
+				"initial": 834,
+				"current": 834
+			  }
+			}
+		  },
+		  "2025-03-26": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 1315,
+				"current": 1315
+			  },
+			  "content/journal/2025-03-25.md": {
+				"initial": 564,
+				"current": 564
+			  }
+			}
+		  },
+		  "2025-03-27": {
+			"totalDelta": -6,
+			"files": {
+			  "content/notes/2025-03-19---06-40 Reconsidering my future at MBOCHIP.md": {
+				"initial": 1315,
+				"current": 1315
+			  },
+			  "content/notes/2025-03-24---06-42 Sensibilidade às emoções do outro.md": {
+				"initial": 547,
+				"current": 547
+			  },
+			  "content/notes/Last Notes.md": {
+				"initial": 19,
+				"current": 13
+			  },
+			  "content/notes/Untitled 36.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-03-28": {
+			"totalDelta": 1,
+			"files": {
+			  "content/notes/Untitled 36.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 1
+			  },
+			  "content/journal/2025-03-26.md": {
+				"initial": 529,
+				"current": 529
+			  }
+			}
+		  },
+		  "2025-03-31": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 1,
+				"current": 1
+			  }
+			}
+		  },
+		  "2025-04-01": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 1,
+				"current": 1
+			  }
+			}
+		  },
+		  "2025-04-05": {
+			"totalDelta": -1,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 1,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-04-06": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-04-08": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 0
+			  }
+			}
+		  },
+		  "2025-04-10": {
+			"totalDelta": 0,
+			"files": {
+			  "content/notes/Untitled 37.md": {
+				"initial": 0,
+				"current": 0
+			  },
+			  "content/notes/Last Notes.md": {
+				"initial": 13,
+				"current": 13
+			  },
+			  "content/journal/2025-04-09.md": {
+				"initial": 6,
+				"current": 6
+			  },
+			  "content/journal/2025-04-08.md": {
+				"initial": 393,
+				"current": 393
+			  }
+			}
+		  }
+		}
+	  }
+}

@@ -1,33 +1,41 @@
+:root {
+	--dark-0: ;
+	--dark-1: ;
+	--dark-2: ;
+	--dark-3: ;
+	--dark-4: ;
+}
+
 .theme-light .heatmap-square.level-0 {
-	background-color: var(--light-level_0);
+	background-color: var(--light-0);
 }
 .theme-light .heatmap-square.level-1 {
-	background-color: var(--light-level_1);
+	background-color: var(--light-1);
 }
 .theme-light .heatmap-square.level-2 {
-	background-color: var(--light-level_2);
+	background-color: var(--light-2);
 }
 .theme-light .heatmap-square.level-3 {
-	background-color: var(--light-level_3);
+	background-color: var(--light-3);
 }
 .theme-light .heatmap-square.level-4 {
-	background-color: var(--light-level_4);
+	background-color: var(--light-4);
 }
 
 .theme-dark .heatmap-square.level-0 {
-	background-color: var(--dark-level_0);
+	background-color: var(--dark-0);
 }
 .theme-dark .heatmap-square.level-1 {
-	background-color: var(--dark-level_1);
+	background-color: var(--dark-1);
 }
 .theme-dark .heatmap-square.level-2 {
-	background-color: var(--dark-level_2);
+	background-color: var(--dark-2);
 }
 .theme-dark .heatmap-square.level-3 {
-	background-color: var(--dark-level_3);
+	background-color: var(--dark-3);
 }
 .theme-dark .heatmap-square.level-4 {
-	background-color: var(--dark-level_4);
+	background-color: var(--dark-4);
 }
 
 .heatmap {
@@ -75,9 +83,6 @@
 
 .heatmap-wrapper {
 	width: 100%;
-}
-
-.heatmap-container {
 	position: relative;
 	display: flex;
 	align-items: flex-end;

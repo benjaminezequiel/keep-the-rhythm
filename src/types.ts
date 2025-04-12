@@ -1,4 +1,4 @@
-export type ScriptName =
+export type Language =
 	| "LATIN"
 	| "CJK"
 	| "JAPANESE"
@@ -17,11 +17,11 @@ export interface IntensityConfig {
 }
 
 export interface ColorConfig {
-	level_0: string;
-	level_1: string;
-	level_2: string;
-	level_3: string;
-	level_4: string;
+	0: string;
+	1: string;
+	2: string;
+	3: string;
+	4: string;
 }
 
 export interface ThemeColors {
@@ -29,65 +29,54 @@ export interface ThemeColors {
 	dark: ColorConfig;
 }
 
-export interface FileWordCount {
-	initial: number;
-	current: number;
-}
-
-export interface Stats {
-	[date: string]: {
-		totalDelta: number;
-		files: {
-			[filePath: string]: FileWordCount;
-		};
+export interface Settings {
+	enabledLanguages: Language[];
+	intensityStops: IntensityConfig;
+	sidePanelConfig: {
+		showOverview: boolean;
+		showHeatmap: boolean;
+		showEntries: boolean;
 	};
-}
-
-export interface deviceStats {
-	[deviceId: string]: Stats;
-}
-
-export interface PluginSettings {
-	enabledScripts: ScriptName[];
-	intensityLevels: IntensityConfig;
-	showOverview: boolean;
-	showHeatmap: boolean;
-	showEntries: boolean;
-	colors: {
+	colors?: {
 		light: ColorConfig;
 		dark: ColorConfig;
 	};
 }
 
 export interface PluginData {
-	settings: PluginSettings;
-	devices: deviceStats;
+	settings: Settings;
+	stats?: {
+		fileStats: {};
+		dailyActivity: {};
+	};
 }
 
-export const DEFAULT_SETTINGS: PluginSettings = {
-	intensityLevels: {
+export const DEFAULT_SETTINGS: Settings = {
+	enabledLanguages: ["LATIN"],
+	intensityStops: {
 		low: 100,
 		medium: 500,
 		high: 1000,
 	},
+	sidePanelConfig: {
+		showOverview: true,
+		showEntries: true,
+		showHeatmap: true,
+	},
 	colors: {
 		light: {
-			level_0: "#e0e0e0",
-			level_1: "#9be9a8",
-			level_2: "#6ad286",
-			level_3: "#2ebd54",
-			level_4: "#12a53e",
+			0: "#e0e0e0",
+			1: "#9be9a8",
+			2: "#6ad286",
+			3: "#2ebd54",
+			4: "#12a53e",
 		},
 		dark: {
-			level_0: "#ebedf015",
-			level_1: "#0e4429",
-			level_2: "#006d32",
-			level_3: "#26a641",
-			level_4: "#39d353",
+			0: "#ebedf015",
+			1: "#0e4429",
+			2: "#006d32",
+			3: "#26a641",
+			4: "#39d353",
 		},
 	},
-	showOverview: true,
-	showEntries: true,
-	showHeatmap: true,
-	enabledScripts: ["LATIN"] as ScriptName[],
 };
