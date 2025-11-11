@@ -214,8 +214,7 @@ export default class KeepTheRhythm extends Plugin {
 			// Compare against all existing backups
 			for (const filePath of backupFiles) {
 				const contents = await this.app.vault.adapter.read(filePath);
-				if (contents === jsonData) {
-					// not sure if this is actually working
+				if (contents && contents === jsonData) {
 					new Notice("KTR: No changes to backup.");
 					return;
 				}
