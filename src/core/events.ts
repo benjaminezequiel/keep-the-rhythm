@@ -1,6 +1,6 @@
 import { Unit } from "@/defs/types";
 import { TargetCount } from "@/defs/types";
-import { getCurrentCount } from "@/db/queries";
+import { deleteActivityById, getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
 import { TFile, Editor } from "obsidian";
 import { getDB } from "../db/db";
@@ -31,6 +31,17 @@ export async function handleEditorChange(
 	const file = info.file;
 
 	if (!file || file.extension !== "md") {
+		return;
+	}
+
+	/** Exclude file from updating today's wordcount */
+	var exclude = false;
+	await state.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+		if (frontmatter['ktrExclude']) {
+			exclude = true;
+		}
+	});
+	if (exclude) {
 		return;
 	}
 
@@ -171,7 +182,21 @@ export async function handleFileOpen(file: TFile) {
 		await getDB().dailyActivity.add(entry);
 	}
 
-	if (entry) state.setCurrentActivity(entry);
+	if (entry) {
+		/** Remove entry from DB if file should be excluded, otherwise update DB */
+		var exclude = false;
+		await state.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			if (frontmatter['ktrExclude']) {
+				exclude = true;
+			}
+		});
+		if (exclude) {
+			deleteActivityById(entry.id);
+		} else {
+			state.setCurrentActivity(entry);
+		}
+		
+	}
 	state.isUpdatingActivity = false;
 
 	state.emit(EVENTS.REFRESH_EVERYTHING);
