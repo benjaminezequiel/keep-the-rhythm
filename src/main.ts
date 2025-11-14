@@ -213,10 +213,20 @@ export default class KeepTheRhythm extends Plugin {
 		if (data.schema !== "0.3") {
 			// Compare against all existing backups
 			for (const filePath of backupFiles) {
-				const contents = await this.app.vault.adapter.read(filePath);
-				if (contents && contents === jsonData) {
-					new Notice("KTR: No changes to backup.");
-					return;
+				try {
+					if (!(await this.app.vault.adapter.exists(filePath))) {
+						console.error("File does not exist:", filePath);
+						return;
+					}
+					const contents =
+						await this.app.vault.adapter.read(filePath);
+					if (contents && contents === jsonData) {
+						new Notice("KTR: No changes to backup.");
+						return;
+					}
+				} catch (err) {
+					console.error("Failed to read file:", filePath, err);
+					return null;
 				}
 			}
 			// No identical backup found, save new one
