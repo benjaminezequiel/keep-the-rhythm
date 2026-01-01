@@ -5,6 +5,7 @@ import {
 	DEFAULT_SETTINGS,
 	Language,
 	HeatmapColorModes,
+	NegativeWordCountMode,
 } from "@/defs/types";
 import { state } from "@/core/pluginState";
 
@@ -24,7 +25,7 @@ class ConfirmationModal extends Modal {
 		super(app);
 		this.message = message;
 		this.onConfirm = onConfirm;
-		this.onCancel = onCancel || (() => {});
+		this.onCancel = onCancel || (() => { });
 		this.confirmText = confirmText;
 	}
 
@@ -230,7 +231,26 @@ export class SettingsTab extends PluginSettingTab {
 						this.plugin.data.settings.dailyWritingGoal = value;
 						this.plugin.updateAndSaveEverything();
 					}),
+
 			);
+
+		new Setting(containerEl)
+			.setName("Negative Word Count Mode")
+			.setDesc("Choose how deletions affect your daily stats.")
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption(NegativeWordCountMode.NET, "Net (Additions - Deletions)")
+					.addOption(NegativeWordCountMode.GROSS, "Gross (Additions Only)")
+					.setValue(
+						this.plugin.data.settings.negativeWordCountMode ||
+						NegativeWordCountMode.NET,
+					)
+					.onChange(async (value) => {
+						this.plugin.data.settings.negativeWordCountMode =
+							value as NegativeWordCountMode;
+						this.plugin.updateAndSaveEverything();
+					});
+			});
 
 		new Setting(containerEl)
 			.setName("Heatmap navigation")
@@ -459,11 +479,11 @@ export class SettingsTab extends PluginSettingTab {
 					`Are you sure you want to reset the ${theme} theme colors to their default values?`,
 					async () => {
 						this.plugin.data.settings.heatmapConfig.colors[theme] =
-							{
-								...DEFAULT_SETTINGS.heatmapConfig.colors![
-									theme
-								],
-							};
+						{
+							...DEFAULT_SETTINGS.heatmapConfig.colors![
+							theme
+							],
+						};
 						await this.plugin.updateAndSaveEverything();
 						this.plugin.applyColorStyles();
 						this.display();
@@ -552,4 +572,4 @@ export class SettingsTab extends PluginSettingTab {
 	}
 }
 
-export {};
+export { };

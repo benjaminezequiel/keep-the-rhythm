@@ -95,6 +95,29 @@ export async function handleEditorChange(
 	 * Time keys are added in blocks of 5 minutes and snap to the nearest time
 	 */
 
+	/* -------------------------------------------------------------------------- */
+	/*                        SIMPLE DELTA TRACKING                               */
+	/* -------------------------------------------------------------------------- */
+
+	let waDelta = 0;
+	let wdDelta = 0;
+	let caDelta = 0;
+	let cdDelta = 0;
+
+	// WORD CALCULATION
+	if (wordsAdded > 0) {
+		waDelta = wordsAdded;
+	} else if (wordsAdded < 0) {
+		wdDelta = -wordsAdded;
+	}
+
+	// CHAR CALCULATION
+	if (charsAdded > 0) {
+		caDelta = charsAdded;
+	} else if (charsAdded < 0) {
+		cdDelta = -charsAdded;
+	}
+
 	const existingEntry = changes.find(
 		(entry) => entry.timeKey === currentTimeKey,
 	);
@@ -105,11 +128,19 @@ export async function handleEditorChange(
 			timeKey: currentTimeKey,
 			w: wordsAdded || 0,
 			c: charsAdded || 0,
+			wa: waDelta,
+			wd: wdDelta,
+			ca: caDelta,
+			cd: cdDelta,
 		});
 	} else {
 		// Entry exists, so update the word and char count
 		existingEntry.w += wordsAdded;
 		existingEntry.c += charsAdded;
+		existingEntry.wa = (existingEntry.wa || 0) + waDelta;
+		existingEntry.wd = (existingEntry.wd || 0) + wdDelta;
+		existingEntry.ca = (existingEntry.ca || 0) + caDelta;
+		existingEntry.cd = (existingEntry.cd || 0) + cdDelta;
 	}
 
 	// WORKING ON UPDATING JUST TODAY!!!
@@ -204,6 +235,10 @@ async function flushChangesToDB(activity: DailyActivity) {
 				if (mergedMap[entry.timeKey]) {
 					mergedMap[entry.timeKey].w = entry.w;
 					mergedMap[entry.timeKey].c = entry.c;
+					mergedMap[entry.timeKey].wa = entry.wa;
+					mergedMap[entry.timeKey].wd = entry.wd;
+					mergedMap[entry.timeKey].ca = entry.ca;
+					mergedMap[entry.timeKey].cd = entry.cd;
 				} else {
 					mergedMap[entry.timeKey] = { ...entry };
 				}
@@ -265,60 +300,80 @@ export async function handleFileDelete(file: TFile) {
 			.dailyActivity.where("[date+filePath]")
 			.equals([state.today, file.path])
 			.modify((dailyEntry) => {
-				let wordSum = 0;
-				let charSum = 0;
-
 				const currentTimeKey =
 					floorMomentToFive(moment()).format("HH:mm");
+				const changes = dailyEntry.changes || [];
+				if (!dailyEntry.changes) dailyEntry.changes = changes;
 
-				/** If no changed was made to the file
-				 *  Then the delta is just the word count when it was opened
-				 */
+				/* -------------------------------------------------------------------------- */
+				/*                            CALCULATE CURRENT TOTAL                         */
+				/* -------------------------------------------------------------------------- */
 
-				if (!dailyEntry.changes || dailyEntry.changes?.length == 0) {
-					dailyEntry.changes.push({
-						timeKey: currentTimeKey,
-						w: -dailyEntry.wordCountStart,
-						c: -dailyEntry.charCountStart,
-					});
-					return;
+				let totalWords = dailyEntry.wordCountStart;
+				let totalChars = dailyEntry.charCountStart;
+				let currentDailyWA = 0;
+				let currentDailyCA = 0;
+
+				for (const change of changes) {
+					totalWords += change.w;
+					totalChars += change.c;
+					currentDailyWA += change.wa || 0;
+					currentDailyCA += change.ca || 0;
 				}
 
-				/** If there where changes made,
-				 *  We need to sum those changes
-				 *  The last change is only included if it's timekey isn't the current one
-				 */
-				// Get the last change (if any)
-				const lastEntry =
-					dailyEntry.changes[dailyEntry.changes.length - 1];
-				const lastTimeKey = lastEntry?.timeKey;
+				// The delta needed to reach 0
+				const wordsAdded = -totalWords;
+				const charsAdded = -totalChars;
 
-				for (let i = 0; i < dailyEntry.changes.length - 1; i++) {
-					wordSum += dailyEntry.changes[i].w;
-					charSum += dailyEntry.changes[i].c;
+				/* -------------------------------------------------------------------------- */
+				/*                        SIMPLE DELTA TRACKING                               */
+				/* -------------------------------------------------------------------------- */
+
+				let waDelta = 0;
+				let wdDelta = 0;
+				let caDelta = 0;
+				let cdDelta = 0;
+
+				// WORD CALCULATION
+				if (wordsAdded > 0) {
+					waDelta = wordsAdded;
+				} else if (wordsAdded < 0) {
+					wdDelta = -wordsAdded;
 				}
 
-				// If lastTimeKey is not the same as current, include it
-				if (lastEntry && lastTimeKey !== currentTimeKey) {
-					wordSum += lastEntry.w;
-					charSum += lastEntry.c;
+				// CHAR CALCULATION
+				if (charsAdded > 0) {
+					caDelta = charsAdded;
+				} else if (charsAdded < 0) {
+					cdDelta = -charsAdded;
 				}
 
 				const newEntry: TimeEntry = {
 					timeKey: currentTimeKey,
-					w: -(wordSum + dailyEntry.wordCountStart),
-					c: -(charSum + dailyEntry.charCountStart),
+					w: wordsAdded,
+					c: charsAdded,
+					wa: waDelta,
+					wd: wdDelta,
+					ca: caDelta,
+					cd: cdDelta,
 				};
 
 				// Find and update the existing entry if it exists
-				const existingIndex = dailyEntry.changes.findIndex(
+				const existingIndex = changes.findIndex(
 					(e) => e.timeKey === currentTimeKey,
 				);
 
 				if (existingIndex !== -1) {
-					dailyEntry.changes[existingIndex] = newEntry;
+
+					const e = changes[existingIndex];
+					e.w += wordsAdded;
+					e.c += charsAdded;
+					e.wa = (e.wa || 0) + waDelta;
+					e.wd = (e.wd || 0) + wdDelta;
+					e.ca = (e.ca || 0) + caDelta;
+					e.cd = (e.cd || 0) + cdDelta;
 				} else {
-					dailyEntry.changes.push(newEntry);
+					changes.push(newEntry);
 				}
 			});
 
@@ -332,7 +387,7 @@ export async function handleFileDelete(file: TFile) {
  * @function handleFileCreate
  * - Add file to FileStats table?
  */
-export function handleFileCreate(file: TFile) {}
+export function handleFileCreate(file: TFile) { }
 
 /**
  * @function handleFileRename

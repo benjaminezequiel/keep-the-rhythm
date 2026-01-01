@@ -1,4 +1,4 @@
-import { HeatmapColorModes } from "../defs/types";
+import { HeatmapColorModes, NegativeWordCountMode } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
 import { DailyActivity, TimeEntry } from "@/db/types";
 import { App } from "obsidian";
@@ -85,9 +85,7 @@ export const getDayIndex = (dayIndex: number): number => {
 	return dayIndex === 0 ? 6 : dayIndex - 1;
 };
 
-// function getRandomArbitrary(min, max) {
-// 	return Math.random() * (max - min) + min;
-// }
+
 
 export function getRandomInt(min: number, max: number) {
 	const minCeiled = Math.ceil(min);
@@ -150,6 +148,68 @@ export function sumTimeEntries(
 	}
 
 	return total;
+}
+
+export function sumTimeEntriesWithMode(
+	dailyActivity: DailyActivity,
+	unit: Unit,
+	mode: NegativeWordCountMode = NegativeWordCountMode.NET,
+	excludeStart?: boolean,
+): number {
+	let totalNet = 0;
+	let totalAdded = 0;
+	let totalDeleted = 0;
+
+	// Add start counts (legacy/net)
+	const startCount = (unit === Unit.WORD ? dailyActivity?.wordCountStart : dailyActivity?.charCountStart) || 0;
+	if (!excludeStart) {
+		totalNet += startCount;
+		totalAdded += startCount; // Assume start count is all "added" historically
+	}
+
+	if (dailyActivity?.changes) {
+		for (const entry of dailyActivity.changes) {
+			const w = entry.w || 0;
+			const c = entry.c || 0;
+			const wa = entry.wa ?? (w > 0 ? w : 0); // Fallback for old entries
+			const wd = entry.wd ?? (w < 0 ? -w : 0); // Fallback for old entries
+			const ca = entry.ca ?? (c > 0 ? c : 0);
+			const cd = entry.cd ?? (c < 0 ? -c : 0);
+
+			if (unit === Unit.WORD) {
+				totalNet += w;
+				totalAdded += wa;
+				totalDeleted += wd;
+			} else {
+				totalNet += c;
+				totalAdded += ca;
+				totalDeleted += cd;
+			}
+		}
+	}
+
+	if (mode === NegativeWordCountMode.GROSS) {
+		return totalAdded;
+	} else {
+		return totalNet;
+	}
+}
+
+export function sumAddedDeleted(dailyActivity: DailyActivity) {
+	let wa = 0;
+	let wd = 0;
+	let ca = 0;
+	let cd = 0;
+
+	if (dailyActivity?.changes) {
+		for (const entry of dailyActivity.changes) {
+			wa += entry.wa || 0;
+			wd += entry.wd || 0;
+			ca += entry.ca || 0;
+			cd += entry.cd || 0;
+		}
+	}
+	return { wa, wd, ca, cd };
 }
 
 async function resetDatabase() {

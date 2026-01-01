@@ -4,7 +4,7 @@ import { setIcon } from "obsidian";
 import { useState, useEffect, useRef } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
-import { getCurrentCount } from "@/db/queries";
+import { getCurrentCount, getCurrentCountWithMode } from "@/db/queries";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
@@ -121,11 +121,16 @@ export const Slot = ({
 		)
 			setIsLoading(true);
 		try {
-			const v = await getCurrentCount(unitType, optionType, calcMode);
+			// const v = await getCurrentCount(unitType, optionType, calcMode);
+			const v = await getCurrentCountWithMode(
+				unitType,
+				optionType,
+				calcMode,
+				plugin.data.settings.negativeWordCountMode
+			);
 			if (optionType === TargetCount.CURRENT_DAY) {
-				const newProgress =
-					(v / state.plugin.data.settings.dailyWritingGoal) * 100;
-
+				const goal = state.plugin.data.settings.dailyWritingGoal;
+				const newProgress = ((v as number) / goal) * 100;
 				setProgressValue(Math.min(newProgress, 100));
 			}
 			setValue(v);

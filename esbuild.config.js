@@ -55,7 +55,14 @@ const context = await esbuild.context({
 });
 
 if (prod) {
-	await context.rebuild();
+	console.log("Starting production build...");
+	try {
+		const result = await context.rebuild();
+		console.log("Build complete.");
+		// console.log(result);
+	} catch (e) {
+		console.error("Build failed:", e);
+	}
 	process.exit(0);
 } else {
 	await context.watch(); // Watch for file changes in dev mode

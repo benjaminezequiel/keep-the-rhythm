@@ -11,4 +11,8 @@ export interface TimeEntry {
 	timeKey: string;
 	w: number;
 	c: number;
+	wa?: number;
+	wd?: number;
+	ca?: number;
+	cd?: number;
 }

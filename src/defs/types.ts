@@ -63,6 +63,11 @@ export enum HeatmapColorModes {
 	LIQUID = "liquid",
 }
 
+export enum NegativeWordCountMode {
+	NET = "net",
+	GROSS = "gross",
+}
+
 export interface Settings {
 	dailyWritingGoal: number; // created as setting, not used anywhere yet
 	enabledLanguages: Language[]; // guides the definition of REGEXes for word counting
@@ -70,6 +75,7 @@ export interface Settings {
 	startOfTheWeek: "MONDAY" | "SUNDAY"; // not used yet, should be used to offset start of the week calculations and heatmap
 	heatmapConfig: HeatmapConfig;
 	heatmapNavigation: boolean;
+	negativeWordCountMode: NegativeWordCountMode;
 	sidebarConfig: {
 		visibility: {
 			showSlots: boolean;
@@ -133,6 +139,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	dailyWritingGoal: 500,
 	startOfTheWeek: "SUNDAY",
 	heatmapNavigation: true,
+	negativeWordCountMode: NegativeWordCountMode.NET,
 	heatmapConfig: {
 		roundCells: true,
 		hideMonthLabels: false,

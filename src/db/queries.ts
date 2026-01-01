@@ -1,6 +1,6 @@
 import { getDateStreaks } from "@/utils/utils";
 import { getDB } from "./db";
-import { Language, Unit, TargetCount, CalculationType } from "../defs/types";
+import { Language, Unit, TargetCount, CalculationType, NegativeWordCountMode } from "../defs/types";
 import { formatDate } from "@/utils/dateUtils";
 import { EVENTS, state } from "@/core/pluginState";
 import {
@@ -8,7 +8,7 @@ import {
 	getStartOfWeek,
 	getStartOfYear,
 } from "@/utils/dateUtils";
-import { sumTimeEntries } from "@/utils/utils";
+import { sumTimeEntries, sumTimeEntriesWithMode } from "@/utils/utils";
 import { DailyActivity } from "./types";
 import { moment as _moment, debounce, Notice, Vault } from "obsidian";
 import { getFileWordAndCharCount } from "@/utils/utils";
@@ -289,7 +289,7 @@ export async function getCurrentCount(
 				Math.floor(
 					(new Date(state.today).getTime() -
 						new Date(startDate).getTime()) /
-						(1000 * 3600 * 24),
+					(1000 * 3600 * 24),
 				) + 1;
 			break;
 
@@ -361,3 +361,137 @@ export const deleteActivityFromDate = async (
 		);
 	}
 };
+
+export async function getTotalValueByDateWithMode(
+	date: string,
+	unit: Unit,
+	mode: NegativeWordCountMode
+): Promise<number> {
+	const activities = await getDB()
+		.dailyActivity.where("date")
+		.equals(date)
+		.toArray();
+
+	if (mode === NegativeWordCountMode.NET) {
+		let value = activities.reduce((sum, activity) => {
+			return sum + sumTimeEntries(activity, unit, true);
+		}, 0);
+		return value ?? 0;
+	} else {
+		// For Gross we need to sum individually
+		let totalAdded = 0;
+
+		for (const activity of activities) {
+			// mode will be GROSS
+			const res = sumTimeEntriesWithMode(activity, unit, NegativeWordCountMode.GROSS, true);
+			if (typeof res === 'number') {
+				totalAdded += res;
+			}
+		}
+
+		return totalAdded;
+	}
+}
+
+export async function getCurrentCountWithMode(
+	unit: Unit,
+	target: TargetCount,
+	calc: CalculationType = CalculationType.TOTAL,
+	mode: NegativeWordCountMode = NegativeWordCountMode.NET
+): Promise<number | string> {
+	if (target === TargetCount.CURRENT_FILE) {
+		if (state.currentActivity) {
+			return sumTimeEntriesWithMode(state?.currentActivity, unit, mode) || 0;
+		} else {
+			const activeFile = state.plugin.app.workspace.getActiveFile();
+			if (activeFile) {
+				const activities = await getDB()
+					.dailyActivity.where("filePath")
+					.equals(activeFile.path)
+					.toArray();
+
+				if (mode === NegativeWordCountMode.NET) {
+					return activities.reduce((sum, activity) => {
+						return sum + sumTimeEntries(activity, unit, false);
+					}, 0);
+				} else {
+					// Aggregate Gross
+					let totalAdded = 0;
+					for (const activity of activities) {
+						// mode is GROSS
+						const res = sumTimeEntriesWithMode(activity, unit, NegativeWordCountMode.GROSS, false);
+						if (typeof res === 'number') {
+							totalAdded += res;
+						}
+					}
+					return totalAdded;
+				}
+			}
+			return 0;
+		}
+	}
+
+	if (target === TargetCount.CURRENT_DAY) {
+		return await getTotalValueByDateWithMode(state.today, unit, mode);
+	}
+
+
+	// If mode is NET, just use old function
+	if (mode === NegativeWordCountMode.NET) {
+		return getCurrentCount(unit, target, calc);
+	}
+
+	// GROSS mode support for ranges
+	if (mode === NegativeWordCountMode.GROSS) {
+		let startDate: string;
+		let endDate = state.today;
+
+		switch (target) {
+			case TargetCount.CURRENT_WEEK:
+				startDate = formatDate(getStartOfWeek(new Date()));
+				break;
+			case TargetCount.CURRENT_MONTH:
+				startDate = formatDate(getStartOfMonth(new Date()));
+				break;
+			case TargetCount.CURRENT_YEAR:
+				startDate = formatDate(getStartOfYear(new Date()));
+				break;
+			case TargetCount.LAST_DAY:
+				// Last 24h is special
+				return getCurrentCount(unit, target, calc); // Fallback for last 24h to Net for now
+			case TargetCount.LAST_WEEK:
+				startDate = moment(state.today).subtract(7, "days").format("YYYY-MM-DD");
+				break;
+			case TargetCount.LAST_MONTH:
+				startDate = moment(state.today).subtract(30, "days").format("YYYY-MM-DD");
+				break;
+			case TargetCount.LAST_YEAR:
+				startDate = moment(state.today).subtract(365, "days").format("YYYY-MM-DD");
+				break;
+			default:
+				return getCurrentCount(unit, target, calc);
+		}
+
+		// Fetch all activities in range and sum added
+		const activities = await getDB()
+			.dailyActivity.where("date")
+			.between(startDate, endDate, true, true)
+			.toArray();
+
+		let totalAdded = 0;
+		activities.forEach(act => {
+			const res = sumTimeEntriesWithMode(act, unit, NegativeWordCountMode.GROSS, true);
+			if (typeof res === 'number') totalAdded += res;
+		});
+
+		// Average calculation
+		if (calc === CalculationType.AVG) {
+			const totalDays = moment(endDate).diff(startDate, 'days') + 1;
+			return Math.round(totalAdded / totalDays);
+		}
+
+		return totalAdded;
+	}
+
+	return getCurrentCount(unit, target, calc);
+}
