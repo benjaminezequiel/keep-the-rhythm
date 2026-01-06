@@ -9,7 +9,9 @@ import { sumTimeEntries, getFileNameWithoutExtension } from "../../utils/utils";
 import { state, EVENTS } from "../../core/pluginState";
 import { DailyActivity } from "../../db/types";
 import { Unit } from "../../defs/types";
-import { FileView, Notice, setIcon } from "obsidian";
+import { MarkdownView, FileView, Notice, setIcon, TFile } from "obsidian";
+import { getDB } from "../../db/db";
+import { getWordCount } from "../../core/wordCounting";
 
 interface EntriesProps {
 	date?: string;
@@ -149,13 +151,70 @@ export const Entries = ({ date = formatDate(new Date()) }: EntriesProps) => {
 											ref={(el) =>
 												el && setIcon(el, "trash-2")
 											}
-											onMouseDown={async () => {
-												await deleteActivityById(
-													entry.id,
-												);
-												state.emit(
-													EVENTS.REFRESH_EVERYTHING,
-												);
+											onMouseDown={async (e) => {
+    e.stopPropagation();
+
+    if (entry.id === undefined) {
+        new Notice("Error: Entry ID is missing.");
+        return;
+    }
+    const oldId = entry.id;
+
+    await deleteActivityById(oldId);
+
+    const workspace = state.plugin.app.workspace;
+    const targetLeaf = workspace.getLeavesOfType("markdown").find((leaf) => {
+        // @ts-ignore
+        return leaf.view.file && leaf.view.file.path === entry.filePath;
+    });
+
+    if (targetLeaf) {
+        // @ts-ignore
+        const editor = targetLeaf.view.editor;
+        const content = editor.getValue();
+
+        const pluginInstance = state.plugin as any;
+        const settings = pluginInstance.data?.settings || pluginInstance.settings || {};
+        const enabledLanguages = settings.enabledLanguages || [];
+
+        let wordRegex = /\S+/g;
+
+        if (enabledLanguages.length === 4) {
+            wordRegex = /[\u4e00-\u9fa5]|[a-zA-Z0-9_\-]+/g;
+        } else if (enabledLanguages.length > 4) {
+            wordRegex = /[\p{L}\p{N}\p{M}\-_]+|\p{P}|\p{S}/gu;
+        } else {
+            wordRegex = /\S+/g;
+        }
+
+        const currentWords = getWordCount(content, wordRegex);
+        const currentChars = content.length;
+
+        const anchorChange = {
+            timeKey: Date.now().toString(),
+            w: 0,
+            c: 0
+        };
+
+        const newEntryData = {
+            filePath: entry.filePath,
+            date: entry.date,
+            wordCountStart: currentWords,
+            charCountStart: currentChars,
+            changes: [anchorChange],
+        };
+
+        const newId = await getDB().dailyActivity.add(newEntryData);
+
+        if (state.currentActivity && state.currentActivity.filePath === entry.filePath) {
+            state.currentActivity.id = newId;
+            state.currentActivity.wordCountStart = currentWords;
+            state.currentActivity.charCountStart = currentChars;
+            state.currentActivity.changes = [anchorChange];
+        }
+    }
+
+    state.emit(EVENTS.REFRESH_EVERYTHING);
 											}}
 										/>
 									</Tooltip>
