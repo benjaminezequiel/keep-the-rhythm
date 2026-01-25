@@ -17,7 +17,7 @@ import { getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
-import { SettingsTab } from "@/ui/views/SettingsTab";
+import { SettingsTab } from "@/ui/settings/SettingsTab";
 
 import { formatDate } from "@/utils/dateUtils";
 
@@ -29,8 +29,6 @@ import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 const moment = _moment as unknown as typeof _moment.default;
 
 export default class KeepTheRhythm extends Plugin {
-  // INITIAL DEFINITIONS
-
   data: PluginData = {
     schema: "0.2",
     settings: DEFAULT_SETTINGS,
@@ -40,18 +38,22 @@ export default class KeepTheRhythm extends Plugin {
   };
 
   private JSON_DEBOUNCE_TIME = 1000;
+  private LAST_BREAKING_CHANGE_TO_SCHEMA = "0.2";
+
   private JsonDebounceTimeout: any = null;
 
   async onload() {
     state.setPlugin(this);
-
     initDatabase();
+
+    // todo: check if this is really necessary
     getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
+
+    /////////
     const loadedData = await this.loadData();
 
-    let lastBreakingChangeToSchema = "0.2";
-
     if (loadedData) {
+      // add setting to remove backups
       try {
         await this.backupDataToVaultFolder(loadedData);
       } catch (err) {
@@ -60,13 +62,19 @@ export default class KeepTheRhythm extends Plugin {
     }
 
     /** Data is only loaded into dexie if it's the correct schema */
-    if (loadedData && loadedData.schema == lastBreakingChangeToSchema) {
+    if (
+      loadedData &&
+      loadedData.schema == this.LAST_BREAKING_CHANGE_TO_SCHEMA
+    ) {
       await this.initializeDataFromJSON(loadedData);
-    } else if (loadedData && loadedData.schema !== lastBreakingChangeToSchema) {
+    } else if (
+      loadedData &&
+      loadedData.schema !== this.LAST_BREAKING_CHANGE_TO_SCHEMA
+    ) {
       new Notice("KTR: Migrating data from previous versions...");
       await this.migrateDataFromJSON(loadedData);
     } else if (!loadedData) {
-      this.data.schema = lastBreakingChangeToSchema;
+      this.data.schema = this.LAST_BREAKING_CHANGE_TO_SCHEMA;
       this.data.stats = {
         ...STARTING_STATS,
       };
@@ -295,7 +303,7 @@ export default class KeepTheRhythm extends Plugin {
     }
   }
 
-  private applyColorStyles() {
+  public applyColorStyles() {
     const containerStyle = this.app.workspace.containerEl.style;
     let light = undefined;
     let dark = undefined;
