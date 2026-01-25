@@ -2,14 +2,9 @@ import {
   Plugin,
   TFile,
   TAbstractFile,
-  MarkdownPostProcessorContext,
-  MarkdownRenderChild,
   Notice,
   moment as _moment,
 } from "obsidian";
-
-import React from "react";
-import { createRoot } from "react-dom/client";
 
 import {
   ColorConfig,
@@ -22,18 +17,14 @@ import { getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
-import { parseQueryToJSEP, parseSlotQuery } from "@/core/codeBlockQuery";
-
 import { SettingsTab } from "@/ui/views/SettingsTab";
-import { SlotWrapper } from "@/ui/components/SlotWrapper";
-import { Heatmap } from "@/ui/components/Heatmap";
-import { Entries } from "@/ui/components/Entries";
 
 import { formatDate } from "@/utils/dateUtils";
 
 import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
-import * as codeBlocks from "./core/codeBlocks";
+import * as codeBlocks from "@/core/codeBlocks";
+import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -51,10 +42,7 @@ export default class KeepTheRhythm extends Plugin {
   private JSON_DEBOUNCE_TIME = 1000;
   private JsonDebounceTimeout: any = null;
 
-  // #region Initialization
   async onload() {
-    // #region JSON
-
     state.setPlugin(this);
 
     initDatabase();
@@ -291,7 +279,7 @@ export default class KeepTheRhythm extends Plugin {
     }
     if (loadedData.stats) {
       this.data.stats = loadedData.stats;
-      await this.checkPreviousStreak();
+      await checkPreviousStreak();
 
       const dailyActivitiesFromJSON = this.data.stats?.dailyActivity || [];
 
@@ -327,15 +315,15 @@ export default class KeepTheRhythm extends Plugin {
   }
 
   private initializeCommands() {
-    this.addRibbonIcon("calendar-days", "Word Count Stats", () => {
-      this.activateView();
+    this.addRibbonIcon("calendar-days", "Keep the Rhythm", () => {
+      activateSidebarView();
     });
 
     this.addCommand({
       id: "open-keep-the-rhythm",
       name: "Open sidebar view",
       callback: () => {
-        this.activateView();
+        activateSidebarView();
       },
     });
 
@@ -343,25 +331,9 @@ export default class KeepTheRhythm extends Plugin {
       id: "check-ktr-streak",
       name: "Check writing goal from previous days",
       callback: () => {
-        this.checkPreviousStreak();
+        checkPreviousStreak();
       },
     });
-  }
-
-  private async checkPreviousStreak() {
-    if (!this.data.settings) return;
-
-    const activities = await getDB().dailyActivity.toArray();
-
-    for (let i = 0; i < activities.length; i++) {
-      const { totalWords } = utils.sumBothTimeEntries(activities[i]);
-      if (
-        totalWords > this.data.settings.dailyWritingGoal &&
-        !this.data.stats?.daysWithCompletedGoal?.includes(activities[i].date)
-      ) {
-        this.data.stats?.daysWithCompletedGoal?.push(activities[i].date);
-      }
-    }
   }
 
   private initializeEvents() {
@@ -503,21 +475,4 @@ export default class KeepTheRhythm extends Plugin {
   }
 
   // #endregion
-
-  /**
-   * @function activateView opens the SIDEBAR plugin view
-   */
-  async activateView() {
-    // Return if view already exists
-    if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length > 0) return;
-
-    // Get the leaf and focus on it
-    const leaf = this.app.workspace.getRightLeaf(false);
-    if (leaf) {
-      await leaf.setViewState({
-        type: VIEW_TYPE,
-        active: true,
-      });
-    }
-  }
 }
