@@ -1,3 +1,5 @@
+import { getByPath, setByPath } from "./SettingsTab";
+import { SettingItem } from "./settingSchema";
 import { updateVisibility } from "./SettingsTab";
 import { Setting } from "obsidian";
 import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
@@ -218,4 +220,27 @@ export function updateThresholdVisibility() {
     lowEl.style.display = mode === HeatmapColorModes.SOLID ? "none" : "";
   if (mediumEl)
     mediumEl.style.display = mode === HeatmapColorModes.STOPS ? "" : "none";
+}
+
+export function createBackupFolderPathSetting(
+  setting: Setting,
+  config: SettingItem,
+): void {
+  const currentValue = getByPath(state.plugin.data.settings, config.key);
+
+  setting.addText((text) => {
+    text
+      .setPlaceholder(config.placeholder || "")
+      .setValue(currentValue || "")
+      .onChange(async (value) => {
+        const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
+
+        setByPath(
+          state.plugin.data.settings,
+          "backupConfig.folderPath",
+          cleanPath || ".keep-the-rhythm",
+        );
+        await state.plugin.updateAndSaveEverything();
+      });
+  });
 }

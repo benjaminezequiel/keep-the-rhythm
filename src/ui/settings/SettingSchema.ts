@@ -4,7 +4,6 @@ export interface SettingItem {
   title: string;
   description?: string;
   placeholder?: string;
-  dependsOn?: string[];
   visibleWhen?: Record<string, any>;
 }
 
@@ -129,8 +128,27 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
         {
           key: "backupConfig.enabled",
           type: "toggle",
-          title: "Backup historic data on load",
-          description: "Enables periodic backups to prevent data loss.",
+          title: "Automatic Backups",
+          description:
+            "For safety, disabling this does not delete existing back-ups, you have to do it manually.",
+        },
+        {
+          key: "backupConfig.folderPath",
+          type: "custom",
+          title: "Backup Folder Path",
+          description:
+            "Location where backup files will be stored (relative to vault root).",
+          placeholder: ".keep-the-rhythm",
+          visibleWhen: { "backupConfig.enabled": true },
+        },
+        {
+          key: "backupConfig.maxNumberOfBackups",
+          type: "number",
+          title: "Maximum Number of Backups",
+          description:
+            "How many backup files to keep. Older backups will be automatically deleted.",
+          placeholder: "3",
+          visibleWhen: { "backupConfig.enabled": true },
         },
       ],
     },

@@ -1,12 +1,15 @@
+import { state } from "@/core/pluginState";
+import { App, PluginSettingTab, Setting } from "obsidian";
+import { Settings } from "@/defs/types";
+
+import { SETTINGS_SCHEMA, SettingItem } from "./settingSchema";
 import {
   createColorSettings,
   createLanguageDropdown,
   createColorModeSettings,
   createThresholdSettings,
+  createBackupFolderPathSetting,
 } from "./customSettings";
-import { SETTINGS_SCHEMA, SettingItem } from "./settingSchema";
-import { App, PluginSettingTab, Setting, Modal } from "obsidian";
-import { Settings } from "@/defs/types";
 
 export class SettingsTab extends PluginSettingTab {
   private plugin: any;
@@ -56,7 +59,6 @@ export class SettingsTab extends PluginSettingTab {
         setting.addToggle((toggle) =>
           toggle.setValue(!!currentValue).onChange(async (value) => {
             setByPath(this.settings, config.key, value);
-
             await this.plugin.updateAndSaveEverything();
             updateVisibility(config.key, value);
           }),
@@ -113,18 +115,22 @@ export class SettingsTab extends PluginSettingTab {
           createColorSettings(setting, "dark");
           break;
         }
+        if (config.key == "backupConfig.folderPath") {
+          createBackupFolderPathSetting(setting, config);
+          break;
+        }
     }
   }
 }
 
 export {};
 
-function getByPath(obj: any, path: string) {
+export function getByPath(obj: any, path: string) {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);
 }
 
 // This has to change the whole object cause mutating nested properties won't trigger rerenders for the relevant components
-function setByPath(obj: any, path: string, value: any) {
+export function setByPath(obj: any, path: string, value: any) {
   const keys = path.split(".");
   const last = keys.pop()!;
 
@@ -147,12 +153,10 @@ function setByPath(obj: any, path: string, value: any) {
 }
 
 export function updateVisibility(changedKey: string, newValue: any) {
-  console.log(newValue);
   SETTINGS_SCHEMA.sections.forEach((section) => {
     section.settings.forEach((s: SettingItem) => {
       if (!s.visibleWhen) return;
 
-      console.log(changedKey);
       const visibleCondition = s.visibleWhen[changedKey];
       // if (!allowed) return;
 
