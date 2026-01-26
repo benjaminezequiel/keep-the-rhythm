@@ -125,6 +125,8 @@ export interface HeatmapConfig {
   roundCells: boolean;
   hideMonthLabels: boolean;
   hideWeekdayLabels: boolean;
+  alignLeft: boolean;
+  startDate?: string; // <-- New property
   intensityStops: {
     low: number;
     medium: number;
@@ -144,6 +146,8 @@ export const DEFAULT_SETTINGS: Settings = {
     roundCells: true,
     hideMonthLabels: false,
     hideWeekdayLabels: false,
+    alignLeft: false,
+    numberOfWeeks: 52,
     intensityMode: HeatmapColorModes.GRADUAL,
     intensityStops: {
       low: 100,

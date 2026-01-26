@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/dateUtils";
 import { state } from "@/core/pluginState";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
@@ -63,6 +64,34 @@ export class SettingsTab extends PluginSettingTab {
             updateVisibility(config.key, value);
           }),
         );
+        break;
+
+      case "date":
+        setting.addText((text) => {
+          text.inputEl.setAttribute("type", "date");
+          text.setValue(formatDate(currentValue)).onChange(async (value) => {
+            const date = value ? new Date(value) : null;
+            setByPath(this.settings, config.key, date);
+            await this.plugin.updateAndSaveEverything();
+            updateVisibility(config.key, date);
+          });
+        });
+        setting.addButton((btn) => {
+          btn
+            .setIcon("trash")
+            .setTooltip("Clear date")
+            .setDisabled(currentValue !== "")
+            .onClick(async () => {
+              // Clear the date in settings
+              setByPath(this.settings, config.key, undefined);
+              await this.plugin.updateAndSaveEverything();
+
+              const inputEl = setting.controlEl.querySelector(
+                'input[type="date"]',
+              ) as HTMLInputElement;
+              if (inputEl) inputEl.value = "";
+            });
+        });
         break;
 
       case "number":
@@ -165,7 +194,8 @@ export function updateVisibility(changedKey: string, newValue: any) {
       if (typeof visibleCondition == "boolean") {
         shouldBeVisible = visibleCondition == newValue;
       } else {
-        newValue == visibleCondition.includes(newValue);
+        // newValue == visibleCondition.includes(newValue);
+        shouldBeVisible = true; // TODO: check later for cases, non existent right now
       }
 
       const el = document.querySelector(

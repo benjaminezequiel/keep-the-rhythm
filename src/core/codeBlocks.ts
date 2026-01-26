@@ -33,7 +33,6 @@ export function createHeatmapCodeBlock(
       heatmapConfig: query?.options,
       query: query?.filter,
       isCodeBlock: true,
-      amountOfWeeks: query?.options.numberOfWeeks,
     }),
   );
 

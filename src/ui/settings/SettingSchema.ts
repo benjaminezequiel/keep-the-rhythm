@@ -1,6 +1,6 @@
 export interface SettingItem {
   key: string;
-  type: "toggle" | "number" | "dropdown" | "custom";
+  type: "toggle" | "number" | "dropdown" | "date" | "custom";
   title: string;
   description?: string;
   placeholder?: string;
@@ -45,33 +45,45 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
         {
           key: "heatmapNavigation",
           type: "toggle",
-          title: "Heatmap navigation",
-          description:
-            "Clicks open the daily note from that day, using Obsidian's Daily Note core plugin.",
+          title: "Clicking a Cell Opens its Daily Note",
         },
         {
           key: "heatmapConfig.roundCells",
           type: "toggle",
           title: "Rounded Cells",
-          description: "Render heatmap cells with rounded corners.",
         },
         {
           key: "heatmapConfig.hideMonthLabels",
           type: "toggle",
           title: "Hide Month Labels",
-          description: "Hide month labels above the heatmap.",
         },
         {
           key: "heatmapConfig.hideWeekdayLabels",
           type: "toggle",
           title: "Hide Weekday Labels",
-          description: "Hide weekday labels on the heatmap.",
+        },
+        {
+          key: "heatmapConfig.alignLeft",
+          type: "toggle",
+          title: "Align heatmap cells to the left",
+        },
+        {
+          key: "heatmapConfig.startDate",
+          type: "date",
+          title: "Custom Start Date",
+          description:
+            "Makes the heatmap start from a specific date (like the start of the year).",
+        },
+        {
+          key: "heatmapConfig.numberOfWeeks",
+          type: "number",
+          title: "Default number of weeks displayed",
         },
         {
           key: "heatmapConfig.intensityMode",
           type: "custom",
           title: "Coloring Mode",
-          description: "Choose the coloring method.",
+          description: "Changes how the heatmap cells are filled.",
         },
         {
           key: "heatmapConfig.intensityStops",
@@ -79,6 +91,7 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
           title: "Intensity thresholds",
           description: "Changes how the color of each cell is calculated.",
         },
+
         {
           key: "heatmapConfig.colors[light]",
           type: "custom",

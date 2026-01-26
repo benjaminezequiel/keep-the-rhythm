@@ -212,8 +212,10 @@ export async function getWholeVaultCount(
 
 		for (let i = 0; i < files.length; i++) {
 			const fileContent = await vault.cachedRead(files[i]);
-			const [fileWordCount, fileCharCount] =
-				await getFileWordAndCharCount(fileContent, enabledLanguages);
+      const [fileWordCount, fileCharCount] = await getFileWordAndCharCount(
+        fileContent,
+        enabledLanguages,
+      );
 			wordSum += fileWordCount;
 			charSum += fileCharCount;
 		}

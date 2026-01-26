@@ -1,302 +1,310 @@
 .theme-light .heatmap-square.level-0 {
-	background-color: var(--light-0);
+  background-color: var(--light-0);
 }
 
 .theme-light .heatmap-square.level-1 {
-	background-color: var(--light-1);
+  background-color: var(--light-1);
 }
 .theme-light .heatmap-square.level-2 {
-	background-color: var(--light-2);
+  background-color: var(--light-2);
 }
 .theme-light .heatmap-square.level-3 {
-	background-color: var(--light-3);
+  background-color: var(--light-3);
 }
 .theme-light .heatmap-square.level-4 {
-	background-color: var(--light-4);
+  background-color: var(--light-4);
 }
 
 .theme-dark .heatmap-square.level-0 {
-	background-color: var(--dark-0);
+  background-color: var(--dark-0);
 }
 .theme-dark .heatmap-square.level-1 {
-	background-color: var(--dark-1);
+  background-color: var(--dark-1);
 }
 .theme-dark .heatmap-square.level-2 {
-	background-color: var(--dark-2);
+  background-color: var(--dark-2);
 }
 .theme-dark .heatmap-square.level-3 {
-	background-color: var(--dark-3);
+  background-color: var(--dark-3);
 }
 .theme-dark .heatmap-square.level-4 {
-	background-color: var(--dark-4);
+  background-color: var(--dark-4);
 }
 
 .theme-dark .heatmap-square.proportional-intensity {
-	--new-color: color-mix(
-		in srgb,
-		var(--intensity) var(--dark-4),
-		var(--dark-0)
-	);
-	background-color: var(--new-color);
+  --new-color: color-mix(
+    in srgb,
+    var(--intensity) var(--dark-4),
+    var(--dark-0)
+  );
+  background-color: var(--new-color);
 
-	// position: relative;
-	// overflow: hidden;
-	// background-color: hsl(from var(--newColor) h s l);
+  // position: relative;
+  // overflow: hidden;
+  // background-color: hsl(from var(--newColor) h s l);
 
-	// &::before {
-	// 	content: "";
-	// 	position: absolute;
-	// 	bottom: 0;
-	// 	width: 100%;
-	// 	height: var(--intensity);
-	// 	background-color: var(--new-color);
-	// }
+  // &::before {
+  // 	content: "";
+  // 	position: absolute;
+  // 	bottom: 0;
+  // 	width: 100%;
+  // 	height: var(--intensity);
+  // 	background-color: var(--new-color);
+  // }
 }
 
 .theme-dark .heatmap-square.liquid-intensity {
-	--new-color: color-mix(
-		in srgb,
-		var(--intensity) var(--dark-4),
-		var(--dark-0)
-	);
+  --new-color: color-mix(
+    in srgb,
+    var(--intensity) var(--dark-4),
+    var(--dark-0)
+  );
 
-	background-color: var(--dark-0);
-	position: relative;
-	overflow: hidden;
+  background-color: var(--dark-0);
+  position: relative;
+  overflow: hidden;
 
-	&::before {
-		content: "";
-		position: absolute;
-		bottom: 0;
-		width: 100%;
-		height: var(--intensity);
-		background-color: var(--new-color);
-	}
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: var(--intensity);
+    background-color: var(--new-color);
+  }
 }
 
 .theme-light .heatmap-square.liquid-intensity {
-	--new-color: color-mix(
-		in srgb,
-		var(--intensity) var(--light-4),
-		var(--light-0)
-	);
+  --new-color: color-mix(
+    in srgb,
+    var(--intensity) var(--light-4),
+    var(--light-0)
+  );
 
-	background-color: var(--light-0);
-	position: relative;
-	overflow: hidden;
+  background-color: var(--light-0);
+  position: relative;
+  overflow: hidden;
 
-	&::before {
-		content: "";
-		position: absolute;
-		bottom: 0;
-		width: 100%;
-		height: var(--intensity);
-		background-color: var(--new-color);
-	}
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: var(--intensity);
+    background-color: var(--new-color);
+  }
 }
 
 .theme-light .heatmap-square.proportional-intensity {
-	--new-color: color-mix(
-		in srgb,
-		var(--intensity) var(--light-4),
-		var(--light-0)
-	);
-	background-color: var(--new-color);
-	// background-color: hsl(from var(--newColor) h s l);
+  --new-color: color-mix(
+    in srgb,
+    var(--intensity) var(--light-4),
+    var(--light-0)
+  );
+  background-color: var(--new-color);
+  // background-color: hsl(from var(--newColor) h s l);
 }
 
 .heatmap {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .hide-month-labels {
-	padding-top: 8px !important;
+  padding-top: 8px !important;
 
-	.month-labels {
-		display: none;
-	}
-	.heatmap-new-grid {
-		padding-top: 0px;
-	}
+  .month-labels {
+    display: none;
+  }
+  .heatmap-new-grid {
+    padding-top: 0px;
+  }
 }
+
 .hide-weekday-labels {
-	padding-left: 0px;
+  padding-left: 0px;
 
-	.heatmap-content {
-		padding-left: 0px;
-		mask-image: linear-gradient(to right, transparent 0px, black 28px);
-	}
-	&.is-code-block-heatmap .heatmap-content {
-		mask-image: unset;
-	}
+  .heatmap-content {
+    padding-left: 0px;
+    mask-image: linear-gradient(to right, transparent 0px, black 28px);
+  }
+  &.is-code-block-heatmap .heatmap-content {
+    mask-image: unset;
+  }
 
-	.week-day-labels {
-		display: none;
-	}
+  .week-day-labels {
+    display: none;
+  }
 }
 // .cells-not-rounded .heatmap-square {
 // 	border-radius: 2px;
 // }
 
+.align-left {
+  .heatmap-content {
+    align-items: flex-start;
+    mask-image: linear-gradient(to left, transparent 2px, black 64px);
+  }
+}
 .heatmap-square {
-	transition-property: background-color;
-	transition-duration: 800ms;
-	transition-timing-function: ease-out;
-	cursor: pointer !important;
+  transition-property: background-color;
+  transition-duration: 800ms;
+  transition-timing-function: ease-out;
+  cursor: pointer !important;
 }
 
 .heatmap-column .heatmap-square:hover {
-	background-color: var(--interactive-accent);
-	transition-duration: 25ms;
+  background-color: var(--interactive-accent);
+  transition-duration: 25ms;
 }
 
 .heatmap-square-today {
-	// outline: 1px solid var(--background-modifier-border-focus);
-	box-shadow: inset 0 0 0 1px var(--text-muted);
+  // outline: 1px solid var(--background-modifier-border-focus);
+  box-shadow: inset 0 0 0 1px var(--text-muted);
 }
 
 .heatmap-square:hover .heatmap-square__tooltip-container {
-	opacity: 1;
-	pointer-events: none;
+  opacity: 1;
+  pointer-events: none;
 }
 
 .heatmap-square__tooltip-container {
-	position: fixed;
-	padding: 4px;
-	background-color: black;
-	z-index: 10;
-	opacity: 0;
+  position: fixed;
+  padding: 4px;
+  background-color: black;
+  z-index: 10;
+  opacity: 0;
 }
 .heatmap-square__tooltip-wrapper {
-	position: absolute;
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-	width: 0;
-	height: 0;
-	inset: 0;
-	top: 0;
-	left: 50%;
-	transform: translateX(-50%);
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 0;
+  height: 0;
+  inset: 0;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .heatmap-square {
-	position: relative;
-	width: 10px;
-	height: 10px;
-	border-radius: 99px;
-	cursor: default;
-	-webkit-appearance: none;
-	appearance: none;
-	border: none;
-	padding: 0;
-	background: none;
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
 
-	&.cell-squared {
-		border-radius: 3px;
-	}
+  &.cell-squared {
+    border-radius: 3px;
+  }
 }
 
 .heatmap-wrapper {
-	position: relative;
-	display: flex;
-	align-items: flex-end;
-	gap: 8px;
-	background: var(--background-primary);
-	width: fit-content;
-	padding: 8px;
-	padding-top: 6px;
-	border-radius: var(--radius-m);
-	max-width: 100%;
-	overflow: hidden;
-	border: 1px solid var(--background-modifier-border);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--background-primary);
+  width: fit-content;
+  padding: 8px;
+  padding-top: 6px;
+  border-radius: var(--radius-m);
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
 }
 
 .heatmap-content {
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	width: fit-content;
-	align-items: flex-end;
-	padding-left: 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
-	mask-image: linear-gradient(to right, transparent 2px, black 64px);
+  width: fit-content;
+  padding-left: 32px;
+
+  align-items: flex-end;
+  mask-image: linear-gradient(to right, transparent 2px, black 64px);
 }
 
 .week-day-labels {
-	z-index: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	position: absolute;
-	background: linear-gradient(
-		to right,
-		var(--background-primary) 25%,
-		transparent
-	);
-	// padding-right: 32px;
-	// padding-top: 8px;
-	// padding-bottom: 8px;
-	// bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: absolute;
+  background: linear-gradient(
+    to right,
+    var(--background-primary) 25%,
+    transparent
+  );
+  // padding-right: 32px;
+  // padding-top: 8px;
+  // padding-bottom: 8px;
+  // bottom: 0;
 
-	// background-color: var(--background-primary);
-	// mask-image: linear-gradient(to right, black 50%, transparent);
+  // background-color: var(--background-primary);
+  // mask-image: linear-gradient(to right, black 50%, transparent);
 
-	// backdrop-filter: blur(4px);
+  // backdrop-filter: blur(4px);
 }
 
 .week-day-label {
-	height: 10px;
-	line-height: 10px;
-	font-size: var(--font-smallest);
-	color: var(--text-muted);
+  height: 10px;
+  line-height: 10px;
+  font-size: var(--font-smallest);
+  color: var(--text-muted);
 }
 
 .month-labels {
-	align-items: end;
-	display: grid;
-	width: fit-content;
-	position: absolute;
-	// TODO: number of columns here otherwsie month labels dont work with varialbe weeks number
-	// grid-template-columns: repeat(52, 10px);
-	gap: 2px;
-	height: 14px;
-	border-radius: 2px;
+  align-items: end;
+  display: grid;
+  width: fit-content;
+  position: absolute;
+  // TODO: number of columns here otherwsie month labels dont work with varialbe weeks number
+  // grid-template-columns: repeat(52, 10px);
+  gap: 2px;
+  height: 14px;
+  border-radius: 2px;
 }
 
 .month-label {
-	font-size: var(--font-smallest);
-	color: var(--text-muted);
-	position: absolute;
-	transform: translateX(-50%);
-	white-space: nowrap;
+  font-size: var(--font-smallest);
+  color: var(--text-muted);
+  position: absolute;
+  // transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .heatmap-grid {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .heatmap-square {
-	width: 10px;
-	height: 10px;
-	// border-radius: 2px;
+  width: 10px;
+  height: 10px;
+  // border-radius: 2px;
 }
 
 .heatmap-new-grid {
-	display: flex;
-	padding-top: 18px;
-	flex-direction: row;
-	justify-content: flex-end;
-	gap: 2px;
+  display: flex;
+  padding-top: 18px;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 2px;
 }
 
 .heatmap-column {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
