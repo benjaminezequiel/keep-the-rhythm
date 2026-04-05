@@ -77,27 +77,62 @@ export function createSlotsCodeBlock(
 
 ///////////////// ENTRIES
 
+export type EntryFilter =
+  | { type: "includes"; value: string }
+  | { type: "excludes"; value: string }
+  | { type: "date"; value: string };
+
+function parseSource(source: string): {
+  date?: string;
+  filters: EntryFilter[];
+} {
+  const trimmed = source.trim();
+  if (!trimmed) return { filters: [] };
+
+  const filters: EntryFilter[] = [];
+  let date: string | undefined;
+
+  const lines = trimmed
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const startsWithMatch = line.match(/^filePath\s+includes\s+"([^"]+)"$/);
+    const excludeMatch = line.match(/^filePath\s+excludes\s+"([^"]+)"$/);
+
+    if (startsWithMatch) {
+      filters.push({ type: "includes", value: startsWithMatch[1] });
+    } else if (excludeMatch) {
+      filters.push({ type: "excludes", value: excludeMatch[1] });
+    } else {
+      // Treat unrecognised lines as a date (existing behaviour)
+      date = line;
+    }
+  }
+
+  return { date, filters };
+}
+
 export function createEntriesCodeBlock(
   source: string,
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ): void {
   if (!state.plugin.data || !state.plugin.data.settings) {
-    return; // add log / error
+    return;
   }
 
   const container = el.createDiv("slots-codeblock");
   const root = createRoot(container);
 
-  let date;
-  if (source.trim() !== "") {
-    date = source.trim();
-  }
+  const { date, filters } = parseSource(source);
+
+  console.log(filters);
   root.render(
     React.createElement(Entries, {
-      date: date,
+      date,
+      filters,
     }),
   );
-
-  return;
 }

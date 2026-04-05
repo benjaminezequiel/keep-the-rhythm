@@ -1,4 +1,4 @@
-import { deleteActivityFromDate, deleteActivityById } from "../../db/queries";
+import { deleteActivityById } from "../../db/queries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
@@ -11,11 +11,17 @@ import { DailyActivity } from "../../db/types";
 import { Unit } from "../../defs/types";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
+import { EntryFilter } from "@/core/codeBlocks";
 
 interface EntriesProps {
   date?: string;
+  filters?: EntryFilter[];
 }
-export const Entries = ({ date = formatDate(new Date()) }: EntriesProps) => {
+
+export const Entries = ({
+  date = formatDate(new Date()),
+  filters,
+}: EntriesProps) => {
   const [unit, setUnit] = useState<Unit>(Unit.WORD);
   const [entries, setEntries] = useState<DailyActivity[]>([]);
 
@@ -45,6 +51,15 @@ export const Entries = ({ date = formatDate(new Date()) }: EntriesProps) => {
     setEntries(
       fetchedActivities
         .filter((entry) => sumTimeEntries(entry, Unit.WORD, true) != 0)
+        .filter((entry) => {
+          if (!filters || filters.length === 0) return true;
+          return filters.every((f) => {
+            if (f.type === "includes") return entry.filePath?.includes(f.value);
+            if (f.type === "excludes")
+              return !entry.filePath?.includes(f.value);
+            return true;
+          });
+        })
         .sort((a, b) => {
           const aCount = sumTimeEntries(a, unit, true);
           const bCount = sumTimeEntries(b, unit, true);
