@@ -1,3 +1,4 @@
+import { state } from "@/core/pluginState";
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
 import { DailyActivity, TimeEntry } from "@/db/types";
@@ -270,4 +271,52 @@ export function debounce<T extends (...args: any[]) => void>(
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func.apply(this, args), delay);
   } as T;
+}
+
+export async function getExistingActivity(file: TFile, date: string) {
+  let existingActivity: DailyActivity | undefined = await getDB()
+    .dailyActivity.where("[date+filePath]")
+    .equals([date, file.path])
+    .first();
+
+  return existingActivity ? existingActivity : false;
+}
+
+export async function createActivityObject(file: TFile, date: string) {
+  let newActivity: DailyActivity | undefined = await getDB()
+    .dailyActivity.where("[date+filePath]")
+    .equals([date, file.path])
+    .first();
+
+  const content = await state.plugin.app.vault.read(file);
+  const currentWordCount = getLanguageBasedWordCount(
+    content,
+    state.plugin.data.settings.enabledLanguages,
+  );
+
+  newActivity = {
+    date: date,
+    filePath: file.path,
+    wordCountStart: currentWordCount,
+    charCountStart: content.length,
+    changes: [],
+  };
+
+  return newActivity;
+}
+
+export async function getExistingOrCreateNewEntry(
+  file: TFile,
+  date: string,
+): Promise<DailyActivity> {
+  let entry = await getExistingActivity(file, date);
+
+  /** File was not yet seen today, create an entry for it */
+  if (!entry) {
+    console.log("no entry found");
+    entry = await createActivityObject(file, date);
+    await getDB().dailyActivity.add(entry);
+  }
+
+  return entry;
 }

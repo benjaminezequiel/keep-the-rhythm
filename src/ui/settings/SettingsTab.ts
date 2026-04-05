@@ -3,14 +3,14 @@ import { state } from "@/core/pluginState";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
 
-import { SETTINGS_SCHEMA, SettingItem } from "./settingSchema";
+import { SETTINGS_SCHEMA, SettingItem } from "./SettingSchema";
 import {
   createColorSettings,
   createLanguageDropdown,
   createColorModeSettings,
   createThresholdSettings,
   createBackupFolderPathSetting,
-} from "./customSettings";
+} from "./CustomSettings";
 
 export class SettingsTab extends PluginSettingTab {
   private plugin: any;
@@ -151,8 +151,6 @@ export class SettingsTab extends PluginSettingTab {
     }
   }
 }
-
-export {};
 
 export function getByPath(obj: any, path: string) {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);

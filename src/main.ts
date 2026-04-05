@@ -1,3 +1,4 @@
+import { ManualEntryModal } from "./ui/components/ManualEntry";
 import {
   Plugin,
   TFile,
@@ -327,6 +328,14 @@ export default class KeepTheRhythm extends Plugin {
       name: "Open sidebar view",
       callback: () => {
         activateSidebarView();
+      },
+    });
+
+    this.addCommand({
+      id: "add-ktr-manual-entry",
+      name: "Add manual entry",
+      callback: () => {
+        new ManualEntryModal(state.plugin.app).open();
       },
     });
 

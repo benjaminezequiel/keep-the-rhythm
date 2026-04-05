@@ -7,11 +7,11 @@ import { getDB } from "../db/db";
 import { DailyActivity, TimeEntry } from "@/db/types";
 import KeepTheRhythm from "../main";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
-import { formatDate } from "@/utils/dateUtils";
+import { getCurrentTimeKey } from "@/utils/dateUtils";
 import { floorMomentToFive } from "@/utils/dateUtils";
 import { moment as _moment } from "obsidian";
 import { emit } from "process";
-import { sumBothTimeEntries } from "@/utils/utils";
+import { getExistingOrCreateNewEntry, sumBothTimeEntries } from "@/utils/utils";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -142,30 +142,7 @@ export async function handleFileOpen(file: TFile) {
     return;
   }
 
-  let entry = await getDB()
-    .dailyActivity.where("[date+filePath]")
-    .equals([state.today, file.path])
-    .first();
-
-  /** File was not yet seen today, create an entry for it */
-  if (!entry) {
-    const content = await state.plugin.app.vault.read(file);
-    const currentWordCount = getLanguageBasedWordCount(
-      content,
-      state.plugin.data.settings.enabledLanguages,
-    );
-
-    entry = {
-      date: state.today,
-      filePath: file.path,
-      wordCountStart: currentWordCount,
-      charCountStart: content.length,
-      changes: [],
-    };
-
-    await getDB().dailyActivity.add(entry);
-  }
-
+  const entry = await getExistingOrCreateNewEntry(file, state.today);
   if (entry) state.setCurrentActivity(entry);
   state.isUpdatingActivity = false;
 
@@ -269,7 +246,7 @@ export async function handleFileDelete(file: TFile) {
         let wordSum = 0;
         let charSum = 0;
 
-        const currentTimeKey = floorMomentToFive(moment()).format("HH:mm");
+        const currentTimeKey = getCurrentTimeKey();
 
         /** If no changed was made to the file
          *  Then the delta is just the word count when it was opened

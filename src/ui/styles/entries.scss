@@ -1,106 +1,129 @@
 .todayEntries__section-title {
-	color: var(--text-muted);
-	font-size: var(--font-smallest);
+  color: var(--text-muted);
+  font-size: var(--font-smallest);
+  width: 100%;
 }
 
 .todayEntries__header {
-	display: flex;
-	padding: 8px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	align-items: center;
-	justify-content: space-between;
+  display: flex;
+  padding: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 
-	&:hover button.todayEntries__entry-unit {
-		margin-left: 6px;
-		max-width: 18px;
-		opacity: 1;
-	}
+  &:hover {
+    button.todayEntries__entry-unit,
+    button.todayEntries__manual-entry {
+      max-width: 18px;
+      opacity: 1;
+    }
+  }
 }
 
 .todayEntires__list-item:hover {
-	button.todayEntries__delete-button {
-		margin-left: 6px;
-		max-width: 18px;
-		opacity: 1;
-	}
+  button.todayEntries__delete-button {
+    margin-left: 6px;
+    max-width: 18px;
+    opacity: 1;
+  }
 }
 
 button.todayEntries__delete-button,
-button.todayEntries__entry-unit {
-	transition:
-		margin-left 200ms ease,
-		max-width 200ms ease,
-		opacity 200ms ease;
-	height: 100%;
-	padding: 0;
-	color: var(--text-error);
-	border: none;
-	box-shadow: none;
-	background-color: transparent;
-	cursor: pointer;
-	margin-left: px;
-	opacity: 0;
-	max-width: 0;
+button.todayEntries__entry-unit,
+button.todayEntries__manual-entry {
+  transition:
+    margin-left 200ms ease,
+    max-width 200ms ease,
+    opacity 200ms ease;
+  height: 100%;
+  padding: 0;
+  color: var(--text-error);
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+  cursor: pointer;
+  margin-left: px;
+  opacity: 0;
+  max-width: 0;
 }
 
-button.todayEntries__entry-unit {
-	color: var(--text-muted);
+button.todayEntries__entry-unit,
+button.todayEntries__manual-entry {
+  color: var(--text-muted);
 }
 .todayEntries__list-item-right {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .empty-data {
-	text-align: center;
-	color: var(--text-faint);
-	margin-top: 8px;
-	margin-bottom: 8px;
+  text-align: center;
+  color: var(--text-faint);
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .todayEntries__section {
-	margin-top: 8px;
-	display: flex;
-	flex-direction: column;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
 
-	background: var(--background-primary);
-	border-radius: var(--radius-m);
-	max-width: 100%;
-	border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  border-radius: var(--radius-m);
+  max-width: 100%;
+  border: 1px solid var(--background-modifier-border);
 }
 
 .todayEntires__list-item {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 2px;
-	padding: 6px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
 }
 
 .todayEntires__list-item:not(:last-child) {
-	border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .todayEntries__file-path {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	text-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-wrap: nowrap;
 
-	&:hover {
-		text-decoration: underline;
-		cursor: pointer;
-	}
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 
 .todayEntries__word-count {
-	min-width: fit-content;
-	text-wrap: nowrap;
-	color: var(--text-muted);
+  min-width: fit-content;
+  text-wrap: nowrap;
+  color: var(--text-muted);
 }
 
 .todayEntries_list-item-unit {
-	color: var(--text-muted);
-	padding-left: 3px;
-	letter-spacing: -0.25px;
+  color: var(--text-muted);
+  padding-left: 3px;
+  letter-spacing: -0.25px;
+}
+
+// manual entry modal
+.ktr-no-border {
+  //   border-top: none !important;
+}
+
+.ktr-hidden-date-input {
+  position: absolute !important;
+  bottom: -4px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ktr-date-button {
+  overflow: hidden;
+  position: relative;
 }

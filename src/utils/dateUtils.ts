@@ -64,3 +64,7 @@ export function scheduleNextDayTrigger(onDayChange: () => void): number {
     scheduleNextDayTrigger(onDayChange);
   }, msUntilNextDay);
 }
+
+export function getCurrentTimeKey() {
+  return floorMomentToFive(moment()).format("HH:mm");
+}

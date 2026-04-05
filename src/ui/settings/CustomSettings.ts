@@ -1,5 +1,5 @@
 import { getByPath, setByPath } from "./SettingsTab";
-import { SettingItem } from "./settingSchema";
+import { SettingItem } from "./SettingSchema";
 import { updateVisibility } from "./SettingsTab";
 import { Setting } from "obsidian";
 import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
