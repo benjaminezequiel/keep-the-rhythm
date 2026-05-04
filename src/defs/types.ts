@@ -64,6 +64,7 @@ export enum HeatmapColorModes {
 }
 
 export interface Settings {
+  excludeFilesRegex: string;
   dailyWritingGoal: number; // created as setting, not used anywhere yet
   enabledLanguages: Language[]; // guides the definition of REGEXes for word counting
   globalFilter?: string; // not used yet
@@ -138,6 +139,7 @@ export interface HeatmapConfig {
   };
 }
 export const DEFAULT_SETTINGS: Settings = {
+  excludeFilesRegex: "",
   enabledLanguages: ["LATIN"],
   dailyWritingGoal: 500,
   startOfTheWeek: "SUNDAY",

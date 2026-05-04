@@ -18,6 +18,28 @@ const moment = _moment as unknown as typeof _moment.default;
 let dbUpdateTimeout: NodeJS.Timeout | null = null;
 const DEBOUNCE_TIME = 100; // ms
 
+let excludeRegexCache: { pattern: string; regexp: RegExp | null } = { pattern: "", regexp: null };
+
+export function isFileExcluded(path: string): boolean {
+  const pattern = state.plugin?.data?.settings?.excludeFilesRegex || "";
+  if (!pattern) return false;
+
+  if (excludeRegexCache.pattern !== pattern) {
+    excludeRegexCache.pattern = pattern;
+    try {
+      excludeRegexCache.regexp = new RegExp(pattern);
+    } catch (e) {
+      console.warn("Keep the Rhythm: Invalid exclude string regex pattern", pattern);
+      excludeRegexCache.regexp = null;
+    }
+  }
+
+  if (excludeRegexCache.regexp) {
+    return excludeRegexCache.regexp.test(path);
+  }
+  return false;
+}
+
 /**
  * @function handleEditorChange
  * Fires everytime the user makes an input inside a Markdown editor;
@@ -132,7 +154,7 @@ export async function handleEditorChange(
  */
 
 export async function handleFileOpen(file: TFile) {
-  if (!file || file.extension !== "md") {
+  if (!file || file.extension !== "md" || isFileExcluded(file.path)) {
     return;
   }
   state.isUpdatingActivity = true;
@@ -233,7 +255,7 @@ async function checkStreak() {
  */
 export async function handleFileDelete(file: TFile) {
   // Add this check at the beginning
-  if (!file || file.extension !== "md") {
+  if (!file || file.extension !== "md" || isFileExcluded(file.path)) {
     return;
   }
   //FUTURE: correct file delta is only calculated if the user opens the file first

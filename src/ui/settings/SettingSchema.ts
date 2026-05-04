@@ -1,6 +1,6 @@
 export interface SettingItem {
   key: string;
-  type: "toggle" | "number" | "dropdown" | "date" | "custom";
+  type: "text" | "toggle" | "number" | "dropdown" | "date" | "custom";
   title: string;
   description?: string;
   placeholder?: string;
@@ -23,6 +23,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
       id: "general",
       title: "General",
       settings: [
+        {
+          key: "excludeFilesRegex",
+          type: "text",
+          title: "Exclude Files (Regex)",
+          description: "Regex pattern to ignore files (e.g. .*conflict.*\\.md for Git conflicts).",
+          placeholder: ".*conflict.*\\.md",
+        },
         {
           key: "enabledLanguages",
           type: "custom",
