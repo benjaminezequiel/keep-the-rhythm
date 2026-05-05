@@ -196,6 +196,7 @@ export class SettingsTab extends PluginSettingTab {
 
     list.forEach((pattern, index) => {
       new Setting(containerEl)
+        .setName(`${index + 1} - Excluded Regex Pattern:`)
         .addText((text) =>
           text
             .setPlaceholder(".*conflict.*\\.md")
