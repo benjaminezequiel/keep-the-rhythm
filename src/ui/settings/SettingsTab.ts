@@ -35,6 +35,10 @@ export class SettingsTab extends PluginSettingTab {
         // const currentValue = getByPath(this.settings, setting.key);
         // updateVisibility(setting.key, currentValue);
       });
+
+      if (section.id === "general") {
+        this.renderExcludeRegexList(containerEl);
+      }
     });
 
     // Extra settings and elements not contemplated by settings setup
@@ -94,6 +98,19 @@ export class SettingsTab extends PluginSettingTab {
         });
         break;
 
+      case "text":
+        setting.addText((text) =>
+          text
+            .setPlaceholder(config.placeholder ?? "")
+            .setValue(String(currentValue ?? ""))
+            .onChange(async (value) => {
+              setByPath(this.settings, config.key, value);
+              await this.plugin.updateAndSaveEverything(); // Maybe add debounce
+              updateVisibility(config.key, value);
+            }),
+        );
+        break;
+
       case "number":
         setting.addText((text) =>
           text
@@ -149,6 +166,57 @@ export class SettingsTab extends PluginSettingTab {
           break;
         }
     }
+  }
+
+  private renderExcludeRegexList(containerEl: HTMLElement) {
+    new Setting(containerEl)
+      .setName("Exclude Files List (Regex)")
+      .setDesc("A list of Regex patterns to ignore files (e.g. .*conflict.*\\.md for Git conflicts). Files matching any of these will not be tracked.")
+      .addButton((btn) =>
+        btn
+          .setIcon("plus")
+          .setTooltip("Add Regex")
+          .onClick(async () => {
+            this.settings.excludeFilesRegexList.push("");
+            await this.plugin.updateAndSaveEverything();
+            this.display(); // Re-render tab
+          })
+      );
+
+    // Migrate from older version if needed
+    if (!this.settings.excludeFilesRegexList) {
+      if (typeof (this.settings as any).excludeFilesRegex === "string") {
+        this.settings.excludeFilesRegexList = [(this.settings as any).excludeFilesRegex];
+      } else {
+        this.settings.excludeFilesRegexList = [];
+      }
+    }
+
+    const list = this.settings.excludeFilesRegexList;
+
+    list.forEach((pattern, index) => {
+      new Setting(containerEl)
+        .setName(`${index + 1} - Excluded Regex Pattern:`)
+        .addText((text) =>
+          text
+            .setPlaceholder(".*conflict.*\\.md")
+            .setValue(pattern)
+            .onChange(async (value) => {
+              this.settings.excludeFilesRegexList[index] = value;
+              await this.plugin.updateAndSaveEverything();
+            })
+        )
+        .addButton((btn) =>
+          btn
+            .setIcon("trash")
+            .setTooltip("Delete Regex")
+            .onClick(async () => {
+              this.settings.excludeFilesRegexList.splice(index, 1);
+              await this.plugin.updateAndSaveEverything();
+              this.display(); // Re-render tab
+            })
+        );
+    });
   }
 }
 

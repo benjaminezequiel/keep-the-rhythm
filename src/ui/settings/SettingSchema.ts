@@ -1,6 +1,6 @@
 export interface SettingItem {
   key: string;
-  type: "toggle" | "number" | "dropdown" | "date" | "custom";
+  type: "text" | "toggle" | "number" | "dropdown" | "date" | "custom";
   title: string;
   description?: string;
   placeholder?: string;
