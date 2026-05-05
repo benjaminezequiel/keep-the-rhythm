@@ -24,13 +24,6 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
       title: "General",
       settings: [
         {
-          key: "excludeFilesRegex",
-          type: "text",
-          title: "Exclude Files (Regex)",
-          description: "Regex pattern to ignore files (e.g. .*conflict.*\\.md for Git conflicts).",
-          placeholder: ".*conflict.*\\.md",
-        },
-        {
           key: "enabledLanguages",
           type: "custom",
           title: "Enabled Languages",

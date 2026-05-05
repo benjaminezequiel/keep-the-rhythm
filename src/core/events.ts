@@ -18,26 +18,33 @@ const moment = _moment as unknown as typeof _moment.default;
 let dbUpdateTimeout: NodeJS.Timeout | null = null;
 const DEBOUNCE_TIME = 100; // ms
 
-let excludeRegexCache: { pattern: string; regexp: RegExp | null } = { pattern: "", regexp: null };
+let excludeRegexCache: { patterns: string[]; regexps: RegExp[] } = { patterns: [], regexps: [] };
 
 export function isFileExcluded(path: string): boolean {
-  const pattern = state.plugin?.data?.settings?.excludeFilesRegex || "";
-  if (!pattern) return false;
+  // Gracefull fallback to array if it is migrated from the single string format
+  let list = state.plugin?.data?.settings?.excludeFilesRegexList;
+  if (!list && typeof (state.plugin?.data?.settings as any)?.excludeFilesRegex === "string") {
+    list = [(state.plugin?.data?.settings as any).excludeFilesRegex];
+  } else if (!list) {
+    list = [];
+  }
 
-  if (excludeRegexCache.pattern !== pattern) {
-    excludeRegexCache.pattern = pattern;
-    try {
-      excludeRegexCache.regexp = new RegExp(pattern);
-    } catch (e) {
-      console.warn("Keep the Rhythm: Invalid exclude string regex pattern", pattern);
-      excludeRegexCache.regexp = null;
+  // Check if cache needs update
+  const cacheKey = JSON.stringify(list);
+  if (JSON.stringify(excludeRegexCache.patterns) !== cacheKey) {
+    excludeRegexCache.patterns = [...list];
+    excludeRegexCache.regexps = [];
+    for (const pattern of list) {
+      if (!pattern) continue;
+      try {
+        excludeRegexCache.regexps.push(new RegExp(pattern));
+      } catch (e) {
+        console.warn("Keep the Rhythm: Invalid exclude string regex pattern", pattern);
+      }
     }
   }
 
-  if (excludeRegexCache.regexp) {
-    return excludeRegexCache.regexp.test(path);
-  }
-  return false;
+  return excludeRegexCache.regexps.some((regex) => regex.test(path));
 }
 
 /**
