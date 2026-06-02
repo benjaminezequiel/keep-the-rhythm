@@ -46,6 +46,15 @@ export const formatDate = (date: Date): string => {
   return moment(date).format("YYYY-MM-DD");
 };
 
+/**
+ * Timestamp (ms) of the next local midnight. Used as a cheap day-rollover
+ * boundary: comparing Date.now() against this is a single integer comparison,
+ * avoiding a per-keystroke date re-format.
+ */
+export function getNextMidnightMs(): number {
+  return moment().add(1, "day").startOf("day").valueOf();
+}
+
 export function getDateBasedOnIndex(index: number) {
   const today = moment();
   const monday = today.clone().startOf("isoWeek"); // isoWeek starts on Monday

@@ -1,5 +1,5 @@
 import { DailyActivity } from "@/db/types";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, getNextMidnightMs } from "@/utils/dateUtils";
 import KeepTheRhythm from "@/main";
 import { App } from "obsidian";
 
@@ -60,11 +60,30 @@ export class PluginState {
    * FUTURE: add a setting to change date format!
    */
   private _today: string = formatDate(new Date());
+
+  /**
+   * Timestamp (ms) of the next local midnight. Compared against Date.now() by
+   * hasDayRolledOver() so the per-keystroke day check is a single integer
+   * comparison rather than a date re-format. Recomputed whenever the day advances.
+   */
+  private _nextMidnightMs: number = getNextMidnightMs();
+
   get today() {
     return this._today;
   }
+
+  /**
+   * True once the wall clock has passed the cached next-midnight boundary — i.e.
+   * the calendar day has rolled over since the last setToday(). Cheap enough to
+   * call on every edit; it only does real work (via setToday) at the boundary.
+   */
+  hasDayRolledOver(): boolean {
+    return Date.now() >= this._nextMidnightMs;
+  }
+
   setToday() {
     this._today = formatDate(new Date());
+    this._nextMidnightMs = getNextMidnightMs();
 
     /** Everything is updated on day change to ensure components have the current dates and etc. */
     this.emit(EVENTS.REFRESH_EVERYTHING);
