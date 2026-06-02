@@ -34,14 +34,33 @@ export async function handleEditorChange(
     return;
   }
 
+  /**
+   * Cheap day-rollover refresh. state.today is a cached "YYYY-MM-DD" string; the
+   * gate only re-derives it when the wall clock actually crosses the precomputed
+   * next-midnight boundary — in the common case it's a single Date.now() integer
+   * comparison, no date formatting. We don't rely on the midnight setTimeout for
+   * this: it is deferred by OS sleep when Obsidian is left open overnight.
+   */
+  if (state.hasDayRolledOver()) {
+    state.setToday();
+  }
+
   let activity = state.currentActivity;
 
   /**
-   * Handle mismatches between state and current opened file
-   * Only happens if the user is editing stuff really really fast, some of those inputs might be ignored at the start.
-   * But I think it's okay, there might just be a slight mismatch because of wordCountStart if the file wasn't seen today
+   * Re-sync when there is no activity, when the focused file changed, OR when
+   * the current activity belongs to a previous day — the last is a free string
+   * compare against the cached day. That clause is what catches a file left open
+   * across midnight: without it, post-midnight edits are recorded against
+   * activity.date (the day the file was opened) and counted toward yesterday.
+   * The rebuild itself is delegated to handleFileOpen, whose date-aware guard
+   * is what allows the same-file rebuild to actually happen.
    * */
-  if (!activity || activity?.filePath !== info.file.path) {
+  if (
+    !activity ||
+    activity.filePath !== info.file.path ||
+    activity.date !== state.today
+  ) {
     // If handleFileOpen is not running (some weird focusing states), make it run and update the activity
     if (!state.isUpdatingActivity) {
       await handleFileOpen(info.file);
@@ -135,16 +154,47 @@ export async function handleFileOpen(file: TFile) {
   if (!file || file.extension !== "md") {
     return;
   }
-  state.isUpdatingActivity = true;
 
-  /** Return if the file "opened" is the same that was seen last time. */
-  if (file.path == state.currentActivity?.filePath) {
+  /**
+   * Keep the cached day current with the same cheap gate used in
+   * handleEditorChange. If the day rolled over while Obsidian stayed open, this
+   * advances state.today so the sidebar/heatmap and any activity created below
+   * use the correct date — even if the midnight timer never fired (OS sleep).
+   */
+  if (state.hasDayRolledOver()) {
+    state.setToday();
+  }
+
+  /**
+   * Short-circuit only when this file is already the active activity AND that
+   * activity belongs to the current day. The previous version compared the file
+   * path alone, so re-focusing a file left open across midnight matched on path
+   * and kept yesterday's activity. This date-aware guard is also what lets
+   * handleEditorChange's staleness check rebuild: on a rollover it calls us for
+   * the same file, and the `date === state.today` clause makes us fall through
+   * and create today's activity instead of early-returning.
+   */
+  if (
+    file.path === state.currentActivity?.filePath &&
+    state.currentActivity?.date === state.today
+  ) {
     return;
   }
 
-  const entry = await getExistingOrCreateNewEntry(file, state.today);
-  if (entry) state.setCurrentActivity(entry);
-  state.isUpdatingActivity = false;
+  /**
+   * Guard concurrent editor-change events while we (re)create the activity. The
+   * no-op check above runs BEFORE this flag is set, and try/finally always
+   * clears it. The old code set the flag, then early-returned on the same-file
+   * case without clearing it, leaving isUpdatingActivity stuck `true` — which
+   * makes handleEditorChange bail at its guard and stop counting entirely.
+   */
+  state.isUpdatingActivity = true;
+  try {
+    const entry = await getExistingOrCreateNewEntry(file, state.today);
+    if (entry) state.setCurrentActivity(entry);
+  } finally {
+    state.isUpdatingActivity = false;
+  }
 
   state.emit(EVENTS.REFRESH_EVERYTHING);
 }
@@ -156,12 +206,6 @@ export async function handleFileOpen(file: TFile) {
 async function flushChangesToDB(activity: DailyActivity) {
   // TODO: use this globally, making all updates on info real time by using stores but flushing them to the DB ocasionally.
   // probably here is a good moment to update the STREAK data?
-
-  /** Simple check if the day has passed to update everything if it did.*/
-  //   const today = formatDate(new Date());
-  //   if (today !== state.today) {
-  //     state.setToday();
-  //   }
 
   if (!activity) return;
 
