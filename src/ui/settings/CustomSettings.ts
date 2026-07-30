@@ -65,62 +65,39 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 // ------------------------
 // Language dropdown
 // ------------------------
+const ALL_LANGUAGES: Language[] = ["LATIN", "CJK", "JAPANESE", "KOREAN", "CYRILLIC", "GREEK", "ARABIC", "HEBREW", "INDIC", "SOUTHEAST_ASIAN"];
+
+const LANGUAGE_PRESETS: Record<string, { label: string; scripts: Language[] }> = {
+  basic:   { label: "Basic (Latin only)", scripts: ["LATIN"] },
+  chinese: { label: "Chinese (中文)",     scripts: ["LATIN", "CJK"] },
+  cjk:     { label: "CJK Support",       scripts: ["LATIN", "CJK", "JAPANESE", "KOREAN"] },
+  full:    { label: "Full Unicode",      scripts: ALL_LANGUAGES },
+};
+
 export function createLanguageDropdown(setting: Setting) {
   const settings = state.plugin.data.settings;
-  const enabledLanguages = settings.enabledLanguages || [];
-  let loadedLanguage: string;
+  const enabled = settings.enabledLanguages || [];
 
-  if (enabledLanguages.length === 1 && enabledLanguages.includes("LATIN")) loadedLanguage = "basic";
-  else if (enabledLanguages.length === 2 && enabledLanguages.includes("LATIN") && enabledLanguages.includes("CJK")) loadedLanguage = "chinese";
-  else if (enabledLanguages.length === 4) loadedLanguage = "cjk";
-  else if (enabledLanguages.length > 4) loadedLanguage = "full";
-  else loadedLanguage = "basic";
+  const loadedKey =
+    Object.keys(LANGUAGE_PRESETS).find((k) => {
+      const a = LANGUAGE_PRESETS[k].scripts;
+      if (enabled.length !== a.length) return false;
+      const sorted = [...enabled].sort();
+      return [...a].sort().every((v, i) => v === sorted[i]);
+    }) || "custom";
+
+  const options: Record<string, string> = {};
+  for (const k of Object.keys(LANGUAGE_PRESETS)) options[k] = LANGUAGE_PRESETS[k].label;
 
   setting.setClass("ktr-first").addDropdown((dropdown) => {
-    const scriptOptions = {
-      basic: "Basic (Latin only)",
-      cjk: "CJK Support",
-      chinese: "Chinese (中文)",
-      full: "Full Unicode",
-    };
-
-    dropdown
-      .addOptions(scriptOptions)
-      .setValue(loadedLanguage)
-      .onChange((value) => {
-        let newScripts: Language[] = [];
-        switch (value) {
-          case "basic":
-            newScripts = ["LATIN"];
-            break;
-          case "cjk":
-            newScripts = ["LATIN", "CJK", "JAPANESE", "KOREAN"];
-            break;
-          case "chinese":
-            newScripts = ["LATIN", "CJK"];
-            break;
-          case "full":
-            newScripts = [
-              "LATIN",
-              "CJK",
-              "JAPANESE",
-              "KOREAN",
-              "CYRILLIC",
-              "GREEK",
-              "ARABIC",
-              "HEBREW",
-              "INDIC",
-              "SOUTHEAST_ASIAN",
-            ];
-            break;
-          case "custom":
-            // TODO: implement checkboxes if needed
-            break;
-        }
-        settings.enabledLanguages = [...newScripts];
-        state.plugin.updateAndSaveEverything();
-        updateVisibility("enabledLanguages", newScripts);
-      });
+    dropdown.addOptions(options).setValue(loadedKey).onChange((value) => {
+      const preset = LANGUAGE_PRESETS[value];
+      if (!preset) return;
+      const newScripts = [...preset.scripts];
+      settings.enabledLanguages = newScripts;
+      state.plugin.updateAndSaveEverything();
+      updateVisibility("enabledLanguages", newScripts);
+    });
   });
 }
 
