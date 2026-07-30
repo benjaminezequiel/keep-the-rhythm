@@ -3,7 +3,6 @@ import {
 	Plugin,
 	TFile,
 	TAbstractFile,
-	Notice,
 	moment as _moment,
 } from "obsidian";
 
@@ -20,12 +19,11 @@ import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
 
-import { formatDate } from "@/utils/dateUtils";
-
 import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
+import { backupData } from "@/core/backup";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -54,14 +52,7 @@ export default class KeepTheRhythm extends Plugin {
 
 		const loadedData = await this.loadData();
 
-		if (loadedData) {
-			// add setting to remove backups
-			try {
-				await this.backupDataToVaultFolder(loadedData);
-			} catch (err) {
-				console.error("KTR Error trying to create backup: ", err);
-			}
-		}
+		await backupData(loadedData, this.app);
 
 		await this.initializeDataFromJSON(loadedData);
 
@@ -135,116 +126,6 @@ export default class KeepTheRhythm extends Plugin {
 					await this.saveData(this.data);
 				}
 			}
-		}
-	}
-
-	private async backupDataToVaultFolder(data: any) {
-		const backupConfig =
-			data.settings.backupConfig || this.data.settings.backupConfig;
-
-		// Check if backups are enabled
-		if (!backupConfig.enabled) {
-			console.log("KTR: Backups disabled, ignoring");
-			return;
-		}
-
-		const folderPath = backupConfig.folderPath || ".keep-the-rhythm";
-		const fileName = `backup-${formatDate(new Date())}-${data.schema}.json`;
-		const backupPath = `${folderPath}/${fileName}`;
-		const jsonData = JSON.stringify(data, null, 2);
-
-		const folderExists = await this.app.vault.adapter.exists(folderPath);
-
-		if (!folderExists) {
-			await this.app.vault.adapter.mkdir(folderPath);
-		}
-
-		const filesOnBackupsFolder =
-			await this.app.vault.adapter.list(folderPath);
-		const backupFiles = filesOnBackupsFolder.files.filter((f) =>
-			f.endsWith(".json"),
-		);
-
-		// Clean backups based on user preference
-		const maxBackups = backupConfig.maxNumberOfBackups || 3;
-		if (backupFiles.length >= maxBackups) {
-			await this.cleanOlderBackups(backupFiles, maxBackups);
-		}
-
-		// This if runs if the user has data from previous schemas, checking
-		// every backup to see if the data was already backed up and saving it otherwise.
-		if (data.schema !== "0.3") {
-			// Compare against all existing backups
-			for (const filePath of backupFiles) {
-				try {
-					if (!(await this.app.vault.adapter.exists(filePath))) {
-						console.error("File does not exist:", filePath);
-						return;
-					}
-					const contents =
-						await this.app.vault.adapter.read(filePath);
-					if (contents && contents === jsonData) {
-						return;
-					}
-				} catch (err) {
-					console.error("Failed to read file:", filePath, err);
-					return null;
-				}
-			}
-			// No identical backup found, save new one
-			await this.app.vault.adapter.write(backupPath, jsonData);
-			new Notice("KTR: New backup saved.");
-		} else {
-			await this.app.vault.adapter.write(backupPath, jsonData);
-			new Notice("KTR: First backup created.");
-		}
-	}
-
-	private async cleanOlderBackups(backupPaths: string[], maxBackups: number) {
-		const now = window.moment();
-
-		// Sort backups by date (newest first)
-		const backupsWithDates = backupPaths
-			.map((fullPath) => {
-				const fileName = fullPath.split("/").pop();
-				if (!fileName) return null;
-
-				// Match: backup-YYYY-MM-DD(-optionalSchema).json
-				const match = fileName.match(
-					/^backup-(\d{4}-\d{2}-\d{2})(?:-[\w\d.]+)?\.json$/,
-				);
-				if (!match) return null;
-
-				const dateStr = match[1];
-				const fileDate = window.moment(dateStr, "YYYY-MM-DD", true);
-
-				if (!fileDate.isValid()) {
-					console.warn(
-						`Skipping file with invalid date: ${fileName}`,
-					);
-					return null;
-				}
-
-				return { fullPath, fileName, fileDate };
-			})
-			.filter((item) => item !== null)
-			.sort((a, b) => b!.fileDate.valueOf() - a!.fileDate.valueOf());
-
-		// Keep only the most recent maxBackups, delete the rest
-		for (let i = maxBackups; i < backupsWithDates.length; i++) {
-			const backup = backupsWithDates[i];
-			if (!backup) continue;
-
-			const fileExists = await this.app.vault.adapter.exists(
-				backup.fullPath,
-			);
-			if (!fileExists) {
-				console.warn(`File already missing: ${backup.fullPath}`);
-				continue;
-			}
-
-			await this.app.vault.adapter.remove(backup.fullPath);
-			console.log(`Deleted old backup: ${backup.fileName}`);
 		}
 	}
 
@@ -391,7 +272,7 @@ export default class KeepTheRhythm extends Plugin {
 		// ordered: an un-awaited clear() could otherwise empty the DB before
 		// saveDataToJSON snapshots it, backing up (and saving) empty stats.
 		await this.saveDataToJSON();
-		await this.backupDataToVaultFolder(this.data);
+		await backupData(this.data, this.app);
 
 		await getDB().dailyActivity.clear();
 	}
