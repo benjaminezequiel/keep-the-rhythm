@@ -2,13 +2,7 @@ import { VIEW_TYPE } from "@/ui/views/PluginView";
 
 import { state } from "./pluginState";
 import { getDB } from "@/db/db";
-import * as utils from "@/utils/utils";
 
-/**
- * @function checkPreviousStreak check previous days to update streak if it is not correct
- * NOT SURE IF IT'S REALLY FULLY WORKING
- * ADD NOTIFICATION WITH RESULT
- */
 export async function checkPreviousStreak() {
   const data = state.plugin.data;
 
@@ -16,13 +10,17 @@ export async function checkPreviousStreak() {
 
   const activities = await getDB().dailyActivity.toArray();
 
-  for (let i = 0; i < activities.length; i++) {
-    const totalWords = utils.getTotalWords(activities[i]);
+  const wordsByDate = activities.reduce<Record<string, number>>((acc, act) => {
+    acc[act.date] = (acc[act.date] || 0) + act.wordsAdded;
+    return acc;
+  }, {});
+
+  for (const [date, totalWords] of Object.entries(wordsByDate)) {
     if (
       totalWords > data.settings.dailyWritingGoal &&
-      !data.stats?.daysWithCompletedGoal?.includes(activities[i].date)
+      !data.stats?.daysWithCompletedGoal?.includes(date)
     ) {
-      data.stats?.daysWithCompletedGoal?.push(activities[i].date);
+      data.stats?.daysWithCompletedGoal?.push(date);
     }
   }
 }
