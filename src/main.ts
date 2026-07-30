@@ -90,9 +90,11 @@ export default class KeepTheRhythm extends Plugin {
 			codeBlocks.createEntriesCodeBlock,
 		);
 
-		// Both REFRESH_EVERYTHING (cross-day / history / settings) and
-		// REFRESH_TODAY (only today's data changed) must schedule a JSON
-		// save — the debounce coalesces them regardless.
+		// The JSON save pipeline listens exclusively to DATA_PERSIST_NEEDED,
+		// which is emitted by the data layer *after* an IndexedDB write has
+		// actually resolved. Any other event is pure UI refresh and must
+		// not schedule a save — this prevents racing saves when only the
+		// in-memory activity object was mutated (before flushChangesToDB).
 		const scheduleSave = async () => {
 			if (this._isUnloading) return;
 
@@ -108,8 +110,7 @@ export default class KeepTheRhythm extends Plugin {
 				await this.saveDataToJSON();
 			}, this.JSON_DEBOUNCE_TIME);
 		};
-		state.on(EVENTS.REFRESH_EVERYTHING, scheduleSave);
-		state.on(EVENTS.REFRESH_TODAY, scheduleSave);
+		state.on(EVENTS.DATA_PERSIST_NEEDED, scheduleSave);
 	}
 
 	private async initializeDataFromJSON(loadedData: PluginData) {
@@ -232,9 +233,9 @@ export default class KeepTheRhythm extends Plugin {
 	async onunload() {
 		this._isUnloading = true;
 
-		// Flush in-memory changes to the DB. Must be awaited so all
-		// REFRESH_EVERYTHING emissions (and their debounced save timers)
-		// settle before we invalidate them below.
+		// Flush in-memory changes to the DB. Must be awaited so any pending
+		// TODAY/HISTORY data events + their DATA_PERSIST_NEEDED debounced
+		// save timers settle before we invalidate them below.
 		await events.cleanDBTimeout();
 
 		if (this.onFocusHandler !== null) {
@@ -245,7 +246,7 @@ export default class KeepTheRhythm extends Plugin {
 		// may have been queued before or during cleanDBTimeout. The timer
 		// is cancelled so it won't fire; if it already fired and the
 		// callback is pending, the generation check inside the callback
-		// (see REFRESH_EVERYTHING handler) will make it a no-op.
+		// (see DATA_PERSIST_NEEDED handler) will make it a no-op.
 		this._saveGen++;
 		if (this.JsonDebounceTimeout) {
 			clearTimeout(this.JsonDebounceTimeout);
@@ -270,6 +271,11 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 
+			let dbMutated = false;
+			// Note: this forEach runs async work in "fire and forget"; any
+			// actual DB put() still resolves eventually and the events
+			// below remain semantically correct ("something may have
+			// changed — re-render and re-snapshot").
 			newData.stats?.dailyActivity.forEach(async (activity, index) => {
 				let existingActivity;
 
@@ -284,6 +290,7 @@ export default class KeepTheRhythm extends Plugin {
 					return;
 				} else {
 					getDB().dailyActivity.put(activity);
+					dbMutated = true;
 				}
 			});
 
@@ -295,8 +302,17 @@ export default class KeepTheRhythm extends Plugin {
 				};
 			}
 
-			state.emit(EVENTS.REFRESH_EVERYTHING);
-			//TODO: ADD "SAVE AND UPDATE" HERE + EMIT UPDATE TO PLUGIN STATE
+			// External settings file could have changed settings, DB rows,
+			// or both. Fire the appropriately-scoped events:
+			//  - SETTINGS_CHANGED so SidebarView re-reads config
+			//  - HISTORY_DATA_CHANGED so Entries/Heatmap re-read history
+			//    (the imported dailyActivity could cover any date)
+			//  - DATA_PERSIST_NEEDED only if we actually wrote to IndexedDB
+			state.emit(EVENTS.SETTINGS_CHANGED);
+			state.emit(EVENTS.HISTORY_DATA_CHANGED);
+			if (dbMutated) {
+				state.emit(EVENTS.DATA_PERSIST_NEEDED);
+			}
 		} catch (error) {
 			console.error("Error in onExternalSettingsChange:", error);
 		}
@@ -338,25 +354,50 @@ export default class KeepTheRhythm extends Plugin {
 			this.data.stats.daysWithCompletedGoal,
 		);
 
+		let changed = false;
 		if (increase) {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {
 				return;
 			}
 			this.data.stats.daysWithCompletedGoal.push(state.today);
+			changed = true;
 		} else {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {
 				const newArray = this.data.stats.daysWithCompletedGoal?.filter(
 					(item) => item !== state.today,
 				);
 				this.data.stats.daysWithCompletedGoal = newArray;
+				changed = true;
 			}
 		}
-		this.quietSave();
+		// daysWithCompletedGoal lives in this.data.stats (NOT in IndexedDB),
+		// so quietSave persists it directly to data.json.  UI listeners that
+		// render streak / total-days data must re-read on HISTORY_DATA_CHANGED.
+		// No DATA_PERSIST_NEEDED required — that event is only for DB→JSON
+		// snapshots produced by saveDataToJSON.
+		if (changed) {
+			this.quietSave();
+			state.emit(EVENTS.HISTORY_DATA_CHANGED);
+		}
 	}
 
+	/**
+	 * Called by the settings UI (SettingsTab / CustomSettings) every time
+	 * a setting value changes. Persists plugin.data (which contains the
+	 * settings object) via saveData, then broadcasts:
+	 *   • SETTINGS_CHANGED — so SidebarView, Slot etc. re-read the new
+	 *     config (visibility toggles, goal, colors, tracked folders…).
+	 *   • checkDayChange() — syncs state.today to wall-clock and possibly
+	 *     emits DAY_CHANGED (Obsidian might have been open across midnight
+	 *     while the user was tweaking settings). Previously this relied on
+	 *     state.setToday() unconditionally which would *always* broadcast
+	 *     a day rollover even when nothing changed — the idempotent
+	 *     checkDayChange avoids that spurious broadcast.
+	 */
 	public async updateAndSaveEverything() {
 		await this.saveData(this.data);
-		state.setToday(); // already refreshes everything
+		state.emit(EVENTS.SETTINGS_CHANGED);
+		state.checkDayChange();
 	}
 
 	public async quietSave() {

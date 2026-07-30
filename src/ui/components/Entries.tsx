@@ -72,16 +72,25 @@ export const Entries = ({
 
   useEffect(() => {
     handleEntriesRefresh();
-    // Listen to both events: REFRESH_TODAY covers edits / file opens /
-    // file deletes within the current day; REFRESH_EVERYTHING covers
-    // cross-day rollovers, arbitrary-date deletions (via deleteActivityFromDate
-    // with a non-today date), renames, and external settings changes.
-    state.on(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
-    state.on(EVENTS.REFRESH_TODAY, handleEntriesRefresh);
+    // Entries show the list of activities for `date`.  Depending on
+    // which date the caller requested, we need different events:
+    //   • TODAY_DATA_CHANGED   — when showing today, words were added,
+    //                            current activity swapped, or a today-only
+    //                            DB row was modified.
+    //   • HISTORY_DATA_CHANGED — arbitrary-date deletion (manual entry
+    //                            delete or Entries delete for past date),
+    //                            file rename, streak changes.
+    //   • DAY_CHANGED          — calendar rolled over; if `date` was the
+    //                            previous "today", re-read in case it now
+    //                            points at a fresh / different date.
+    state.on(EVENTS.TODAY_DATA_CHANGED, handleEntriesRefresh);
+    state.on(EVENTS.HISTORY_DATA_CHANGED, handleEntriesRefresh);
+    state.on(EVENTS.DAY_CHANGED, handleEntriesRefresh);
 
     return () => {
-      state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
-      state.off(EVENTS.REFRESH_TODAY, handleEntriesRefresh);
+      state.off(EVENTS.TODAY_DATA_CHANGED, handleEntriesRefresh);
+      state.off(EVENTS.HISTORY_DATA_CHANGED, handleEntriesRefresh);
+      state.off(EVENTS.DAY_CHANGED, handleEntriesRefresh);
     };
   }, [date]);
 

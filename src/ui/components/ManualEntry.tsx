@@ -109,7 +109,9 @@ export class ManualEntryModal extends Modal {
 				.setCta()
 				.onClick(() => {
 					this.saveNewEntry();
-					state.emit(EVENTS.REFRESH_EVERYTHING);
+					// Event emission is handled inside addDeltaToActivity
+					// (data layer) — UI layers must not broadcast events
+					// directly.
 					this.close();
 				}),
 		);

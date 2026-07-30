@@ -44,10 +44,16 @@ export const KTRView = ({ plugin }: KTRView) => {
   useEffect(() => {
     updateData();
 
-    state.on(EVENTS.REFRESH_EVERYTHING, updateData);
+    // SidebarView only cares about settings (heatmap colors, slot config,
+    // visibility toggles) and day rollover.  Activity-data mutations
+    // (typing, file open etc.) do not touch these, so there is no need
+    // to listen to TODAY_DATA_CHANGED / HISTORY_DATA_CHANGED.
+    state.on(EVENTS.SETTINGS_CHANGED, updateData);
+    state.on(EVENTS.DAY_CHANGED, updateData);
 
     return () => {
-      state.off(EVENTS.REFRESH_EVERYTHING, updateData);
+      state.off(EVENTS.SETTINGS_CHANGED, updateData);
+      state.off(EVENTS.DAY_CHANGED, updateData);
     };
   }, []);
 

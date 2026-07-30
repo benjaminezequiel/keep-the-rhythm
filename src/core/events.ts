@@ -46,7 +46,13 @@ async function ensureActivityExists(file: TFile) {
   try {
     const entry = await getExistingOrCreateNewEntry(file, state.today);
     if (entry) state.setCurrentActivity(entry);
-    state.emit(EVENTS.REFRESH_TODAY);
+    // Either:
+    //  - entry was just created → getExistingOrCreateNewEntry already
+    //    emitted TODAY_DATA_CHANGED + DATA_PERSIST_NEEDED; or
+    //  - entry already existed in DB → no DB change, no persist needed,
+    //    but we still need to refresh UI so Slot shows the newly-swapped
+    //    currentActivity's counts.
+    state.emit(EVENTS.TODAY_DATA_CHANGED);
   } finally {
     state.isUpdatingActivity = false;
   }
@@ -172,9 +178,14 @@ async function processEditorChange(
 
   const wordsAdded = newWordCount - totalWords;
 
+  // This only mutates in-memory state (the activity object held by
+  // state.currentActivity). The DB is NOT updated yet — it's flushed
+  // later via flushChangesToDB. So broadcast TODAY_DATA_CHANGED so UI
+  // reflects the delta immediately, but DO NOT request persistence
+  // (DATA_PERSIST_NEEDED) until the IndexedDB write actually happens.
   activity.wordsAdded = (activity.wordsAdded || 0) + (wordsAdded || 0);
 
-  state.emit(EVENTS.REFRESH_TODAY);
+  state.emit(EVENTS.TODAY_DATA_CHANGED);
 
   /** Debounces updates to the DB, which only happens when
    *  the user stops editing the page for 200ms. */
@@ -221,23 +232,19 @@ export async function handleFileOpen(file: TFile) {
   if (entry) state.setCurrentActivity(entry);
   state.isUpdatingActivity = false;
 
-  state.emit(EVENTS.REFRESH_TODAY);
+  // Same rationale as ensureActivityExists: getExistingOrCreateNewEntry
+  // already emitted events if a row was created; if the row already
+  // existed we still need a UI refresh so currentActivity swap is seen.
+  state.emit(EVENTS.TODAY_DATA_CHANGED);
 }
 
 /**
  * @function flushChangesToDB
  * Debounced function that matches the state to the DB entries;
+ * DB write is the single source of truth for persistence, so we
+ * always emit DATA_PERSIST_NEEDED together with the UI refresh here.
  */
 async function flushChangesToDB(activity: DailyActivity) {
-  // TODO: use this globally, making all updates on info real time by using stores but flushing them to the DB ocasionally.
-  // probably here is a good moment to update the STREAK data?
-
-  /** Simple check if the day has passed to update everything if it did.*/
-  //   const today = formatDate(new Date());
-  //   if (today !== state.today) {
-  //     state.setToday();
-  //   }
-
   if (!activity) return;
 
   await getDB()
@@ -247,14 +254,16 @@ async function flushChangesToDB(activity: DailyActivity) {
       dailyEntry.wordsAdded = activity.wordsAdded;
     });
 
+  // DB write is done → both UI refresh and JSON persist are required.
   checkStreak();
-  state.emit(EVENTS.REFRESH_TODAY);
+  state.emit(EVENTS.TODAY_DATA_CHANGED);
+  state.emit(EVENTS.DATA_PERSIST_NEEDED);
 }
 
 /**
  * @function cleanDBTimeout
  * Clears timeouts and flushes any in-memory data to the DB.
- * Must be awaited so all REFRESH_EVERYTHING / REFRESH_TODAY emissions
+ * Must be awaited so all TODAY/HISTORY data-change and persist events
  * (and their debounced save timers) settle before the caller (onunload)
  * invalidates pending saves and clears the DB.
  */
@@ -291,7 +300,9 @@ async function checkStreak() {
 
 /**
  * @function handleFileDelete
- * Should probably just get the fileWordCount and consider it as delta in it's dailyActivity?
+ * Zeroes out today's contribution from the deleted file, then broadcasts
+ * both the UI refresh (today's totals changed) and the persist signal
+ * (DB row was actually modified).
  */
 export async function handleFileDelete(file: TFile) {
   if (!file || file.extension !== "md") {
@@ -310,7 +321,8 @@ export async function handleFileDelete(file: TFile) {
         dailyEntry.wordsAdded = -(dailyEntry.wordCountStart || 0);
       });
 
-    state.emit(EVENTS.REFRESH_TODAY);
+    state.emit(EVENTS.TODAY_DATA_CHANGED);
+    state.emit(EVENTS.DATA_PERSIST_NEEDED);
   } catch (error) {
     console.error(`KTR failed deleting ${file.path} | ${error}`);
   }
@@ -324,7 +336,14 @@ export function handleFileCreate(file: TFile) {}
 
 /**
  * @function handleFileRename
- * Update all references to this file to match new filepath
+ * Update all references to this file to match new filepath.
+ * Two cases:
+ *  (a) new path is outside tracking scope → drop all historical rows for
+ *      the old path (otherwise today's / history totals are inflated),
+ *      then broadcast HISTORY + persist.
+ *  (b) normal rename inside scope → rewrite every historical row's
+ *      filePath so heatmap/entries keep pointing at the right file,
+ *      then broadcast HISTORY + persist.
  */
 export async function handleFileRename(file: TFile, oldPath: string) {
   try {
@@ -332,7 +351,8 @@ export async function handleFileRename(file: TFile, oldPath: string) {
     // activity for the old path instead of carrying it over.
     if (!isPathTracked(file.path)) {
       await getDB().dailyActivity.where("filePath").equals(oldPath).delete();
-      state.emit(EVENTS.REFRESH_EVERYTHING);
+      state.emit(EVENTS.HISTORY_DATA_CHANGED);
+      state.emit(EVENTS.DATA_PERSIST_NEEDED);
       return;
     }
 
@@ -343,7 +363,8 @@ export async function handleFileRename(file: TFile, oldPath: string) {
         dailyEntry.filePath = file.path;
       });
 
-    state.emit(EVENTS.REFRESH_EVERYTHING);
+    state.emit(EVENTS.HISTORY_DATA_CHANGED);
+    state.emit(EVENTS.DATA_PERSIST_NEEDED);
   } catch (error) {
     console.error(`KTR failed renaming ${file.path} | ${error}`);
   }

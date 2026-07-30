@@ -201,7 +201,16 @@ export const deleteActivityFromDate = async (
 			.dailyActivity.where("[date+filePath]")
 			.equals([date, filePath])
 			.delete();
-		state.emit(EVENTS.REFRESH_EVERYTHING);
+		// Scope the UI refresh by the actual date deleted, and always
+		// request JSON persist since a DB row was removed. If the current
+		// activity was just nullified, TODAY_DATA_CHANGED also picks up
+		// the current-slot reset.
+		state.emit(
+			date === state.today
+				? EVENTS.TODAY_DATA_CHANGED
+				: EVENTS.HISTORY_DATA_CHANGED,
+		);
+		state.emit(EVENTS.DATA_PERSIST_NEEDED);
 	} catch {
 		const notice = new Notice(
 			"Failed to delete this entry! This is a bug, contact the developer.",
@@ -209,6 +218,15 @@ export const deleteActivityFromDate = async (
 	}
 };
 
+/**
+ * Applies `wordsDelta` to the given activity's DB row and broadcasts the
+ * appropriate events. Callers (e.g. ManualEntry modal) should NOT emit any
+ * event themselves after calling this — it's handled here so the data layer
+ * is the single source of truth for when things changed.
+ *
+ * The date on `dailyActivity` determines whether we broadcast TODAY vs
+ * HISTORY scope; a PERSIST signal is always emitted since the DB mutated.
+ */
 export async function addDeltaToActivity(
 	dailyActivity: DailyActivity,
 	wordsDelta: number,
@@ -219,4 +237,11 @@ export async function addDeltaToActivity(
 		.modify((selectedEntry) => {
 			selectedEntry.wordsAdded = (selectedEntry.wordsAdded || 0) + wordsDelta;
 		});
+
+	state.emit(
+		dailyActivity.date === state.today
+			? EVENTS.TODAY_DATA_CHANGED
+			: EVENTS.HISTORY_DATA_CHANGED,
+	);
+	state.emit(EVENTS.DATA_PERSIST_NEEDED);
 }

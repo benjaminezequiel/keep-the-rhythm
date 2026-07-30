@@ -125,19 +125,36 @@ export const Slot = ({
 	};
 
 	useEffect(() => {
-		// Defensive cleanup for both event types before re-registering.
+		// Defensive cleanup for all 4 event types before re-registering.
 		// Works around the weird off→on→off pattern that was here before
 		// (which hinted at duplicate-listener bugs).
-		state.off(EVENTS.REFRESH_EVERYTHING, updateData);
-		state.off(EVENTS.REFRESH_TODAY, updateData);
-		state.on(EVENTS.REFRESH_EVERYTHING, updateData);
-		state.on(EVENTS.REFRESH_TODAY, updateData);
+		state.off(EVENTS.TODAY_DATA_CHANGED, updateData);
+		state.off(EVENTS.HISTORY_DATA_CHANGED, updateData);
+		state.off(EVENTS.DAY_CHANGED, updateData);
+		state.off(EVENTS.SETTINGS_CHANGED, updateData);
+
+		// Slot re-renders on four events:
+		//  • TODAY_DATA_CHANGED   — current file word delta updated in memory
+		//                            or flushed to DB
+		//  • HISTORY_DATA_CHANGED — streak / daysWithCompletedGoal changed
+		//                            (e.g. goal hit or missed, manual entry
+		//                            for past date, file rename)
+		//  • DAY_CHANGED          — calendar day rolled over, state.today
+		//                            points at a new date
+		//  • SETTINGS_CHANGED     — daily writing goal / slot config changed
+		//                            (progress percentage depends on goal)
+		state.on(EVENTS.TODAY_DATA_CHANGED, updateData);
+		state.on(EVENTS.HISTORY_DATA_CHANGED, updateData);
+		state.on(EVENTS.DAY_CHANGED, updateData);
+		state.on(EVENTS.SETTINGS_CHANGED, updateData);
 
 		updateData();
 
 		return () => {
-			state.off(EVENTS.REFRESH_EVERYTHING, updateData);
-			state.off(EVENTS.REFRESH_TODAY, updateData);
+			state.off(EVENTS.TODAY_DATA_CHANGED, updateData);
+			state.off(EVENTS.HISTORY_DATA_CHANGED, updateData);
+			state.off(EVENTS.DAY_CHANGED, updateData);
+			state.off(EVENTS.SETTINGS_CHANGED, updateData);
 		};
 	}, [unitType, optionType, calcMode]);
 
