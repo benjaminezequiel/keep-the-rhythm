@@ -18,7 +18,6 @@ import { getDB, initDatabase } from "@/db/db";
 import { getActivityByDateAndFile } from "@/db/queries";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
-import { migrateDataFromOldFormat } from "@/utils/migrateData";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
 
 import { formatDate } from "@/utils/dateUtils";
@@ -32,7 +31,7 @@ const moment = _moment as unknown as typeof _moment.default;
 
 export default class KeepTheRhythm extends Plugin {
 	data: PluginData = {
-		schema: "0.2",
+		schema: "1.0",
 		settings: DEFAULT_SETTINGS,
 		stats: {
 			dailyActivity: [],
@@ -41,7 +40,6 @@ export default class KeepTheRhythm extends Plugin {
 
 	private onFocusHandler: (() => void) | null = null;
 	private JSON_DEBOUNCE_TIME = 1000;
-	private LAST_BREAKING_CHANGE_TO_SCHEMA = "0.2";
 
 	private JsonDebounceTimeout: any = null;
 	private _saveGen = 0;
@@ -65,27 +63,7 @@ export default class KeepTheRhythm extends Plugin {
 			}
 		}
 
-		/** Data is only loaded into dexie if it's the correct schema */
-		if (
-			loadedData &&
-			loadedData.schema == this.LAST_BREAKING_CHANGE_TO_SCHEMA
-		) {
-			await this.initializeDataFromJSON(loadedData);
-		} else if (
-			loadedData &&
-			loadedData.schema !== this.LAST_BREAKING_CHANGE_TO_SCHEMA
-		) {
-			new Notice("KTR: Migrating data from previous versions...");
-			await this.migrateDataFromJSON(loadedData);
-		} else if (!loadedData) {
-			this.data.schema = this.LAST_BREAKING_CHANGE_TO_SCHEMA;
-			this.data.stats = {
-				...STARTING_STATS,
-			};
-		} else {
-			this.data.stats = loadedData.stats;
-			this.data.settings = loadedData.settings;
-		}
+		await this.initializeDataFromJSON(loadedData);
 
 		await this.saveData(this.data);
 
@@ -270,17 +248,13 @@ export default class KeepTheRhythm extends Plugin {
 		}
 	}
 
-	private async migrateDataFromJSON(loadedData: any) {
-		const previousStats = migrateDataFromOldFormat(loadedData);
-		this.data.stats = previousStats.stats;
-		this.data.schema = "0.2";
-
-		if (this.data.stats) {
-			await getDB().dailyActivity.bulkAdd(this.data.stats.dailyActivity);
-		}
-	}
-
 	private async initializeDataFromJSON(loadedData: PluginData) {
+		if (!loadedData) {
+			this.data.stats = {
+				...STARTING_STATS,
+			};
+			return;
+		}
 		if (loadedData.settings) {
 			this.data.settings = {
 				...DEFAULT_SETTINGS,
