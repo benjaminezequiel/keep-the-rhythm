@@ -1,4 +1,3 @@
-import { Unit } from "@/defs/types";
 import { TargetCount } from "@/defs/types";
 import { getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
@@ -8,12 +7,12 @@ import { DailyActivity } from "@/db/types";
 import KeepTheRhythm from "../main";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { moment as _moment } from "obsidian";
-import { getExistingOrCreateNewEntry, sumBothTimeEntries } from "@/utils/utils";
+import { getExistingOrCreateNewEntry, getTotalWords } from "@/utils/utils";
 import { isPathTracked } from "./pathFilter";
 
 const moment = _moment as unknown as typeof _moment.default;
 
-let dbUpdateTimeout: NodeJS.Timeout | null = null;
+let dbUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_TIME = 100; // ms
 
 /**
@@ -29,7 +28,7 @@ const DEBOUNCE_TIME = 100; // ms
  */
 const EDITOR_CHANGE_SAMPLE_DELAY = 2000; // ms
 
-let editorChangeTimer: NodeJS.Timeout | null = null;
+let editorChangeTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingEditor: Editor | null = null;
 let pendingInfo: any = null;
 let pendingPlugin: KeepTheRhythm | null = null;
@@ -130,40 +129,25 @@ async function processEditorChange(
 
   if (!activity) return;
 
-  /** Calculate CHAR and WORD deltas based on state  */
+  /** Calculate WORD deltas based on state  */
   const currentContent = editor.getValue();
 
   const newWordCount = getLanguageBasedWordCount(
     currentContent,
     plugin.data.settings.enabledLanguages,
   );
-  const newCharCount = currentContent.length;
 
-  /**
-   * Calculates delta word count based on
-   * @var wordCountStart: amount of words the file started at the first time it was opened
-   * @var prevWordsAdded: amount of words written today (added across changes[])
-   * @var newWordCount: current amount of words in the file
-   */
-  const { totalWords, totalChars } = sumBothTimeEntries(activity);
+  const totalWords = getTotalWords(activity);
 
   const wordsAdded = newWordCount - totalWords;
-  const charsAdded = newCharCount - totalChars;
 
-  if (state.plugin.data.stats && (wordsAdded !== 0 || charsAdded !== 0)) {
+  if (state.plugin.data.stats && wordsAdded !== 0) {
     if (state.plugin.data.stats.wholeVaultWordCount !== undefined) {
       state.plugin.data.stats.wholeVaultWordCount += wordsAdded;
     }
-    if (state.plugin.data.stats.wholeVaultCharCount !== undefined) {
-      state.plugin.data.stats.wholeVaultCharCount += charsAdded;
-    }
   }
 
-  /**
-   * Accumulate the delta into the activity's flat word/char totals.
-   */
   activity.wordsAdded = (activity.wordsAdded || 0) + (wordsAdded || 0);
-  activity.charsAdded = (activity.charsAdded || 0) + (charsAdded || 0);
 
   state.emit(EVENTS.REFRESH_EVERYTHING);
 
@@ -236,7 +220,6 @@ async function flushChangesToDB(activity: DailyActivity) {
     .equals([activity.date, activity.filePath])
     .modify((dailyEntry) => {
       dailyEntry.wordsAdded = activity.wordsAdded;
-      dailyEntry.charsAdded = activity.charsAdded;
     });
 
   checkStreak();
@@ -269,10 +252,7 @@ export async function cleanDBTimeout() {
  */
 
 async function checkStreak() {
-  const writtenToday = await getCurrentCount(
-    Unit.WORD,
-    TargetCount.CURRENT_DAY,
-  );
+  const writtenToday = await getCurrentCount(TargetCount.CURRENT_DAY);
 
   const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
 
@@ -302,7 +282,6 @@ export async function handleFileDelete(file: TFile) {
         // Reverse the entire day's delta so the file's contribution
         // to today's stats is zeroed out.
         dailyEntry.wordsAdded = -(dailyEntry.wordCountStart || 0);
-        dailyEntry.charsAdded = -(dailyEntry.charCountStart || 0);
       });
 
     state.emit(EVENTS.REFRESH_EVERYTHING);

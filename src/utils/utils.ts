@@ -106,32 +106,16 @@ export function getRandomInt(min: number, max: number) {
 	return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
 
-export function sumBothTimeEntries(activity: DailyActivity): {
-	totalWords: number;
-	totalChars: number;
-} {
-	return {
-		totalWords: (activity.wordCountStart || 0) + (activity.wordsAdded || 0),
-		totalChars: (activity.charCountStart || 0) + (activity.charsAdded || 0),
-	};
+export function getTotalWords(activity: DailyActivity): number {
+	return (activity.wordCountStart || 0) + (activity.wordsAdded || 0);
 }
 
 export function sumTimeEntries(
 	dailyActivity: DailyActivity,
-	unit: Unit,
 	excludeStart?: boolean,
 ): number {
-	const start = excludeStart
-		? 0
-		: unit === Unit.WORD
-			? dailyActivity?.wordCountStart || 0
-			: dailyActivity?.charCountStart || 0;
-
-	const delta =
-		unit === Unit.WORD
-			? dailyActivity?.wordsAdded || 0
-			: dailyActivity?.charsAdded || 0;
-
+	const start = excludeStart ? 0 : dailyActivity?.wordCountStart || 0;
+	const delta = dailyActivity?.wordsAdded || 0;
 	return start + delta;
 }
 
@@ -277,9 +261,7 @@ export async function createActivityObject(file: TFile, date: string) {
 		date: date,
 		filePath: file.path,
 		wordCountStart: currentWordCount,
-		charCountStart: content.length,
 		wordsAdded: 0,
-		charsAdded: 0,
 	};
 
 	return newActivity;

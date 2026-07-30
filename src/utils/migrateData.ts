@@ -74,9 +74,7 @@ export function migrateDataFromOldFormat(oldData: OldFormat): PluginData {
               date,
               filePath,
               wordCountStart: fileData.initial,
-              charCountStart: 0,
               wordsAdded: wordDelta,
-              charsAdded: 0,
             };
 
             activityMap.set(activityKey, activity);
@@ -92,9 +90,7 @@ export function migrateDataFromOldFormat(oldData: OldFormat): PluginData {
           date,
           filePath: recoveredFilePath,
           wordCountStart: 0,
-          charCountStart: 0,
           wordsAdded: dayData.totalDelta,
-          charsAdded: 0,
         };
 
         activityMap.set(activityKey, activity);

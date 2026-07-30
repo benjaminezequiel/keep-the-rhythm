@@ -13,10 +13,8 @@ export async function mockMonthDailyActivity() {
 
 		const sessions = Math.floor(Math.random() * 5 + 1);
 		let wordsAdded = 0;
-		let charsAdded = 0;
 		for (let j = 0; j < sessions; j++) {
 			wordsAdded += Math.floor(Math.random() * 100);
-			charsAdded += Math.floor(Math.random() * 500);
 		}
 
 		const rand = Math.random();
@@ -33,9 +31,7 @@ export async function mockMonthDailyActivity() {
 			date: dateStr,
 			filePath,
 			wordCountStart: 0,
-			charCountStart: 0,
 			wordsAdded,
-			charsAdded,
 		});
 	}
 

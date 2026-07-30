@@ -14,15 +14,10 @@ export class ManualEntryModal extends Modal {
 		date: state.today,
 		filePath: "",
 		wordCountStart: 0,
-		charCountStart: 0,
 		wordsAdded: 0,
-		charsAdded: 0,
 	};
 
 	private wordsDelta = 0;
-	private charsDelta = 0;
-	private charsManuallySet = false;
-	private charsInput: TextComponent;
 
 	constructor(app: App) {
 		super(app);
@@ -62,31 +57,6 @@ export class ManualEntryModal extends Modal {
 			.addText((text) => {
 				text.onChange((value) => {
 					this.wordsDelta = Number(value);
-
-					if (!this.charsManuallySet) {
-						const derived = this.wordsDelta * 5;
-						this.charsDelta = derived;
-						this.charsInput.setValue(
-							derived === 0 ? "" : String(derived),
-						);
-					}
-				});
-			});
-
-		new Setting(this.contentEl)
-			.setName("Character Count")
-			.setClass("ktr-no-border")
-			.setDesc("Defaults to words × 5. Edit to override.")
-			.addText((text) => {
-				this.charsInput = text;
-				text.setPlaceholder("Auto").onChange((value) => {
-					if (value === "") {
-						this.charsManuallySet = false;
-						this.charsDelta = this.wordsDelta * 5;
-					} else {
-						this.charsManuallySet = true;
-						this.charsDelta = Number(value);
-					}
 				});
 			});
 
@@ -146,7 +116,7 @@ export class ManualEntryModal extends Modal {
 	}
 
 	private async saveNewEntry() {
-		await addDeltaToActivity(this.entry, this.wordsDelta, this.charsDelta);
+		await addDeltaToActivity(this.entry, this.wordsDelta);
 	}
 }
 

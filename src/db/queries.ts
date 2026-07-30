@@ -29,17 +29,14 @@ export async function getActivtityForFile(date: string, filePath: string) {
 		.first();
 }
 
-export async function getTotalValueByDate(
-	date: string,
-	unit: Unit,
-): Promise<number> {
+export async function getTotalValueByDate(date: string): Promise<number> {
 	const activities = await getDB()
 		.dailyActivity.where("date")
 		.equals(date)
 		.toArray();
 
 	let value = activities.reduce((sum, activity) => {
-		return sum + sumTimeEntries(activity, unit, true);
+		return sum + (activity.wordsAdded || 0);
 	}, 0);
 
 	return value || 0;
@@ -48,7 +45,6 @@ export async function getTotalValueByDate(
 export async function getTotalValueInDateRange(
 	startDate: string,
 	endDate: string,
-	unit: Unit,
 ) {
 	const activities = await getDB()
 		.dailyActivity.where("date")
@@ -56,7 +52,7 @@ export async function getTotalValueInDateRange(
 		.toArray();
 
 	let value = activities.reduce((sum, activity) => {
-		return sum + sumTimeEntries(activity, unit, true);
+		return sum + (activity.wordsAdded || 0);
 	}, 0);
 
 	return value;
@@ -76,7 +72,6 @@ export async function removeDuplicatedDailyEntries() {
 		} else {
 			const existingEntry = uniqueEntries.get(key);
 			existingEntry.wordsAdded = (existingEntry.wordsAdded || 0) + (entry.wordsAdded || 0);
-			existingEntry.charsAdded = (existingEntry.charsAdded || 0) + (entry.charsAdded || 0);
 
 			if (entry.id !== undefined) {
 				duplicateIds.push(entry.id);
@@ -88,7 +83,6 @@ export async function removeDuplicatedDailyEntries() {
 		if (entry.id !== undefined) {
 			await getDB().dailyActivity.update(entry.id, {
 				wordsAdded: entry.wordsAdded,
-				charsAdded: entry.charsAdded,
 			});
 		}
 	}
@@ -122,16 +116,13 @@ export async function getActivitiesFromLast24Hours(): Promise<DailyActivity[]> {
 	return [...yesterdayActivities, ...todayActivities];
 }
 
-export async function getTotalValueFromLast24Hours(
-	unit: Unit,
-): Promise<number> {
+export async function getTotalValueFromLast24Hours(): Promise<number> {
 	const activities = await getActivitiesFromLast24Hours();
-	return sumLast24Hours(activities, unit);
+	return sumLast24Hours(activities);
 }
 
 export function sumLast24Hours(
 	activities: DailyActivity[],
-	unit: Unit,
 	now: Date = new Date(),
 ): number {
 	const cutoff = moment(now).subtract(24, "hours").format("YYYY-MM-DD");
@@ -139,14 +130,8 @@ export function sumLast24Hours(
 	let total = 0;
 
 	for (const activity of activities) {
-		// Only include activities from dates within the last 24 hours.
-		// Since we no longer store per-time-slot data, we approximate by
-		// checking if the activity's date falls on or after the cutoff date.
 		if (activity.date >= cutoff) {
-			total +=
-				unit === Unit.WORD
-					? activity.wordsAdded || 0
-					: activity.charsAdded || 0;
+			total += activity.wordsAdded || 0;
 		}
 	}
 
@@ -154,56 +139,43 @@ export function sumLast24Hours(
 }
 
 export async function getWholeVaultCount(
-	unit: Unit,
 	vault: Vault,
 	enabledLanguages: Language[],
 ) {
 	const needsRecalc =
-		state.plugin.data.stats?.wholeVaultWordCount === undefined ||
-		state.plugin.data.stats?.wholeVaultCharCount === undefined;
+		state.plugin.data.stats?.wholeVaultWordCount === undefined;
 
 	if (needsRecalc) {
 		if (!state.plugin.data.stats) {
 			return 0;
 		}
-		// expensive!
 		const files = vault
 			.getMarkdownFiles()
 			.filter((f) => isPathTracked(f.path));
 		let wordSum = 0;
-		let charSum = 0;
 
 		for (let i = 0; i < files.length; i++) {
 			const fileContent = await vault.cachedRead(files[i]);
-			const [fileWordCount, fileCharCount] =
+			const [fileWordCount] =
 				await getFileWordAndCharCount(fileContent, enabledLanguages);
 			wordSum += fileWordCount;
-			charSum += fileCharCount;
 		}
 		state.plugin.data.stats.wholeVaultWordCount = wordSum;
-		state.plugin.data.stats.wholeVaultCharCount = charSum;
 	}
 
-	// get base count + activity changes
-	const baseCount =
-		unit === Unit.CHAR
-			? state.plugin.data.stats?.wholeVaultCharCount
-			: state.plugin.data.stats?.wholeVaultWordCount;
-	if (!baseCount) return 0;
+	if (!state.plugin.data.stats?.wholeVaultWordCount) return 0;
 
-	return baseCount;
+	return state.plugin.data.stats.wholeVaultWordCount;
 }
 
 export async function getCurrentCount(
-	unit: Unit,
 	target: TargetCount,
 	calc?: CalculationType,
 ): Promise<number> {
 	if (target === TargetCount.CURRENT_FILE) {
 		if (state.currentActivity) {
-			return sumTimeEntries(state?.currentActivity, unit) || 0;
+			return sumTimeEntries(state?.currentActivity) || 0;
 		} else {
-			// No current session - just sum all past activity for this file
 			const activeFile = state.plugin.app.workspace.getActiveFile();
 			if (activeFile) {
 				const activities = await getDB()
@@ -211,7 +183,7 @@ export async function getCurrentCount(
 					.equals(activeFile.path)
 					.toArray();
 				return activities.reduce((sum, activity) => {
-					return sum + sumTimeEntries(activity, unit, false);
+					return sum + sumTimeEntries(activity);
 				}, 0);
 			}
 			return 0;
@@ -234,7 +206,7 @@ export async function getCurrentCount(
 			}
 
 		case TargetCount.CURRENT_DAY:
-			return await getTotalValueByDate(state.today, unit);
+			return await getTotalValueByDate(state.today);
 
 		case TargetCount.CURRENT_WEEK:
 			startDate = formatDate(getStartOfWeek(new Date()));
@@ -257,7 +229,7 @@ export async function getCurrentCount(
 			break;
 
 		case TargetCount.LAST_DAY:
-			return getTotalValueFromLast24Hours(unit);
+			return getTotalValueFromLast24Hours();
 			break;
 
 		case TargetCount.LAST_WEEK:
@@ -283,7 +255,6 @@ export async function getCurrentCount(
 
 		case TargetCount.WHOLE_VAULT:
 			return await getWholeVaultCount(
-				unit,
 				state.plugin.app.vault,
 				state.plugin.data.settings.enabledLanguages,
 			);
@@ -293,7 +264,7 @@ export async function getCurrentCount(
 			throw new Error("Unsupported target type");
 	}
 
-	const value = await getTotalValueInDateRange(startDate, state.today, unit);
+	const value = await getTotalValueInDateRange(startDate, state.today);
 	return calc === CalculationType.AVG ? Math.round(value / totalDays) : value;
 }
 
@@ -328,13 +299,11 @@ export const deleteActivityFromDate = async (
 export async function addDeltaToActivity(
 	dailyActivity: DailyActivity,
 	wordsDelta: number,
-	charsDelta: number,
 ) {
 	await getDB()
 		.dailyActivity.where("[date+filePath]")
 		.equals([dailyActivity.date, dailyActivity.filePath])
 		.modify((selectedEntry) => {
 			selectedEntry.wordsAdded = (selectedEntry.wordsAdded || 0) + wordsDelta;
-			selectedEntry.charsAdded = (selectedEntry.charsAdded || 0) + charsDelta;
 		});
 }

@@ -116,12 +116,11 @@ export const Slot = ({
 	const updateData = async () => {
 		if (
 			optionType == TargetCount.WHOLE_VAULT &&
-			(plugin.data.stats?.wholeVaultWordCount === undefined ||
-				plugin.data.stats?.wholeVaultCharCount === undefined)
+			plugin.data.stats?.wholeVaultWordCount === undefined
 		)
 			setIsLoading(true);
 		try {
-			const v = await getCurrentCount(unitType, optionType, calcMode);
+			const v = await getCurrentCount(optionType, calcMode);
 			if (optionType === TargetCount.CURRENT_DAY) {
 				const newProgress =
 					(v / state.plugin.data.settings.dailyWritingGoal) * 100;

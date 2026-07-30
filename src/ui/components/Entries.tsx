@@ -7,7 +7,6 @@ import { getActivityByDate } from "../../db/queries";
 import { sumTimeEntries, getFileNameWithoutExtension } from "../../utils/utils";
 import { state, EVENTS } from "../../core/pluginState";
 import { DailyActivity } from "../../db/types";
-import { Unit } from "../../defs/types";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
@@ -22,7 +21,6 @@ export const Entries = ({
   filters,
 }: EntriesProps) => {
   const date = dateProp ?? state.today;
-  const [unit, setUnit] = useState<Unit>(Unit.WORD);
   const [entries, setEntries] = useState<DailyActivity[]>([]);
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -50,7 +48,7 @@ export const Entries = ({
 
     setEntries(
       fetchedActivities
-        .filter((entry) => sumTimeEntries(entry, Unit.WORD, true) != 0)
+        .filter((entry) => sumTimeEntries(entry, true) != 0)
         .filter((entry) => {
           if (!filters || filters.length === 0) return true;
           return filters.every((f) => {
@@ -61,15 +59,11 @@ export const Entries = ({
           });
         })
         .sort((a, b) => {
-          const aCount = sumTimeEntries(a, unit, true);
-          const bCount = sumTimeEntries(b, unit, true);
+          const aCount = sumTimeEntries(a, true);
+          const bCount = sumTimeEntries(b, true);
           return bCount - aCount;
         }),
     );
-  };
-
-  const toggleUnit = () => {
-    setUnit(unit == Unit.WORD ? Unit.CHAR : Unit.WORD);
   };
 
   const addManualEntry = () => {
@@ -99,17 +93,10 @@ export const Entries = ({
               onMouseDown={addManualEntry}
             />
           </Tooltip>
-          <Tooltip content="Toggle Unit">
-            <button
-              className="todayEntries__entry-unit"
-              ref={(el) => el && setIcon(el, "case-sensitive")}
-              onMouseDown={toggleUnit}
-            />
-          </Tooltip>
         </div>
         {entries.length > 0 ? (
           entries.map((entry) => {
-            const delta = sumTimeEntries(entry, unit, true);
+            const delta = sumTimeEntries(entry, true);
             const prefix = delta > 0 ? "+" : "";
 
             return (
@@ -152,7 +139,7 @@ export const Entries = ({
                     {delta.toLocaleString()}
                   </span>
                   <span className="todayEntries_list-item-unit">
-                    {" " + unit.toLowerCase() + "s"}
+                    {" words"}
                   </span>
                   <Tooltip content="Delete entry">
                     <button

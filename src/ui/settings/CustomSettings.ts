@@ -263,7 +263,6 @@ export function createTrackedFoldersSetting(
   function invalidateVaultCountCache() {
     if (state.plugin.data.stats) {
       state.plugin.data.stats.wholeVaultWordCount = undefined;
-      state.plugin.data.stats.wholeVaultCharCount = undefined;
     }
   }
 

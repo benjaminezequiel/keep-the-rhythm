@@ -111,7 +111,6 @@ export interface PluginData {
 		daysWithCompletedGoal?: string[];
 		dailyActivity: DailyActivity[];
 		wholeVaultWordCount?: number;
-		wholeVaultCharCount?: number;
 	};
 }
 

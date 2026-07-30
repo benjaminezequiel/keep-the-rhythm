@@ -6,7 +6,7 @@ import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/db/types";
-import { Unit, HeatmapColorModes, HeatmapConfig } from "@/defs/types";
+import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
 import { getDB } from "@/db/db";
@@ -90,7 +90,7 @@ export const Heatmap = ({
 		const dateMap: Record<string, number> = {};
 
 		for (const entry of results) {
-			const entryValue = sumTimeEntries(entry, Unit.WORD, true);
+			const entryValue = sumTimeEntries(entry, true);
 			const valueUntilNow = dateMap[entry.date] || 0;
 			dateMap[entry.date] = valueUntilNow + entryValue;
 		}

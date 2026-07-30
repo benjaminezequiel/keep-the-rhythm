@@ -148,10 +148,7 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	private async checkVaultCountStaleness() {
-		if (
-			this.data.stats?.wholeVaultWordCount !== undefined &&
-			this.data.stats?.wholeVaultCharCount !== undefined
-		) {
+		if (this.data.stats?.wholeVaultWordCount !== undefined) {
 			const recentActivity = await getDB()
 				.dailyActivity.orderBy("date")
 				.reverse()
@@ -164,7 +161,6 @@ export default class KeepTheRhythm extends Plugin {
 				);
 				if (daysSinceLastActivity > 7) {
 					this.data.stats.wholeVaultWordCount = undefined;
-					this.data.stats.wholeVaultCharCount = undefined;
 					await this.saveData(this.data);
 				}
 			}
@@ -305,23 +301,15 @@ export default class KeepTheRhythm extends Plugin {
 			const dailyActivitiesFromJSON =
 				this.data.stats?.dailyActivity || [];
 
-			// Migrate legacy `changes: TimeEntry[]` to flat `wordsAdded` /
-			// `charsAdded` fields.  Old entries are summed; new entries are
-			// passed through unchanged.
 			for (const activity of dailyActivitiesFromJSON as any[]) {
 				if (activity.changes) {
 					activity.wordsAdded = activity.changes.reduce(
 						(sum: number, c: any) => sum + (c.w || 0),
 						0,
 					);
-					activity.charsAdded = activity.changes.reduce(
-						(sum: number, c: any) => sum + (c.c || 0),
-						0,
-					);
 					delete activity.changes;
 				}
 				if (activity.wordsAdded === undefined) activity.wordsAdded = 0;
-				if (activity.charsAdded === undefined) activity.charsAdded = 0;
 			}
 
 			try {
