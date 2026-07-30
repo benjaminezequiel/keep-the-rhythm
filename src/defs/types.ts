@@ -104,10 +104,6 @@ export interface PluginData {
 	migratedPreviousVersion?: boolean;
 	schema?: "0.2" | "0.3" | string;
 	stats?: {
-		currentStreak?: number;
-		highestStreak?: number;
-		highestStreakStartDate?: string;
-		highestStreakEndDate?: string;
 		daysWithCompletedGoal?: string[];
 		dailyActivity: DailyActivity[];
 		wholeVaultWordCount?: number;
@@ -115,10 +111,6 @@ export interface PluginData {
 }
 
 export const STARTING_STATS = {
-	currentStreak: 0,
-	highestStreak: 0,
-	highestStreakStartDate: "",
-	highestStreakEndDate: "",
 	daysWithCompletedGoal: [],
 	dailyActivity: [],
 };
