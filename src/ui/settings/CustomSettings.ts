@@ -70,7 +70,8 @@ export function createLanguageDropdown(setting: Setting) {
   const enabledLanguages = settings.enabledLanguages || [];
   let loadedLanguage: string;
 
-  if (enabledLanguages.length === 1) loadedLanguage = "basic";
+  if (enabledLanguages.length === 1 && enabledLanguages.includes("LATIN")) loadedLanguage = "basic";
+  else if (enabledLanguages.length === 2 && enabledLanguages.includes("LATIN") && enabledLanguages.includes("CJK")) loadedLanguage = "chinese";
   else if (enabledLanguages.length === 4) loadedLanguage = "cjk";
   else if (enabledLanguages.length > 4) loadedLanguage = "full";
   else loadedLanguage = "basic";
@@ -79,6 +80,7 @@ export function createLanguageDropdown(setting: Setting) {
     const scriptOptions = {
       basic: "Basic (Latin only)",
       cjk: "CJK Support",
+      chinese: "Chinese (中文)",
       full: "Full Unicode",
     };
 
@@ -93,6 +95,9 @@ export function createLanguageDropdown(setting: Setting) {
             break;
           case "cjk":
             newScripts = ["LATIN", "CJK", "JAPANESE", "KOREAN"];
+            break;
+          case "chinese":
+            newScripts = ["LATIN", "CJK"];
             break;
           case "full":
             newScripts = [
