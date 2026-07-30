@@ -15,6 +15,7 @@ import {
 } from "@/defs/types";
 
 import { getDB, initDatabase } from "@/db/db";
+import { getActivityByDateAndFile } from "@/db/queries";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
@@ -51,16 +52,8 @@ export default class KeepTheRhythm extends Plugin {
 		this.onFocusHandler = () => state.checkDayChange();
 		window.addEventListener("focus", this.onFocusHandler);
 
-		initDatabase();
+		await initDatabase();
 
-		// todo: check if this is really necessary
-		await getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
-		// Must be awaited: otherwise this fire-and-forget clear() can resolve
-		// AFTER initializeDataFromJSON's bulkPut below, wiping the just-loaded
-		// data. The now-empty DB then gets persisted back to data.json and
-		// overwrites the good same-day backup with empty stats.
-
-		/////////
 		const loadedData = await this.loadData();
 
 		if (loadedData) {
@@ -301,17 +294,6 @@ export default class KeepTheRhythm extends Plugin {
 			const dailyActivitiesFromJSON =
 				this.data.stats?.dailyActivity || [];
 
-			for (const activity of dailyActivitiesFromJSON as any[]) {
-				if (activity.changes) {
-					activity.wordsAdded = activity.changes.reduce(
-						(sum: number, c: any) => sum + (c.w || 0),
-						0,
-					);
-					delete activity.changes;
-				}
-				if (activity.wordsAdded === undefined) activity.wordsAdded = 0;
-			}
-
 			try {
 				/** BulkPut updates the records if they already exist! */
 				await getDB().dailyActivity.bulkPut(dailyActivitiesFromJSON);
@@ -453,11 +435,8 @@ export default class KeepTheRhythm extends Plugin {
 			newData.stats?.dailyActivity.forEach(async (activity, index) => {
 				let existingActivity;
 
-				if (activity.id) {
-					existingActivity = await getDB().dailyActivity.get(
-						activity.id,
-					);
-				}
+				existingActivity = await getActivityByDateAndFile(
+					activity.date, activity.filePath);
 
 				/** Find any new activity and add it to the db */
 				if (

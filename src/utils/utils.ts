@@ -5,6 +5,7 @@ import { DailyActivity } from "@/db/types";
 import { App } from "obsidian";
 import { Language } from "../defs/types";
 import { getDB } from "../db/db";
+import { getActivityByDateAndFile } from "@/db/queries";
 import { Unit } from "../defs/types";
 import KeepTheRhythm from "../main";
 import { TFile } from "obsidian";
@@ -236,28 +237,14 @@ export function debounce<T extends (...args: any[]) => void>(
 	} as T;
 }
 
-export async function getExistingActivity(file: TFile, date: string) {
-	let existingActivity: DailyActivity | undefined = await getDB()
-		.dailyActivity.where("[date+filePath]")
-		.equals([date, file.path])
-		.first();
-
-	return existingActivity ? existingActivity : false;
-}
-
-export async function createActivityObject(file: TFile, date: string) {
-	let newActivity: DailyActivity | undefined = await getDB()
-		.dailyActivity.where("[date+filePath]")
-		.equals([date, file.path])
-		.first();
-
+async function createActivityObject(file: TFile, date: string) {
 	const content = await state.plugin.app.vault.read(file);
 	const currentWordCount = getLanguageBasedWordCount(
 		content,
 		state.plugin.data.settings.enabledLanguages,
 	);
 
-	newActivity = {
+	const newActivity: DailyActivity = {
 		date: date,
 		filePath: file.path,
 		wordCountStart: currentWordCount,
@@ -271,11 +258,10 @@ export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
 ): Promise<DailyActivity> {
-	let entry = await getExistingActivity(file, date);
+	let entry = await getActivityByDateAndFile(date, file.path);
 
 	/** File was not yet seen today, create an entry for it */
 	if (!entry) {
-		console.log("no entry found");
 		entry = await createActivityObject(file, date);
 		await getDB().dailyActivity.add(entry);
 	}

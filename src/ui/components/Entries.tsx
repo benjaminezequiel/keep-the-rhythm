@@ -1,4 +1,4 @@
-import { deleteActivityById } from "../../db/queries";
+import { deleteActivityFromDate } from "../../db/queries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
@@ -146,7 +146,7 @@ export const Entries = ({
                       className="todayEntries__delete-button"
                       ref={(el) => el && setIcon(el, "trash-2")}
                       onMouseDown={async () => {
-                        await deleteActivityById(entry.id);
+                        await deleteActivityFromDate(entry.filePath, date);
                         state.emit(EVENTS.REFRESH_EVERYTHING);
                       }}
                     />

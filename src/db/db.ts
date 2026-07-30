@@ -1,10 +1,9 @@
 import Dexie from "dexie";
 import { state } from "@/core/pluginState";
 import { DailyActivity } from "./types";
-import { Plugin } from "obsidian";
 
 class KTRDatabase extends Dexie {
-	dailyActivity!: Dexie.Table<DailyActivity, number>;
+	dailyActivity!: Dexie.Table<DailyActivity, [string, string]>;
 
 	// It's necessary to add the vault name to the plugin DB because
 	// indexedDB is shared across the same electron app
@@ -12,9 +11,9 @@ class KTRDatabase extends Dexie {
 	constructor(vaultName: string) {
 		super(`KTRDatabase-${vaultName}`);
 
-		this.version(2).stores({
+		this.version(3).stores({
 			dailyActivity:
-				"++id, date, filePath, [date+filePath], [filePath+date]",
+				"[date+filePath], date, filePath, [filePath+date]",
 		});
 	}
 }
@@ -22,10 +21,21 @@ class KTRDatabase extends Dexie {
 let dbInstance: KTRDatabase | null = null;
 
 // Need to init the database onload() so that the plugin instance already exists
-export function initDatabase() {
-	if (!dbInstance) {
-		const vaultName = state.plugin.app.vault.getName();
+export async function initDatabase() {
+	const vaultName = state.plugin.app.vault.getName();
+	try {
 		dbInstance = new KTRDatabase(vaultName);
+		await dbInstance.open();
+		await dbInstance.dailyActivity.clear();
+	} catch (error: any) {
+		if (error?.name === 'UpgradeError' || error?.name === 'VersionError') {
+			await Dexie.delete(`KTRDatabase-${vaultName}`);
+			dbInstance = new KTRDatabase(vaultName);
+			await dbInstance.open();
+			await dbInstance.dailyActivity.clear();
+		} else {
+			throw error;
+		}
 	}
 }
 

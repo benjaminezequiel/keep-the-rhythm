@@ -33,6 +33,25 @@ let pendingEditor: Editor | null = null;
 let pendingInfo: any = null;
 let pendingPlugin: KeepTheRhythm | null = null;
 
+async function ensureActivityExists(file: TFile) {
+  if (!file || file.extension !== "md") return;
+  if (!isPathTracked(file.path)) return;
+  if (state.isUpdatingActivity) return;
+  if (
+    file.path == state.currentActivity?.filePath &&
+    state.currentActivity?.date === state.today
+  ) return;
+
+  state.isUpdatingActivity = true;
+  try {
+    const entry = await getExistingOrCreateNewEntry(file, state.today);
+    if (entry) state.setCurrentActivity(entry);
+    state.emit(EVENTS.REFRESH_EVERYTHING);
+  } finally {
+    state.isUpdatingActivity = false;
+  }
+}
+
 /**
  * @function handleEditorChange
  * Fires everytime the user makes an input inside a Markdown editor;
@@ -53,6 +72,18 @@ export async function handleEditorChange(
   // the configured folders so they don't pollute daily stats or streaks.
   if (!isPathTracked(file.path)) {
     return;
+  }
+
+  // Eagerly create the activity entry if it doesn't exist, so that
+  // wordCountStart is captured from disk before auto-save can write
+  // the current edits. This ensures the debounced delta calculation
+  // in processEditorChange has a correct baseline.
+  if (
+    !state.currentActivity ||
+    state.currentActivity.filePath !== file.path ||
+    state.currentActivity.date !== state.today
+  ) {
+    ensureActivityExists(file);
   }
 
   // Stash the latest references and re-schedule the sample. Repeated
