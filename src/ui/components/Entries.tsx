@@ -72,10 +72,16 @@ export const Entries = ({
 
   useEffect(() => {
     handleEntriesRefresh();
+    // Listen to both events: REFRESH_TODAY covers edits / file opens /
+    // file deletes within the current day; REFRESH_EVERYTHING covers
+    // cross-day rollovers, arbitrary-date deletions (via deleteActivityFromDate
+    // with a non-today date), renames, and external settings changes.
     state.on(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+    state.on(EVENTS.REFRESH_TODAY, handleEntriesRefresh);
 
     return () => {
       state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+      state.off(EVENTS.REFRESH_TODAY, handleEntriesRefresh);
     };
   }, [date]);
 
@@ -147,7 +153,6 @@ export const Entries = ({
                       ref={(el) => el && setIcon(el, "trash-2")}
                       onMouseDown={async () => {
                         await deleteActivityFromDate(entry.filePath, date);
-                        state.emit(EVENTS.REFRESH_EVERYTHING);
                       }}
                     />
                   </Tooltip>

@@ -90,7 +90,10 @@ export default class KeepTheRhythm extends Plugin {
 			codeBlocks.createEntriesCodeBlock,
 		);
 
-		state.on(EVENTS.REFRESH_EVERYTHING, async () => {
+		// Both REFRESH_EVERYTHING (cross-day / history / settings) and
+		// REFRESH_TODAY (only today's data changed) must schedule a JSON
+		// save — the debounce coalesces them regardless.
+		const scheduleSave = async () => {
 			if (this._isUnloading) return;
 
 			if (this.JsonDebounceTimeout) {
@@ -104,7 +107,9 @@ export default class KeepTheRhythm extends Plugin {
 				this.JsonDebounceTimeout = null;
 				await this.saveDataToJSON();
 			}, this.JSON_DEBOUNCE_TIME);
-		});
+		};
+		state.on(EVENTS.REFRESH_EVERYTHING, scheduleSave);
+		state.on(EVENTS.REFRESH_TODAY, scheduleSave);
 	}
 
 	private async initializeDataFromJSON(loadedData: PluginData) {

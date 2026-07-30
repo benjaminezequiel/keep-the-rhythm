@@ -125,13 +125,19 @@ export const Slot = ({
 	};
 
 	useEffect(() => {
+		// Defensive cleanup for both event types before re-registering.
+		// Works around the weird off→on→off pattern that was here before
+		// (which hinted at duplicate-listener bugs).
 		state.off(EVENTS.REFRESH_EVERYTHING, updateData);
+		state.off(EVENTS.REFRESH_TODAY, updateData);
 		state.on(EVENTS.REFRESH_EVERYTHING, updateData);
+		state.on(EVENTS.REFRESH_TODAY, updateData);
 
 		updateData();
 
 		return () => {
 			state.off(EVENTS.REFRESH_EVERYTHING, updateData);
+			state.off(EVENTS.REFRESH_TODAY, updateData);
 		};
 	}, [unitType, optionType, calcMode]);
 

@@ -46,7 +46,7 @@ async function ensureActivityExists(file: TFile) {
   try {
     const entry = await getExistingOrCreateNewEntry(file, state.today);
     if (entry) state.setCurrentActivity(entry);
-    state.emit(EVENTS.REFRESH_EVERYTHING);
+    state.emit(EVENTS.REFRESH_TODAY);
   } finally {
     state.isUpdatingActivity = false;
   }
@@ -174,7 +174,7 @@ async function processEditorChange(
 
   activity.wordsAdded = (activity.wordsAdded || 0) + (wordsAdded || 0);
 
-  state.emit(EVENTS.REFRESH_EVERYTHING);
+  state.emit(EVENTS.REFRESH_TODAY);
 
   /** Debounces updates to the DB, which only happens when
    *  the user stops editing the page for 200ms. */
@@ -221,7 +221,7 @@ export async function handleFileOpen(file: TFile) {
   if (entry) state.setCurrentActivity(entry);
   state.isUpdatingActivity = false;
 
-  state.emit(EVENTS.REFRESH_EVERYTHING);
+  state.emit(EVENTS.REFRESH_TODAY);
 }
 
 /**
@@ -248,14 +248,15 @@ async function flushChangesToDB(activity: DailyActivity) {
     });
 
   checkStreak();
-  state.emit(EVENTS.REFRESH_EVERYTHING);
+  state.emit(EVENTS.REFRESH_TODAY);
 }
 
 /**
  * @function cleanDBTimeout
  * Clears timeouts and flushes any in-memory data to the DB.
- * Must be awaited so all REFRESH_EVERYTHING emissions settle before the
- * caller (onunload) invalidates pending saves and clears the DB.
+ * Must be awaited so all REFRESH_EVERYTHING / REFRESH_TODAY emissions
+ * (and their debounced save timers) settle before the caller (onunload)
+ * invalidates pending saves and clears the DB.
  */
 export async function cleanDBTimeout() {
   // Flush any pending editor-change sample so the final deltas land in the
@@ -309,7 +310,7 @@ export async function handleFileDelete(file: TFile) {
         dailyEntry.wordsAdded = -(dailyEntry.wordCountStart || 0);
       });
 
-    state.emit(EVENTS.REFRESH_EVERYTHING);
+    state.emit(EVENTS.REFRESH_TODAY);
   } catch (error) {
     console.error(`KTR failed deleting ${file.path} | ${error}`);
   }

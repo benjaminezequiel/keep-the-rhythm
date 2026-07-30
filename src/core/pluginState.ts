@@ -120,7 +120,7 @@ export class PluginState {
     const listeners = this._events[event];
 
     if (!listeners) return;
-    if (event === EVENTS.REFRESH_EVERYTHING) {
+    if (event === EVENTS.REFRESH_EVERYTHING || event === EVENTS.REFRESH_TODAY) {
       requestAnimationFrame(() => {
         for (const listener of listeners) {
           listener(...args);
