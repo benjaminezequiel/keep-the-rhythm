@@ -172,12 +172,6 @@ async function processEditorChange(
 
   const wordsAdded = newWordCount - totalWords;
 
-  if (state.plugin.data.stats && wordsAdded !== 0) {
-    if (state.plugin.data.stats.wholeVaultWordCount !== undefined) {
-      state.plugin.data.stats.wholeVaultWordCount += wordsAdded;
-    }
-  }
-
   activity.wordsAdded = (activity.wordsAdded || 0) + (wordsAdded || 0);
 
   state.emit(EVENTS.REFRESH_EVERYTHING);

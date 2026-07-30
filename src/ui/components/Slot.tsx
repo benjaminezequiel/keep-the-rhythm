@@ -29,7 +29,6 @@ export const Slot = ({
 	const [optionType, setOptionType] = useState<TargetCount>(option);
 	const [calcMode, setCalcType] = useState<CalculationType>(calc);
 	const [progressValue, setProgressValue] = useState<number>(0);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 	const unitButtonRef = useRef<HTMLButtonElement>(null);
@@ -71,10 +70,7 @@ export const Slot = ({
 		optionType !== TargetCount.CURRENT_FILE &&
 		optionType !== TargetCount.CURRENT_DAY &&
 		optionType !== TargetCount.LAST_DAY &&
-		optionType !== TargetCount.WHOLE_VAULT &&
 		optionType !== TargetCount.CURRENT_STREAK;
-	// useEffect(() => {
-	// }, [calcMode, optionType]);
 
 	const toggleCalculation = () => {
 		const newCalc =
@@ -114,11 +110,6 @@ export const Slot = ({
 	};
 
 	const updateData = async () => {
-		if (
-			optionType == TargetCount.WHOLE_VAULT &&
-			plugin.data.stats?.wholeVaultWordCount === undefined
-		)
-			setIsLoading(true);
 		try {
 			const v = await getCurrentCount(optionType, calcMode);
 			if (optionType === TargetCount.CURRENT_DAY) {
@@ -130,8 +121,6 @@ export const Slot = ({
 			setValue(v);
 		} catch (error) {
 			console.error(error);
-		} finally {
-			if (optionType == TargetCount.WHOLE_VAULT) setIsLoading(false);
 		}
 	};
 
@@ -212,19 +201,15 @@ export const Slot = ({
 					</div>
 				)}
 			</div>
-			{isLoading ? (
-				<div className="slot__data-loading">Loading...</div>
-			) : (
-				<div className="slot__data">
-					<div className="slot__value">{value.toLocaleString()}</div>
-					<div className="slot__unit">
-						{unitSupportingText()}
-						<span className="slot__unit-avg">
-							{showCalcType && calcMode == "AVG" ? "/day" : ""}
-						</span>
-					</div>
+			<div className="slot__data">
+				<div className="slot__value">{value.toLocaleString()}</div>
+				<div className="slot__unit">
+					{unitSupportingText()}
+					<span className="slot__unit-avg">
+						{showCalcType && calcMode == "AVG" ? "/day" : ""}
+					</span>
 				</div>
-			)}
+			</div>
 			{optionType === TargetCount.CURRENT_DAY &&
 				unitType !== Unit.CHAR && (
 					<div className="today-progress-bar">

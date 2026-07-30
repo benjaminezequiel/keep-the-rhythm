@@ -36,8 +36,6 @@ export function getSlotLabel(option: TargetCount) {
 			return "Last 30 Days";
 		case TargetCount.LAST_YEAR:
 			return "Last Year";
-		case TargetCount.WHOLE_VAULT:
-			return "Vault";
 		case TargetCount.CURRENT_STREAK:
 			return "Streak";
 	}

@@ -260,12 +260,6 @@ export function createTrackedFoldersSetting(
     cls: "ktr-tracked-folders-list",
   });
 
-  function invalidateVaultCountCache() {
-    if (state.plugin.data.stats) {
-      state.plugin.data.stats.wholeVaultWordCount = undefined;
-    }
-  }
-
   async function addFolder() {
     if (!textComponent) return;
     const raw = textComponent.getValue();
@@ -279,7 +273,6 @@ export function createTrackedFoldersSetting(
     }
 
     state.plugin.data.settings.trackedFolders = [...folders, normalized];
-    invalidateVaultCountCache();
     textComponent.setValue("");
     await state.plugin.updateAndSaveEverything();
     renderList();
@@ -290,7 +283,6 @@ export function createTrackedFoldersSetting(
     state.plugin.data.settings.trackedFolders = folders.filter(
       (_, i) => i !== index,
     );
-    invalidateVaultCountCache();
     await state.plugin.updateAndSaveEverything();
     renderList();
   }

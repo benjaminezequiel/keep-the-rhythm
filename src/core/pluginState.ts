@@ -79,32 +79,6 @@ export class PluginState {
 
   /****************************************************************************************/
 
-  /**
-   * Reading the whole vault it's a bit expensive.
-   * So there is a debounce to avoid reading it too much too fast.
-   * @var _vaultReadTimeout allows the timeout to be properly reset
-   * @var _currentVaultCount is used by the WHOLE_VAULT Slot to display this
-   * @const _DEBOUNCE_VAULT_READ is the amount of time before reading it again
-   */
-  private _vaultReadTimeout: typeof setTimeout | null;
-  public DEBOUNCE_VAULT_READ: number = 1000;
-
-  private _currentVaultCount: number;
-  get currentVaultCount(): number {
-    return this._currentVaultCount;
-  }
-  setCurrentVaultCount(newCount: number) {
-    this._currentVaultCount = newCount;
-  }
-  get vaultReadTimeout() {
-    return this._vaultReadTimeout;
-  }
-  setVaultReadTimeout(timeout: typeof setTimeout | null) {
-    this._vaultReadTimeout = timeout;
-  }
-
-  /****************************************************************************************/
-
   public _currentFileActivity: DailyActivity | null;
 
   public isUpdatingActivity: boolean = false;

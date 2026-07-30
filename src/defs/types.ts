@@ -52,8 +52,6 @@ export enum TargetCount {
 	LAST_WEEK = "LAST_WEEK",
 	LAST_MONTH = "LAST_MONTH",
 	LAST_YEAR = "LAST_YEAR",
-	WHOLE_VAULT = "WHOLE_VAULT", // not done yet
-	// THIS_FOLDER = "THIS_FOLDER", //not done yet
 }
 
 export enum HeatmapColorModes {
@@ -106,7 +104,6 @@ export interface PluginData {
 	stats?: {
 		daysWithCompletedGoal?: string[];
 		dailyActivity: DailyActivity[];
-		wholeVaultWordCount?: number;
 	};
 }
 

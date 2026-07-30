@@ -62,8 +62,6 @@ export default class KeepTheRhythm extends Plugin {
 
 		state.setToday();
 
-		this.checkVaultCountStaleness();
-
 		// /** Set of utility functions that registers required objects and sets plugin state */
 
 		/** Initialize SIDEBAR view */
@@ -107,26 +105,6 @@ export default class KeepTheRhythm extends Plugin {
 				await this.saveDataToJSON();
 			}, this.JSON_DEBOUNCE_TIME);
 		});
-	}
-
-	private async checkVaultCountStaleness() {
-		if (this.data.stats?.wholeVaultWordCount !== undefined) {
-			const recentActivity = await getDB()
-				.dailyActivity.orderBy("date")
-				.reverse()
-				.first();
-
-			if (recentActivity) {
-				const daysSinceLastActivity = moment().diff(
-					moment(recentActivity.date),
-					"days",
-				);
-				if (daysSinceLastActivity > 7) {
-					this.data.stats.wholeVaultWordCount = undefined;
-					await this.saveData(this.data);
-				}
-			}
-		}
 	}
 
 	private async initializeDataFromJSON(loadedData: PluginData) {

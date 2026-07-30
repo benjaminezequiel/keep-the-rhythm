@@ -1,6 +1,6 @@
-import { getDateStreaks } from "@/utils/utils";
+import { getDateStreaks, sumTimeEntries } from "@/utils/utils";
 import { getDB } from "./db";
-import { Language, Unit, TargetCount, CalculationType } from "../defs/types";
+import { TargetCount, CalculationType } from "../defs/types";
 import { formatDate } from "@/utils/dateUtils";
 import { EVENTS, state } from "@/core/pluginState";
 import {
@@ -8,11 +8,8 @@ import {
 	getStartOfWeek,
 	getStartOfYear,
 } from "@/utils/dateUtils";
-import { sumTimeEntries } from "@/utils/utils";
 import { DailyActivity } from "./types";
-import { moment as _moment, debounce, Notice, Vault } from "obsidian";
-import { getFileWordAndCharCount } from "@/utils/utils";
-import { isPathTracked } from "@/core/pathFilter";
+import { moment as _moment, Notice } from "obsidian";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -95,36 +92,6 @@ export function sumLast24Hours(
 	}
 
 	return total;
-}
-
-export async function getWholeVaultCount(
-	vault: Vault,
-	enabledLanguages: Language[],
-) {
-	const needsRecalc =
-		state.plugin.data.stats?.wholeVaultWordCount === undefined;
-
-	if (needsRecalc) {
-		if (!state.plugin.data.stats) {
-			return 0;
-		}
-		const files = vault
-			.getMarkdownFiles()
-			.filter((f) => isPathTracked(f.path));
-		let wordSum = 0;
-
-		for (let i = 0; i < files.length; i++) {
-			const fileContent = await vault.cachedRead(files[i]);
-			const [fileWordCount] =
-				await getFileWordAndCharCount(fileContent, enabledLanguages);
-			wordSum += fileWordCount;
-		}
-		state.plugin.data.stats.wholeVaultWordCount = wordSum;
-	}
-
-	if (!state.plugin.data.stats?.wholeVaultWordCount) return 0;
-
-	return state.plugin.data.stats.wholeVaultWordCount;
 }
 
 export async function getCurrentCount(
@@ -211,12 +178,6 @@ export async function getCurrentCount(
 				.format("YYYY-MM-DD");
 			totalDays = 365;
 			break;
-
-		case TargetCount.WHOLE_VAULT:
-			return await getWholeVaultCount(
-				state.plugin.app.vault,
-				state.plugin.data.settings.enabledLanguages,
-			);
 
 		default:
 			console.info(target);
