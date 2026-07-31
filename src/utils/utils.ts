@@ -2,11 +2,10 @@ import { getPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
-import { DailyActivity } from "@/db/types";
+import { DailyActivity } from "../defs/types";
 import { App } from "obsidian";
 import { Language } from "../defs/types";
-import { getDB } from "../db/db";
-import { getActivityByDateAndFile } from "@/db/queries";
+import { getActivityByDateAndFile } from "@/core/dataQueries";
 import KeepTheRhythm from "../main";
 import { TFile } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
@@ -118,11 +117,6 @@ export function sumTimeEntries(
 	const start = excludeStart ? 0 : dailyActivity?.wordCountStart || 0;
 	const delta = dailyActivity?.wordsAdded || 0;
 	return start + delta;
-}
-
-async function _resetDatabase() {
-	await getDB().delete();
-	location.reload(); // Force page reload to reinitialize DB
 }
 
 export interface PathCondition {
@@ -255,18 +249,16 @@ export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
 ): Promise<DailyActivity> {
-	let entry = await getActivityByDateAndFile(date, file.path);
+	const { dailyActivity } = useStore.getState();
+	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
 
 	/** File was not yet seen today, create an entry for it */
 	if (!entry) {
 		entry = await createActivityObject(file, date);
-		await getDB().dailyActivity.add(entry);
-
-		// DB has a brand-new row for (date, file).  useLiveQuery in Slot /
-		// Entries / Heatmap auto-responds to the insert, so no manual UI
-		// event is needed — we only request JSON persist so the new row
-		// eventually lands in data.json.
-		useStore.getState().requestPersist();
+		// upsertActivity mutates the in-memory store and calls
+		// requestPersist, so no manual UI refresh or DB write is needed —
+		// Slot/Entries/Heatmap selectors fire automatically.
+		useStore.getState().upsertActivity(entry);
 	}
 
 	return entry;

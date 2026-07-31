@@ -1,14 +1,13 @@
 import { DEFAULT_SETTINGS, STARTING_STATS, PluginData } from "@/defs/types";
-import { getDB } from "@/db/db";
+import { useStore } from "./store";
 import KeepTheRhythm from "../main";
 import { checkPreviousStreak } from "./commands";
-import { useStore } from "./store";
 
 const JSON_DEBOUNCE_TIME = 1000;
 
 /**
  * Initialize plugin data from loaded data.json content.
- * Populates plugin.data and syncs dailyActivity into IndexedDB.
+ * Populates plugin.data and the in-memory store (dailyActivity slice).
  */
 export async function initializeDataFromJSON(
 	plugin: { data: PluginData },
@@ -18,6 +17,8 @@ export async function initializeDataFromJSON(
 		plugin.data.stats = {
 			...STARTING_STATS,
 		};
+		// No data.json existed; seed the store with an empty array.
+		useStore.setState({ dailyActivity: [] });
 		return;
 	}
 	if (loadedData.settings) {
@@ -28,53 +29,35 @@ export async function initializeDataFromJSON(
 	}
 	if (loadedData.stats) {
 		plugin.data.stats = loadedData.stats;
-		await checkPreviousStreak();
+		checkPreviousStreak();
 
-		const dailyActivitiesFromJSON =
-			plugin.data.stats?.dailyActivity || [];
-
-		try {
-			/** BulkPut updates the records if they already exist! */
-			await getDB().dailyActivity.bulkPut(dailyActivitiesFromJSON);
-		} catch (error) {
-			console.error(
-				"Failed loading some data, contact the developer.",
-				error,
-			);
-		}
+		// Push the freshly loaded array into the store.  Doing this here
+		// (rather than via hydrateFromPluginData) keeps initializeDataFromJSON
+		// self-contained: callers don't need a separate hydrate step.
+		useStore
+			.getState()
+			.bulkSetDailyActivity(plugin.data.stats?.dailyActivity || []);
 	}
 }
 
 /**
- * Persist IndexedDB dailyActivity to plugin.data and save to data.json.
- * Guards against overwriting data.json with empty data when IndexedDB is
- * empty but in-memory stats still have entries.
+ * Persist in-memory dailyActivity to plugin.data and save to data.json.
+ * The store IS the in-memory source of truth, so plugin.data and the store
+ * cannot disagree — no safety guards needed.
  */
-async function saveDataToJSON(
-	plugin: KeepTheRhythm,
-) {
-	const dailyActivityDB = await getDB().dailyActivity.toArray();
-
-	// Safety guard: if the DB is empty but we have entries in memory, the DB
-	// was likely cleared by a race (e.g., a stale timer callback or an
-	// un-awaited clear()).  Don't overwrite data.json with empty data.
-	if (
-		dailyActivityDB.length === 0 &&
-		(plugin.data.stats?.dailyActivity?.length ?? 0) > 0
-	) {
-		return;
-	}
+async function saveDataToJSON(plugin: KeepTheRhythm) {
+	const dailyActivity = useStore.getState().dailyActivity;
 
 	plugin.data.stats = {
 		...plugin.data.stats,
-		dailyActivity: dailyActivityDB,
+		dailyActivity,
 	};
 
 	await plugin.saveData(plugin.data);
 }
 
 /**
- * Immediately flush IndexedDB data to data.json.
+ * Immediately flush in-memory data to data.json.
  * Used during plugin unload to ensure data is persisted before teardown.
  */
 export async function flushToJSON(plugin: KeepTheRhythm) {
@@ -101,7 +84,7 @@ export function setupPersistenceScheduling(
 
 	const scheduleSave = () => {
 		clearTimeout(JsonDebounceTimeout);
-		
+
 		_saveGen++;
 		const gen = _saveGen;
 		JsonDebounceTimeout = setTimeout(async () => {

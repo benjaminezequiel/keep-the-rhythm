@@ -1,16 +1,14 @@
 import { DEFAULT_SETTINGS } from "@/defs/types";
-import { getDB } from "@/db/db";
 import { useStore } from "./store";
 import KeepTheRhythm from "../main";
 
 /**
  * Handle external changes to data.json (e.g. from file sync, manual edits).
- * Compares loaded data with current in-memory data, syncs IndexedDB rows
- * and settings, then re-hydrates the store.
+ * Compares loaded data with current in-memory data, updates the store,
+ * then re-hydrates the store.  Replaces the old bulkPut-into-IndexedDB
+ * path.
  */
-export async function handleExternalSettingsChange(
-	plugin: KeepTheRhythm
-) {
+export async function handleExternalSettingsChange(plugin: KeepTheRhythm) {
 	try {
 		const newData = await plugin.loadData();
 
@@ -19,27 +17,26 @@ export async function handleExternalSettingsChange(
 		}
 
 		// Sync settings (deep compare, not reference)
-		if (JSON.stringify(plugin.data.settings) !== JSON.stringify(newData.settings)) {
+		if (
+			JSON.stringify(plugin.data.settings) !==
+			JSON.stringify(newData.settings)
+		) {
 			plugin.data.settings = {
 				...DEFAULT_SETTINGS,
 				...newData.settings,
 			};
 		}
 
-		// Sync dailyActivity: compare in-memory arrays, bulk write if changed.
-		// No DB read needed — plugin.data already has the latest snapshot.
-		let dbMutated = false;
+		// Sync dailyActivity: compare in-memory arrays, replace if changed.
 		const newActivities = newData.stats?.dailyActivity ?? [];
 		const oldActivities = plugin.data.stats?.dailyActivity ?? [];
 		if (JSON.stringify(newActivities) !== JSON.stringify(oldActivities)) {
-			await getDB().dailyActivity.bulkPut(newActivities);
-			dbMutated = true;
+			// bulkSetDailyActivity re-derives currentActivity and triggers
+			// a debounced JSON save — no manual requestPersist needed.
+			useStore.getState().bulkSetDailyActivity(newActivities);
 		}
 
 		useStore.getState().hydrateFromPluginData();
-		if (dbMutated) {
-			useStore.getState().requestPersist();
-		}
 	} catch (error) {
 		console.error("Error in onExternalSettingsChange:", error);
 	}

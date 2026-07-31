@@ -1,15 +1,14 @@
 import React from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { moment as _moment } from "obsidian";
 import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
-import { DailyActivity } from "@/db/types";
+import { DailyActivity } from "@/defs/types";
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
-import { getDB } from "@/db/db";
+import { useStore } from "@/core/store";
 
 interface HeatmapProps {
 	heatmapConfig: HeatmapConfig;
@@ -29,7 +28,12 @@ export const Heatmap = ({
 		? new Date(heatmapConfig.startDate)
 		: undefined;
 
-	const heatmapData = useLiveQuery(async () => {
+	// Subscribe to the in-memory dailyActivity slice; memoize the heatmap
+	// aggregation on it.  Mirrors the previous useLiveQuery behaviour
+	// (re-runs when underlying rows change) but synchronously.
+	const dailyActivity = useStore((s) => s.dailyActivity);
+
+	const heatmapData = useMemo(() => {
 		const requiredDates = new Set<string>();
 
 		for (let week = 0; week < weeksToShow; week++) {
@@ -43,7 +47,7 @@ export const Heatmap = ({
 			}
 		}
 
-		let results: DailyActivity[] | null;
+		let results: DailyActivity[];
 		let filterFn: ((entry: DailyActivity) => boolean) | null = null;
 		if (query) {
 			try {
@@ -60,31 +64,23 @@ export const Heatmap = ({
 			let value = query.right.value;
 			if (typeof value === "string") {
 				value = value.startsWith("/") ? value.substring(1) : value;
-				results = await getDB()
-					.dailyActivity.where("[filePath+date]")
-					.between(
-						[value, startDate],
-						[value + "\uffff", endDate],
-						true,
-						true,
-					)
-					.toArray();
+				const startStr = startDate ? formatDate(startDate) : "";
+				const endStr = endDate ? formatDate(endDate) : "";
+				results = dailyActivity.filter(
+					(e) =>
+						e.filePath.startsWith(value) &&
+						e.date >= startStr &&
+						e.date <= endStr,
+				);
 			} else {
 				results = [];
 			}
 		} else if (query && filterFn) {
-			results = await getDB()
-				.dailyActivity.where("date")
-				.anyOf([...requiredDates])
-				.filter((entry) => {
-					return filterFn!(entry);
-				})
-				.toArray();
+			results = dailyActivity.filter(
+				(e) => requiredDates.has(e.date) && filterFn!(e),
+			);
 		} else {
-			results = await getDB()
-				.dailyActivity.where("date")
-				.anyOf([...requiredDates])
-				.toArray();
+			results = dailyActivity.filter((e) => requiredDates.has(e.date));
 		}
 
 		const dateMap: Record<string, number> = {};
@@ -96,11 +92,7 @@ export const Heatmap = ({
 		}
 
 		return dateMap;
-	});
-
-	if (!heatmapData) {
-		return <div className="heatmap-loading">Loading heatmap...</div>; // Replace with spinner or skeleton
-	}
+	}, [dailyActivity, query, weeksToShow, baseDate]);
 
 	const getMonthLabels = () => {
 		const labels = [];

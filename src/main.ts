@@ -1,18 +1,8 @@
 import { ManualEntryModal } from "./ui/components/ManualEntry";
-import {
-	Plugin,
-	TFile,
-	TAbstractFile,
-	moment as _moment,
-} from "obsidian";
+import { Plugin, TFile, TAbstractFile, moment as _moment } from "obsidian";
 
-import {
-	ColorConfig,
-	DEFAULT_SETTINGS,
-	PluginData,
-} from "@/defs/types";
+import { ColorConfig, DEFAULT_SETTINGS, PluginData } from "@/defs/types";
 
-import { getDB, initDatabase } from "@/db/db";
 import { setPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
@@ -22,9 +12,13 @@ import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
-import { initializeDataFromJSON, flushToJSON, setupPersistenceScheduling, PersistenceScheduler } from "@/core/dataPersistence";
+import {
+	initializeDataFromJSON,
+	flushToJSON,
+	setupPersistenceScheduling,
+	PersistenceScheduler,
+} from "@/core/dataPersistence";
 import { handleExternalSettingsChange } from "@/core/externalSync";
-
 
 export default class KeepTheRhythm extends Plugin {
 	data: PluginData = {
@@ -45,8 +39,8 @@ export default class KeepTheRhythm extends Plugin {
 		this.onFocusHandler = () => useStore.getState().checkDayChange();
 		window.addEventListener("focus", this.onFocusHandler);
 
-		await initDatabase();
-
+		// No DB to initialise — the in-memory store is empty until
+		// initializeDataFromJSON hydrates it from data.json below.
 		const loadedData = await this.loadData();
 
 		await backupData(loadedData, this.app);
@@ -71,10 +65,10 @@ export default class KeepTheRhythm extends Plugin {
 
 		// The JSON save pipeline subscribes to the store's persistVersion
 		// counter, which is incremented (via requestPersist, rAF-coalesced)
-		// by the data layer *after* an IndexedDB write has actually
-		// resolved. Pure UI refresh never touches persistVersion, so it
-		// can't schedule a save — this prevents racing saves when only the
-		// in-memory activity object was mutated (before flushChangesToDB).
+		// by the data layer after an in-memory mutation. Pure UI refresh
+		// never touches persistVersion, so it can't schedule a save — this
+		// prevents racing saves when only an in-memory activity object was
+		// mutated before flushChangesToJSON.
 		this.persistenceScheduler = setupPersistenceScheduling(this);
 	}
 
@@ -187,16 +181,14 @@ export default class KeepTheRhythm extends Plugin {
 		this.persistenceScheduler?.dispose();
 		this.persistenceScheduler = null;
 
-		// Flush in-memory changes to the DB.
+		// Flush any pending editor-change sample so the final deltas land
+		// in the in-memory store before we snapshot it for the JSON save.
 		await events.cleanDBTimeout();
 
-		// Persist and back up BEFORE clearing the DB. These must be awaited and
-		// ordered: an un-awaited clear() could otherwise empty the DB before
-		// flushToJSON snapshots it, backing up (and saving) empty stats.
+		// Persist and back up.  No DB to clear — the in-memory store is
+		// garbage-collected with the plugin.
 		await flushToJSON(this);
 		await backupData(this.data, this.app);
-
-		await getDB().dailyActivity.clear();
 	}
 
 	// #endregion
@@ -219,5 +211,4 @@ export default class KeepTheRhythm extends Plugin {
 		useStore.getState().hydrateFromPluginData();
 		useStore.getState().requestPersist();
 	}
-
 }

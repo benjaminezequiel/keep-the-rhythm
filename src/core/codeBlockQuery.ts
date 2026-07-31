@@ -1,6 +1,6 @@
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import jsep from "jsep";
-import { DailyActivity } from "@/db/types";
+import { DailyActivity } from "@/defs/types";
 import {
 	isValidCalculationType,
 	isValidTargetCount,

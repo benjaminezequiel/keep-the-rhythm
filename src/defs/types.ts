@@ -1,4 +1,9 @@
-import { DailyActivity } from "@/db/types";
+export interface DailyActivity {
+	date: string;
+	filePath: string;
+	wordCountStart: number;
+	wordsAdded: number;
+}
 
 export enum CalculationType {
 	TOTAL = "TOTAL",

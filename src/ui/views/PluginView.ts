@@ -33,8 +33,8 @@ export class PluginView extends ItemView {
 		const reactContainer = container.createEl("div");
 		this.root = createRoot(reactContainer);
 
-		// KTRView reads everything it needs from the Zustand store +
-		// useLiveQuery, so no plugin prop is required.
+		// KTRView reads everything it needs from the Zustand store, so no
+		// plugin prop is required.
 		this.root.render(React.createElement(KTRView));
 	}
 

@@ -1,4 +1,4 @@
-import { addDeltaToActivity } from "@/db/queries";
+import { addDeltaToActivity } from "@/core/dataQueries";
 import { TFile } from "obsidian";
 import { useStore } from "@/core/store";
 import { AbstractInputSuggest } from "obsidian";
@@ -7,7 +7,7 @@ import {
 	getExistingOrCreateNewEntry,
 	getFileNameWithoutExtension,
 } from "@/utils/utils";
-import { DailyActivity } from "@/db/types";
+import { DailyActivity } from "@/defs/types";
 
 export class ManualEntryModal extends Modal {
 	private entry: DailyActivity;

@@ -1,11 +1,10 @@
 import { getDateBasedOnIndex } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
-import { useState, useRef } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useState, useRef, useMemo } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
-import { getCurrentCount } from "@/db/queries";
+import { getCurrentCount } from "@/core/dataQueries";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
@@ -41,20 +40,11 @@ export const Slot = ({
 	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
 	const mutateSettings = useStore((s) => s.mutateSettings);
 
-	// useLiveQuery replaces the manual updateData() + event listener dance.
-	// It re-runs whenever:
-	//   • the IndexedDB rows the query touches change (auto-tracked by Dexie)
-	//   • any of the deps below change (optionType/calcMode toggles, today
-	//     rollover, currentActivity word-delta updates, streak list changes)
-	const value = useLiveQuery(
-		() =>
-			getCurrentCount(optionType, calcMode, {
-				today,
-				currentActivity,
-				daysWithCompletedGoal,
-			}),
+	// useLiveQuery is gone — getCurrentCount reads useStore.getState()
+	// synchronously, so we just memoize on the slices the count depends on.
+	const value = useMemo(
+		() => getCurrentCount(optionType, calcMode),
 		[optionType, calcMode, today, currentActivity, daysWithCompletedGoal],
-		0,
 	);
 
 	const unitText = () => {
@@ -171,9 +161,7 @@ export const Slot = ({
 				)}
 			</div>
 			<div className="slot__data">
-				<div className="slot__value">
-					{(value ?? 0).toLocaleString()}
-				</div>
+				<div className="slot__value">{value.toLocaleString()}</div>
 				<div className="slot__unit">
 					{unitText()}
 					<span className="slot__unit-avg">
@@ -182,15 +170,15 @@ export const Slot = ({
 				</div>
 			</div>
 			{optionType === TargetCount.CURRENT_DAY && (
-					<div className="today-progress-bar">
-						<div
-							className="progress"
-							style={{
-								width: progressValue + "%",
-							}}
-						></div>
-					</div>
-				)}
+				<div className="today-progress-bar">
+					<div
+						className="progress"
+						style={{
+							width: progressValue + "%",
+						}}
+					></div>
+				</div>
+			)}
 			{optionType === TargetCount.CURRENT_WEEK && (
 				<div className="KTR-week-progress">
 					{weekdaysNames.map((_, index) => (
