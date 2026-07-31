@@ -93,7 +93,7 @@ Customize your heatmap appearance with various options:
 
 Display various writing statistics using customizable slots:
 
-- Current: CURRENT_FILE, CURRENT_DAY, CURRENT_WEEK, CURRENT_MONTH, CURRENT_YEAR
+- Current: CURRENT_DAY, CURRENT_WEEK, CURRENT_MONTH, CURRENT_YEAR
     - These are dynamic ranges calculated based on the start of the day/week/year
 - Historical Stats: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR
     - These are calculated based on discrete ranges (24h, 7d, 30d, 365d)
@@ -153,7 +153,6 @@ CURRENT_YEAR
 
 Available Slots:
 
-- CURRENT_FILE: displays the current file count
 - CURRENT_STREAK: displays the amount of sequential days where writing goal was completed
 - CURRENT_DAY: displays the amount written from the start of the day until now
 - CURRENT_WEEK: displays the amount from the start of the week (currently defined as Monday, I'll add a setting soon)

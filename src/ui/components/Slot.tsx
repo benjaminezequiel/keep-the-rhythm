@@ -73,7 +73,6 @@ export const Slot = ({
 	}
 
 	const showCalcType =
-		optionType !== TargetCount.CURRENT_FILE &&
 		optionType !== TargetCount.CURRENT_DAY &&
 		optionType !== TargetCount.LAST_DAY &&
 		optionType !== TargetCount.CURRENT_STREAK;

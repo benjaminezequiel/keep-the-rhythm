@@ -66,7 +66,7 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
     }
     const newSlot: SlotConfig = {
       index: effectiveSlots?.length ?? 0,
-      option: TargetCount.CURRENT_FILE,
+      option: TargetCount.CURRENT_DAY,
       calc: CalculationType.TOTAL,
     };
 

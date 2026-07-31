@@ -1,7 +1,6 @@
 import { getDateStreaks } from "@/utils/utils";
 import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
 import { useStore } from "./store";
-import { getPlugin } from "./pluginRegistry";
 import {
 	formatDate,
 	getStartOfMonth,
@@ -100,21 +99,8 @@ export function getCurrentCount(
 	target: TargetCount,
 	calc?: CalculationType,
 ): number {
-	const { today, currentActivity, daysWithCompletedGoal, dailyActivity } =
+	const { today, daysWithCompletedGoal, dailyActivity } =
 		useStore.getState();
-
-	if (target === TargetCount.CURRENT_FILE) {
-		if (currentActivity) {
-			return currentActivity.wordsAdded;
-		}
-		const activeFile = getPlugin().app.workspace.getActiveFile();
-		if (activeFile) {
-			return dailyActivity
-				.filter((a) => a.filePath === activeFile.path)
-				.reduce((sum, a) => sum + a.wordsAdded, 0);
-		}
-		return 0;
-	}
 
 	if (target === TargetCount.CURRENT_STREAK) {
 		if (daysWithCompletedGoal?.length) {
