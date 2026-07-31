@@ -1,5 +1,4 @@
 import { formatDate } from "@/utils/dateUtils";
-import { state } from "@/core/pluginState";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
 

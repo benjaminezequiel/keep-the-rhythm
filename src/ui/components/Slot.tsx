@@ -1,7 +1,8 @@
 import { getDateBasedOnIndex } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount } from "@/db/queries";
@@ -9,7 +10,7 @@ import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
 import { TargetCount, SlotConfig, Unit } from "@/defs/types";
-import { EVENTS, state } from "@/core/pluginState";
+import { useStore } from "@/core/store";
 
 export const Slot = ({
 	index,
@@ -22,13 +23,9 @@ export const Slot = ({
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
 }) => {
-	// TODO: should probably make something that stores data that's not from today so its only udpated on refresh everything!
-
-	const [value, setValue] = useState<number | string>(0);
 	const [unitType, setUnitType] = useState<Unit>(unit);
 	const [optionType, setOptionType] = useState<TargetCount>(option);
 	const [calcMode, setCalcType] = useState<CalculationType>(calc);
-	const [progressValue, setProgressValue] = useState<number>(0);
 
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 	const unitButtonRef = useRef<HTMLButtonElement>(null);
@@ -36,7 +33,32 @@ export const Slot = ({
 	const calcButtonRef = useRef<HTMLButtonElement>(null);
 
 	const TargetCounts = Object.values(TargetCount);
-	const plugin = state.plugin;
+
+	// Reactive slices of the store the slot's value depends on.  Each
+	// selector re-renders the component only when that slice changes,
+	// replacing the old SETTINGS_CHANGED / DAY_CHANGED / HISTORY_DATA_CHANGED
+	// event listeners.
+	const today = useStore((s) => s.today);
+	const currentActivity = useStore((s) => s.currentActivity);
+	const daysWithCompletedGoal = useStore((s) => s.daysWithCompletedGoal);
+	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
+	const mutateSettings = useStore((s) => s.mutateSettings);
+
+	// useLiveQuery replaces the manual updateData() + event listener dance.
+	// It re-runs whenever:
+	//   • the IndexedDB rows the query touches change (auto-tracked by Dexie)
+	//   • any of the deps below change (optionType/calcMode toggles, today
+	//     rollover, currentActivity word-delta updates, streak list changes)
+	const value = useLiveQuery(
+		() =>
+			getCurrentCount(optionType, calcMode, {
+				today,
+				currentActivity,
+				daysWithCompletedGoal,
+			}),
+		[optionType, calcMode, today, currentActivity, daysWithCompletedGoal],
+		0,
+	);
 
 	const unitSupportingText = () => {
 		if (optionType === TargetCount.CURRENT_STREAK) {
@@ -78,21 +100,20 @@ export const Slot = ({
 				? CalculationType.AVG
 				: CalculationType.TOTAL;
 
-		if (plugin?.data?.settings) {
-			plugin.data.settings.sidebarConfig.slots[index].calc = newCalc;
-			plugin.quietSave();
-		}
-
+		// Persist the new calc mode into settings (mutateSettings syncs
+		// the store + saves to data.json, replacing plugin.quietSave()).
+		mutateSettings((draft) => {
+			draft.sidebarConfig.slots[index].calc = newCalc;
+		});
 		setCalcType(newCalc);
 	};
 
 	const toggleUnit = () => {
 		const newUnit: Unit = unitType === Unit.WORD ? Unit.CHAR : Unit.WORD;
 
-		if (plugin?.data?.settings) {
-			plugin.data.settings.sidebarConfig.slots[index].unit = newUnit;
-			plugin.quietSave();
-		}
+		mutateSettings((draft) => {
+			draft.sidebarConfig.slots[index].unit = newUnit;
+		});
 		setUnitType(newUnit);
 	};
 
@@ -101,71 +122,20 @@ export const Slot = ({
 		const nextIndex = (currentIndex + 1) % TargetCounts.length;
 		const newOption = TargetCounts[nextIndex];
 
-		if (plugin && plugin.data && plugin.data.settings) {
-			plugin.data.settings.sidebarConfig.slots[index].option = newOption;
-			plugin.quietSave();
-		}
-
+		mutateSettings((draft) => {
+			draft.sidebarConfig.slots[index].option = newOption;
+		});
 		setOptionType(newOption);
 	};
 
-	const updateData = async () => {
-		try {
-			const v = await getCurrentCount(optionType, calcMode);
-			if (optionType === TargetCount.CURRENT_DAY) {
-				const newProgress =
-					(v / state.plugin.data.settings.dailyWritingGoal) * 100;
-
-				setProgressValue(Math.min(newProgress, 100));
-			}
-			setValue(v);
-		} catch (error) {
-			console.error(error);
-		}
-	};
-
-	useEffect(() => {
-		// Defensive cleanup for all 4 event types before re-registering.
-		// Works around the weird off→on→off pattern that was here before
-		// (which hinted at duplicate-listener bugs).
-		state.off(EVENTS.TODAY_DATA_CHANGED, updateData);
-		state.off(EVENTS.HISTORY_DATA_CHANGED, updateData);
-		state.off(EVENTS.DAY_CHANGED, updateData);
-		state.off(EVENTS.SETTINGS_CHANGED, updateData);
-
-		// Slot re-renders on four events:
-		//  • TODAY_DATA_CHANGED   — current file word delta updated in memory
-		//                            or flushed to DB
-		//  • HISTORY_DATA_CHANGED — streak / daysWithCompletedGoal changed
-		//                            (e.g. goal hit or missed, manual entry
-		//                            for past date, file rename)
-		//  • DAY_CHANGED          — calendar day rolled over, state.today
-		//                            points at a new date
-		//  • SETTINGS_CHANGED     — daily writing goal / slot config changed
-		//                            (progress percentage depends on goal)
-		state.on(EVENTS.TODAY_DATA_CHANGED, updateData);
-		state.on(EVENTS.HISTORY_DATA_CHANGED, updateData);
-		state.on(EVENTS.DAY_CHANGED, updateData);
-		state.on(EVENTS.SETTINGS_CHANGED, updateData);
-
-		updateData();
-
-		return () => {
-			state.off(EVENTS.TODAY_DATA_CHANGED, updateData);
-			state.off(EVENTS.HISTORY_DATA_CHANGED, updateData);
-			state.off(EVENTS.DAY_CHANGED, updateData);
-			state.off(EVENTS.SETTINGS_CHANGED, updateData);
-		};
-	}, [unitType, optionType, calcMode]);
+	const progressValue =
+		optionType === TargetCount.CURRENT_DAY && dailyWritingGoal > 0
+			? Math.min(((value ?? 0) / dailyWritingGoal) * 100, 100)
+			: 0;
 
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);
-		const data = state.plugin.data.stats?.daysWithCompletedGoal;
-
-		if (data && data.includes(date)) {
-			return true;
-		}
-		return false;
+		return daysWithCompletedGoal?.includes(date) ?? false;
 	}
 
 	return (
@@ -225,7 +195,9 @@ export const Slot = ({
 				)}
 			</div>
 			<div className="slot__data">
-				<div className="slot__value">{value.toLocaleString()}</div>
+				<div className="slot__value">
+					{(value ?? 0).toLocaleString()}
+				</div>
 				<div className="slot__unit">
 					{unitSupportingText()}
 					<span className="slot__unit-avg">

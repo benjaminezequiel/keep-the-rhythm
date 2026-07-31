@@ -1,7 +1,7 @@
 import { Entries } from "@/ui/components/Entries";
 import { SlotWrapper } from "@/ui/components/SlotWrapper";
 import { parseSlotQuery } from "./codeBlockQuery";
-import { state } from "./pluginState";
+import { getPlugin } from "./pluginRegistry";
 import { MarkdownPostProcessorContext } from "obsidian";
 import { parseQueryToJSEP } from "./codeBlockQuery";
 import { createRoot } from "react-dom/client";
@@ -16,7 +16,7 @@ export function createHeatmapCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!state.plugin.data || !state.plugin.data.settings) {
+	if (!getPlugin().data || !getPlugin().data.settings) {
 		return; // add log / error
 	}
 
@@ -56,7 +56,7 @@ export function createSlotsCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!state.plugin.data || !state.plugin.data.settings) {
+	if (!getPlugin().data || !getPlugin().data.settings) {
 		return; // add log / error
 	}
 	const config = parseSlotQuery(source);
@@ -119,7 +119,7 @@ export function createEntriesCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!state.plugin.data || !state.plugin.data.settings) {
+	if (!getPlugin().data || !getPlugin().data.settings) {
 		return;
 	}
 

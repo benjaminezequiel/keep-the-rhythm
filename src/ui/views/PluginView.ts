@@ -33,22 +33,9 @@ export class PluginView extends ItemView {
 		const reactContainer = container.createEl("div");
 		this.root = createRoot(reactContainer);
 
-		this.root.render(
-			React.createElement(KTRView, {
-				plugin: this.plugin,
-			}),
-		);
-		// this.root.render(
-		// 	React.createElement(Heatmap, {
-		// 		data: this.plugin.mergedStats,
-		// 		intensityLevels:
-		// 			this.plugin.pluginData.settings.intensityLevels,
-		// 		showOverview: this.plugin.pluginData.settings.showOverview,
-		// 		showHeatmap: this.plugin.pluginData.settings.showHeatmap,
-		// 		showEntries: this.plugin.pluginData.settings.showEntries,
-		// 		plugin: this.plugin,
-		// 	}),
-		// );
+		// KTRView reads everything it needs from the Zustand store +
+		// useLiveQuery, so no plugin prop is required.
+		this.root.render(React.createElement(KTRView));
 	}
 
 	async onClose() {

@@ -2,10 +2,11 @@ import { deleteActivityFromDate } from "../../db/queries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
-import { useEffect, useState, useRef } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { getActivityByDate } from "../../db/queries";
 import { sumTimeEntries, getFileNameWithoutExtension } from "../../utils/utils";
-import { state, EVENTS } from "../../core/pluginState";
+import { useStore } from "@/core/store";
+import { getPlugin } from "@/core/pluginRegistry";
 import { DailyActivity } from "../../db/types";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
@@ -20,34 +21,19 @@ export const Entries = ({
   date: dateProp,
   filters,
 }: EntriesProps) => {
-  const date = dateProp ?? state.today;
-  const [entries, setEntries] = useState<DailyActivity[]>([]);
+  // Subscribe to today so the header label + default date stay live when
+  // the calendar rolls over (DAY_CHANGED equivalent).
+  const today = useStore((s) => s.today);
+  const date = dateProp ?? today;
 
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  // useLiveQuery auto re-runs whenever the underlying IndexedDB rows for
+  // `date` change (insert / modify / delete), replacing the old
+  // TODAY_DATA_CHANGED / HISTORY_DATA_CHANGED event listeners.
+  const entries = useLiveQuery(
+    async () => {
+      const fetchedActivities = await getActivityByDate(date);
 
-  if (
-    deleteButtonRef instanceof HTMLElement &&
-    !deleteButtonRef.dataset.iconSet
-  ) {
-    setIcon(deleteButtonRef, "trash-2");
-    deleteButtonRef.dataset.iconSet = "true";
-  }
-
-  const handleEntriesRefresh = async () => {
-    const fetchedActivities = await getActivityByDate(date);
-
-    const pathCounts = new Map<string, number>();
-    for (const activity of fetchedActivities) {
-      if (activity.filePath) {
-        pathCounts.set(
-          activity.filePath,
-          (pathCounts.get(activity.filePath) || 0) + 1,
-        );
-      }
-    }
-
-    setEntries(
-      fetchedActivities
+      return fetchedActivities
         .filter((entry) => sumTimeEntries(entry, true) != 0)
         .filter((entry) => {
           if (!filters || filters.length === 0) return true;
@@ -62,44 +48,22 @@ export const Entries = ({
           const aCount = sumTimeEntries(a, true);
           const bCount = sumTimeEntries(b, true);
           return bCount - aCount;
-        }),
-    );
-  };
+        });
+    },
+    [date, filters],
+    [] as DailyActivity[],
+  );
 
   const addManualEntry = () => {
-    new ManualEntryModal(state.plugin.app).open();
+    new ManualEntryModal(getPlugin().app).open();
   };
-
-  useEffect(() => {
-    handleEntriesRefresh();
-    // Entries show the list of activities for `date`.  Depending on
-    // which date the caller requested, we need different events:
-    //   • TODAY_DATA_CHANGED   — when showing today, words were added,
-    //                            current activity swapped, or a today-only
-    //                            DB row was modified.
-    //   • HISTORY_DATA_CHANGED — arbitrary-date deletion (manual entry
-    //                            delete or Entries delete for past date),
-    //                            file rename, streak changes.
-    //   • DAY_CHANGED          — calendar rolled over; if `date` was the
-    //                            previous "today", re-read in case it now
-    //                            points at a fresh / different date.
-    state.on(EVENTS.TODAY_DATA_CHANGED, handleEntriesRefresh);
-    state.on(EVENTS.HISTORY_DATA_CHANGED, handleEntriesRefresh);
-    state.on(EVENTS.DAY_CHANGED, handleEntriesRefresh);
-
-    return () => {
-      state.off(EVENTS.TODAY_DATA_CHANGED, handleEntriesRefresh);
-      state.off(EVENTS.HISTORY_DATA_CHANGED, handleEntriesRefresh);
-      state.off(EVENTS.DAY_CHANGED, handleEntriesRefresh);
-    };
-  }, [date]);
 
   return (
     <div className="todayEntries__section">
       <RadixTooltip.Provider delayDuration={200}>
         <div className="todayEntries__header">
           <div className="todayEntries__section-title">
-            {date == state.today ? "ENTRIES TODAY" : `ENTRIES (${date})`}
+            {date == today ? "ENTRIES TODAY" : `ENTRIES (${date})`}
           </div>
           <Tooltip content="Add Entry">
             <button
@@ -109,7 +73,7 @@ export const Entries = ({
             />
           </Tooltip>
         </div>
-        {entries.length > 0 ? (
+        {entries && entries.length > 0 ? (
           entries.map((entry) => {
             const delta = sumTimeEntries(entry, true);
             const prefix = delta > 0 ? "+" : "";
@@ -119,29 +83,27 @@ export const Entries = ({
                 <span
                   className="todayEntries__file-path"
                   onClick={async () => {
-                    const file = state.plugin.app.vault.getFileByPath(
-                      entry.filePath,
-                    );
+                    const app = getPlugin().app;
+                    const file = app.vault.getFileByPath(entry.filePath);
 
                     if (!file) {
                       new Notice("File not found!");
                       return;
                     }
 
-                    const leaves =
-                      state.plugin.app.workspace.getLeavesOfType("markdown");
+                    const leaves = app.workspace.getLeavesOfType("markdown");
                     for (const leaf of leaves) {
                       if (
                         leaf.view instanceof FileView &&
                         leaf.view.file?.path == file.path
                       ) {
                         // Activate the existing leaf
-                        state.plugin.app.workspace.setActiveLeaf(leaf);
+                        app.workspace.setActiveLeaf(leaf);
                         return;
                       }
                     }
 
-                    const newLeaf = state.plugin.app.workspace.getLeaf("tab");
+                    const newLeaf = app.workspace.getLeaf("tab");
 
                     await newLeaf.openFile(file);
                   }}

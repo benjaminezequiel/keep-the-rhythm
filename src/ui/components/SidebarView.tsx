@@ -1,61 +1,25 @@
 import { KeyProvider } from "@/utils/useModiferKey";
-import React, { useEffect, useState } from "react";
-import type { PluginData } from "@/defs/types";
-import KeepTheRhythm from "@/main";
+import React from "react";
 import { Heatmap } from "./Heatmap";
 import { SlotWrapper } from "./SlotWrapper";
-import { EVENTS, state } from "@/core/pluginState";
+import { useStore } from "@/core/store";
 import { Entries } from "./Entries";
 
-interface KTRView {
-  data?: PluginData;
-  showSlots?: boolean;
-  showHeatmap?: boolean;
-  showEntries?: boolean;
-  plugin: KeepTheRhythm;
-}
-
-export const KTRView = ({ plugin }: KTRView) => {
-  const [heatmapConfigState, setHeatmapConfigState] = useState(
-    plugin.data.settings.heatmapConfig,
+export const KTRView = () => {
+  // Each selector subscribes to exactly the slice of settings it cares
+  // about.  Zustand's default Object.is equality means the component only
+  // re-renders when the selected value actually changes.
+  const heatmapConfig = useStore((s) => s.settings.heatmapConfig);
+  const slots = useStore((s) => s.settings.sidebarConfig.slots);
+  const showHeatmap = useStore(
+    (s) => s.settings.sidebarConfig.visibility.showHeatmap,
   );
-
-  const [slots, setSlots] = useState(plugin.data.settings.sidebarConfig.slots);
-  const [showHeatmap, setShowHeatmap] = useState(
-    plugin.data.settings.sidebarConfig.visibility.showHeatmap,
+  const showEntries = useStore(
+    (s) => s.settings.sidebarConfig.visibility.showEntries,
   );
-  const [showEntries, setShowEntries] = useState(
-    plugin.data.settings.sidebarConfig.visibility.showEntries,
+  const showSlots = useStore(
+    (s) => s.settings.sidebarConfig.visibility.showSlots,
   );
-  const [showSlots, setShowSlots] = useState(
-    plugin.data.settings.sidebarConfig.visibility.showSlots,
-  );
-
-  const updateData = () => {
-    setHeatmapConfigState(plugin.data.settings.heatmapConfig);
-
-    setSlots(plugin.data.settings.sidebarConfig.slots);
-
-    setShowHeatmap(plugin.data.settings.sidebarConfig.visibility.showHeatmap);
-    setShowEntries(plugin.data.settings.sidebarConfig.visibility.showEntries);
-    setShowSlots(plugin.data.settings.sidebarConfig.visibility.showSlots);
-  };
-
-  useEffect(() => {
-    updateData();
-
-    // SidebarView only cares about settings (heatmap colors, slot config,
-    // visibility toggles) and day rollover.  Activity-data mutations
-    // (typing, file open etc.) do not touch these, so there is no need
-    // to listen to TODAY_DATA_CHANGED / HISTORY_DATA_CHANGED.
-    state.on(EVENTS.SETTINGS_CHANGED, updateData);
-    state.on(EVENTS.DAY_CHANGED, updateData);
-
-    return () => {
-      state.off(EVENTS.SETTINGS_CHANGED, updateData);
-      state.off(EVENTS.DAY_CHANGED, updateData);
-    };
-  }, []);
 
   return (
     <div
@@ -65,9 +29,7 @@ export const KTRView = ({ plugin }: KTRView) => {
     >
       <KeyProvider>
         {showSlots && <SlotWrapper slots={slots} />}
-        {showHeatmap && (
-          <Heatmap heatmapConfig={heatmapConfigState} query={""} />
-        )}
+        {showHeatmap && <Heatmap heatmapConfig={heatmapConfig} query={""} />}
         {showEntries && <Entries />}
       </KeyProvider>
     </div>

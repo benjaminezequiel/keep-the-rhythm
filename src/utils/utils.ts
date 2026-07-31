@@ -1,4 +1,5 @@
-import { EVENTS, state } from "@/core/pluginState";
+import { getPlugin } from "@/core/pluginRegistry";
+import { useStore } from "@/core/store";
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
 import { DailyActivity } from "@/db/types";
@@ -238,10 +239,11 @@ export function debounce<T extends (...args: any[]) => void>(
 }
 
 async function createActivityObject(file: TFile, date: string) {
-	const content = await state.plugin.app.vault.read(file);
+	const plugin = getPlugin();
+	const content = await plugin.app.vault.read(file);
 	const currentWordCount = getLanguageBasedWordCount(
 		content,
-		state.plugin.data.settings.enabledLanguages,
+		plugin.data.settings.enabledLanguages,
 	);
 
 	const newActivity: DailyActivity = {
@@ -265,15 +267,11 @@ export async function getExistingOrCreateNewEntry(
 		entry = await createActivityObject(file, date);
 		await getDB().dailyActivity.add(entry);
 
-		// DB has a brand-new row for (date, file). Broadcast both the
-		// UI refresh event (scoped by whether the record is for today)
-		// and the persistence signal so the change ends up in data.json.
-		state.emit(
-			date === state.today
-				? EVENTS.TODAY_DATA_CHANGED
-				: EVENTS.HISTORY_DATA_CHANGED,
-		);
-		state.emit(EVENTS.DATA_PERSIST_NEEDED);
+		// DB has a brand-new row for (date, file).  useLiveQuery in Slot /
+		// Entries / Heatmap auto-responds to the insert, so no manual UI
+		// event is needed — we only request JSON persist so the new row
+		// eventually lands in data.json.
+		useStore.getState().requestPersist();
 	}
 
 	return entry;

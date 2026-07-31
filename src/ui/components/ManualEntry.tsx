@@ -1,6 +1,6 @@
 import { addDeltaToActivity } from "@/db/queries";
 import { TFile } from "obsidian";
-import { EVENTS, state } from "@/core/pluginState";
+import { useStore } from "@/core/store";
 import { AbstractInputSuggest } from "obsidian";
 import { App, Modal, Setting, TextComponent } from "obsidian";
 import {
@@ -10,17 +10,22 @@ import {
 import { DailyActivity } from "@/db/types";
 
 export class ManualEntryModal extends Modal {
-	private entry: DailyActivity = {
-		date: state.today,
-		filePath: "",
-		wordCountStart: 0,
-		wordsAdded: 0,
-	};
+	private entry: DailyActivity;
 
 	private wordsDelta = 0;
 
 	constructor(app: App) {
 		super(app);
+		// Read today / currentActivity once, at modal-open time.  The modal
+		// is short-lived so a snapshot is fine — no need for reactive
+		// subscriptions here.
+		const store = useStore.getState();
+		this.entry = {
+			date: store.today,
+			filePath: "",
+			wordCountStart: 0,
+			wordsAdded: 0,
+		};
 		this.setTitle("Add a new entry:");
 
 		new Setting(this.contentEl)
@@ -29,7 +34,7 @@ export class ManualEntryModal extends Modal {
 			.addSearch((search) => {
 				search
 					.setPlaceholder("Example: folder1/folder2")
-					.setValue(state.currentActivity?.filePath || "")
+					.setValue(store.currentActivity?.filePath || "")
 					.onChange(async (value) => {
 						this.entry.filePath = value;
 					});
@@ -38,7 +43,7 @@ export class ManualEntryModal extends Modal {
 
 				search.inputEl.addEventListener("blur", async () => {
 					const value = search.getValue();
-					const file = state.plugin.app.vault.getFileByPath(value);
+					const file = this.app.vault.getFileByPath(value);
 
 					if (!file) {
 						console.error("KTR: Invalid file selection");
@@ -46,7 +51,7 @@ export class ManualEntryModal extends Modal {
 					}
 					this.entry = await getExistingOrCreateNewEntry(
 						file,
-						state.today,
+						useStore.getState().today,
 					);
 				});
 			});
@@ -69,7 +74,7 @@ export class ManualEntryModal extends Modal {
 			.addText((text) => {
 				momentTextComponent = text;
 				text.setPlaceholder("YYYY-MM-DD")
-					.setValue(state.today)
+					.setValue(store.today)
 					.onChange((value) => {
 						this.entry.date = value;
 						const m = window.moment(value, "YYYY-MM-DD", true);
@@ -87,7 +92,7 @@ export class ManualEntryModal extends Modal {
 				hiddenDateInput.type = "date";
 				hiddenDateInput.addClass("ktr-hidden-date-input");
 				hiddenDateInput.value = window
-					.moment(state.today, "YYYY-MM-DD")
+					.moment(store.today, "YYYY-MM-DD")
 					.format("YYYY-MM-DD");
 
 				hiddenDateInput.addEventListener("change", () => {
@@ -109,9 +114,8 @@ export class ManualEntryModal extends Modal {
 				.setCta()
 				.onClick(() => {
 					this.saveNewEntry();
-					// Event emission is handled inside addDeltaToActivity
-					// (data layer) — UI layers must not broadcast events
-					// directly.
+					// Persist is handled inside addDeltaToActivity (data
+					// layer) — UI layers must not request persist directly.
 					this.close();
 				}),
 		);

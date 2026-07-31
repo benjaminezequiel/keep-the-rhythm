@@ -1,6 +1,6 @@
 import { TargetCount } from "@/defs/types";
 import { getCurrentCount } from "@/db/queries";
-import { EVENTS, state } from "./pluginState";
+import { useStore } from "./store";
 import { TFile, Editor } from "obsidian";
 import { getDB } from "../db/db";
 import { DailyActivity } from "@/db/types";
@@ -11,6 +11,10 @@ import { getExistingOrCreateNewEntry, getTotalWords } from "@/utils/utils";
 import { isPathTracked } from "./pathFilter";
 
 const moment = _moment as unknown as typeof _moment.default;
+
+// Module-level guard — replaces state.isUpdatingActivity.  Only used
+// internally by events.ts to prevent re-entrant activity creation.
+let isUpdatingActivity = false;
 
 let dbUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_TIME = 100; // ms
@@ -33,28 +37,29 @@ let pendingEditor: Editor | null = null;
 let pendingInfo: any = null;
 let pendingPlugin: KeepTheRhythm | null = null;
 
+// Convenience accessor — avoids importing useStore directly in every function.
+const store = () => useStore.getState();
+
 async function ensureActivityExists(file: TFile) {
   if (!file || file.extension !== "md") return;
   if (!isPathTracked(file.path)) return;
-  if (state.isUpdatingActivity) return;
+  if (isUpdatingActivity) return;
   if (
-    file.path == state.currentActivity?.filePath &&
-    state.currentActivity?.date === state.today
+    file.path == store().currentActivity?.filePath &&
+    store().currentActivity?.date === store().today
   ) return;
 
-  state.isUpdatingActivity = true;
+  isUpdatingActivity = true;
   try {
-    const entry = await getExistingOrCreateNewEntry(file, state.today);
-    if (entry) state.setCurrentActivity(entry);
-    // Either:
-    //  - entry was just created → getExistingOrCreateNewEntry already
-    //    emitted TODAY_DATA_CHANGED + DATA_PERSIST_NEEDED; or
-    //  - entry already existed in DB → no DB change, no persist needed,
-    //    but we still need to refresh UI so Slot shows the newly-swapped
-    //    currentActivity's counts.
-    state.emit(EVENTS.TODAY_DATA_CHANGED);
+    const entry = await getExistingOrCreateNewEntry(file, store().today);
+    if (entry) store().setCurrentActivity(entry);
+    // If a new DB row was created, getExistingOrCreateNewEntry already
+    // called requestPersist().  useLiveQuery in Slot/Entries will auto-
+    // respond to the DB insert.  If the row already existed, no DB change
+    // occurred — but we still swapped currentActivity in the store, so
+    // Slot's useStore(s => s.currentActivity) selector fires automatically.
   } finally {
-    state.isUpdatingActivity = false;
+    isUpdatingActivity = false;
   }
 }
 
@@ -84,10 +89,12 @@ export async function handleEditorChange(
   // wordCountStart is captured from disk before auto-save can write
   // the current edits. This ensures the debounced delta calculation
   // in processEditorChange has a correct baseline.
+  const currentActivity = store().currentActivity;
+  const today = store().today;
   if (
-    !state.currentActivity ||
-    state.currentActivity.filePath !== file.path ||
-    state.currentActivity.date !== state.today
+    !currentActivity ||
+    currentActivity.filePath !== file.path ||
+    currentActivity.date !== today
   ) {
     ensureActivityExists(file);
   }
@@ -141,24 +148,24 @@ async function processEditorChange(
   info: any,
   plugin: KeepTheRhythm,
 ) {
-  let activity = state.currentActivity;
+  let activity = store().currentActivity;
 
   /**
-   * Handle mismatches between state and current opened file
+   * Handle mismatches between store and current opened file
    * Only happens if the user is editing stuff really really fast, some of those inputs might be ignored at the start.
    * But I think it's okay, there might just be a slight mismatch because of wordCountStart if the file wasn't seen today
    * */
   if (
     !activity ||
     activity?.filePath !== info.file.path ||
-    activity?.date !== state.today
+    activity?.date !== store().today
   ) {
     // Re-sync the activity when it's missing, points at a different file, or
     // is stale after a midnight rollover (Obsidian left open across days).
     // If handleFileOpen is not running (some weird focusing states), make it run and update the activity
-    if (!state.isUpdatingActivity) {
+    if (!isUpdatingActivity) {
       await handleFileOpen(info.file);
-      activity = state.currentActivity;
+      activity = store().currentActivity;
     } else {
       return;
     }
@@ -166,7 +173,7 @@ async function processEditorChange(
 
   if (!activity) return;
 
-  /** Calculate WORD deltas based on state  */
+  /** Calculate WORD deltas based on store  */
   const currentContent = editor.getValue();
 
   const newWordCount = getLanguageBasedWordCount(
@@ -178,27 +185,25 @@ async function processEditorChange(
 
   const wordsAdded = newWordCount - totalWords;
 
-  // This only mutates in-memory state (the activity object held by
-  // state.currentActivity). The DB is NOT updated yet — it's flushed
-  // later via flushChangesToDB. So broadcast TODAY_DATA_CHANGED so UI
-  // reflects the delta immediately, but DO NOT request persistence
-  // (DATA_PERSIST_NEEDED) until the IndexedDB write actually happens.
-  activity.wordsAdded = (activity.wordsAdded || 0) + (wordsAdded || 0);
-
-  state.emit(EVENTS.TODAY_DATA_CHANGED);
+  // This only mutates the store's currentActivity (immutable update via
+  // accumulateCurrentActivityWords). The DB is NOT updated yet — it's
+  // flushed later via flushChangesToDB.  Slot's useStore selector for
+  // currentActivity will auto-re-render.  No persist signal is needed
+  // until the DB write actually happens.
+  store().accumulateCurrentActivityWords(wordsAdded || 0);
 
   /** Debounces updates to the DB, which only happens when
    *  the user stops editing the page for 200ms. */
   if (dbUpdateTimeout) clearTimeout(dbUpdateTimeout);
 
   dbUpdateTimeout = setTimeout(async () => {
-    await flushChangesToDB(state.currentActivity!);
+    await flushChangesToDB(store().currentActivity!);
   }, DEBOUNCE_TIME);
 }
 
 /**
  * @function handleFileOpen
- * - Updates the state to match the current opened file
+ * - Updates the store to match the current opened file
  * - Creates an activity for the opened file if it doens't exist
  * - Checks if the day passed to update data (maybe should be somewhere else)
  */
@@ -215,34 +220,34 @@ export async function handleFileOpen(file: TFile) {
   if (!isPathTracked(file.path)) {
     return;
   }
-  state.isUpdatingActivity = true;
+  isUpdatingActivity = true;
 
   /** Return if the file "opened" is the same that was seen last time
    *  AND its activity still belongs to the current day. After a midnight
    *  rollover we must fall through to rebuild today's entry. */
   if (
-    file.path == state.currentActivity?.filePath &&
-    state.currentActivity?.date === state.today
+    file.path == store().currentActivity?.filePath &&
+    store().currentActivity?.date === store().today
   ) {
-    state.isUpdatingActivity = false;
+    isUpdatingActivity = false;
     return;
   }
 
-  const entry = await getExistingOrCreateNewEntry(file, state.today);
-  if (entry) state.setCurrentActivity(entry);
-  state.isUpdatingActivity = false;
+  const entry = await getExistingOrCreateNewEntry(file, store().today);
+  if (entry) store().setCurrentActivity(entry);
+  isUpdatingActivity = false;
 
   // Same rationale as ensureActivityExists: getExistingOrCreateNewEntry
-  // already emitted events if a row was created; if the row already
-  // existed we still need a UI refresh so currentActivity swap is seen.
-  state.emit(EVENTS.TODAY_DATA_CHANGED);
+  // already handled events if a row was created; if the row already
+  // existed we still need currentActivity swap to be seen by Slot —
+  // which happens automatically via useStore selector.
 }
 
 /**
  * @function flushChangesToDB
- * Debounced function that matches the state to the DB entries;
+ * Debounced function that matches the store to the DB entries;
  * DB write is the single source of truth for persistence, so we
- * always emit DATA_PERSIST_NEEDED together with the UI refresh here.
+ * always emit requestPersist together with the UI refresh here.
  */
 async function flushChangesToDB(activity: DailyActivity) {
   if (!activity) return;
@@ -254,18 +259,18 @@ async function flushChangesToDB(activity: DailyActivity) {
       dailyEntry.wordsAdded = activity.wordsAdded;
     });
 
-  // DB write is done → both UI refresh and JSON persist are required.
+  // DB write is done → request JSON persist.  useLiveQuery in Slot /
+  // Entries will auto-respond to the DB mutation.
   checkStreak();
-  state.emit(EVENTS.TODAY_DATA_CHANGED);
-  state.emit(EVENTS.DATA_PERSIST_NEEDED);
+  store().requestPersist();
 }
 
 /**
  * @function cleanDBTimeout
  * Clears timeouts and flushes any in-memory data to the DB.
- * Must be awaited so all TODAY/HISTORY data-change and persist events
- * (and their debounced save timers) settle before the caller (onunload)
- * invalidates pending saves and clears the DB.
+ * Must be awaited so all pending persist signals (and their debounced
+ * save timers) settle before the caller (onunload) invalidates
+ * pending saves and clears the DB.
  */
 export async function cleanDBTimeout() {
   // Flush any pending editor-change sample so the final deltas land in the
@@ -279,7 +284,7 @@ export async function cleanDBTimeout() {
   if (dbUpdateTimeout) {
     clearTimeout(dbUpdateTimeout);
   }
-  await flushChangesToDB(state.currentActivity!);
+  await flushChangesToDB(store().currentActivity!);
 }
 
 /**
@@ -289,20 +294,19 @@ export async function cleanDBTimeout() {
 async function checkStreak() {
   const writtenToday = await getCurrentCount(TargetCount.CURRENT_DAY);
 
-  const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
+  const goal = store().settings?.dailyWritingGoal || 500;
 
   if (writtenToday >= goal) {
-    state.plugin.updateCurrentStreak(true);
+    store().updateStreak(true);
   } else {
-    state.plugin.updateCurrentStreak(false);
+    store().updateStreak(false);
   }
 }
 
 /**
  * @function handleFileDelete
- * Zeroes out today's contribution from the deleted file, then broadcasts
- * both the UI refresh (today's totals changed) and the persist signal
- * (DB row was actually modified).
+ * Zeroes out today's contribution from the deleted file, then requests
+ * persist.  useLiveQuery in Slot/Entries auto-responds to the DB mutation.
  */
 export async function handleFileDelete(file: TFile) {
   if (!file || file.extension !== "md") {
@@ -314,15 +318,14 @@ export async function handleFileDelete(file: TFile) {
   try {
     await getDB()
       .dailyActivity.where("[date+filePath]")
-      .equals([state.today, file.path])
+      .equals([store().today, file.path])
       .modify((dailyEntry) => {
         // Reverse the entire day's delta so the file's contribution
         // to today's stats is zeroed out.
         dailyEntry.wordsAdded = -(dailyEntry.wordCountStart || 0);
       });
 
-    state.emit(EVENTS.TODAY_DATA_CHANGED);
-    state.emit(EVENTS.DATA_PERSIST_NEEDED);
+    store().requestPersist();
   } catch (error) {
     console.error(`KTR failed deleting ${file.path} | ${error}`);
   }
@@ -337,13 +340,7 @@ export function handleFileCreate(file: TFile) {}
 /**
  * @function handleFileRename
  * Update all references to this file to match new filepath.
- * Two cases:
- *  (a) new path is outside tracking scope → drop all historical rows for
- *      the old path (otherwise today's / history totals are inflated),
- *      then broadcast HISTORY + persist.
- *  (b) normal rename inside scope → rewrite every historical row's
- *      filePath so heatmap/entries keep pointing at the right file,
- *      then broadcast HISTORY + persist.
+ * useLiveQuery in Heatmap/Entries auto-responds to the DB mutation.
  */
 export async function handleFileRename(file: TFile, oldPath: string) {
   try {
@@ -351,8 +348,7 @@ export async function handleFileRename(file: TFile, oldPath: string) {
     // activity for the old path instead of carrying it over.
     if (!isPathTracked(file.path)) {
       await getDB().dailyActivity.where("filePath").equals(oldPath).delete();
-      state.emit(EVENTS.HISTORY_DATA_CHANGED);
-      state.emit(EVENTS.DATA_PERSIST_NEEDED);
+      store().requestPersist();
       return;
     }
 
@@ -363,8 +359,7 @@ export async function handleFileRename(file: TFile, oldPath: string) {
         dailyEntry.filePath = file.path;
       });
 
-    state.emit(EVENTS.HISTORY_DATA_CHANGED);
-    state.emit(EVENTS.DATA_PERSIST_NEEDED);
+    store().requestPersist();
   } catch (error) {
     console.error(`KTR failed renaming ${file.path} | ${error}`);
   }

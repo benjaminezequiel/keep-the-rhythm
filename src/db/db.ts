@@ -1,5 +1,5 @@
 import Dexie from "dexie";
-import { state } from "@/core/pluginState";
+import { getPlugin } from "@/core/pluginRegistry";
 import { DailyActivity } from "./types";
 
 class KTRDatabase extends Dexie {
@@ -22,7 +22,7 @@ let dbInstance: KTRDatabase | null = null;
 
 // Need to init the database onload() so that the plugin instance already exists
 export async function initDatabase() {
-	const vaultName = state.plugin.app.vault.getName();
+	const vaultName = getPlugin().app.vault.getName();
 	try {
 		dbInstance = new KTRDatabase(vaultName);
 		await dbInstance.open();

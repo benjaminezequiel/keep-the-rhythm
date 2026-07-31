@@ -8,7 +8,7 @@ import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { useCtrlKey } from "../../utils/useModiferKey";
 import { getCorePluginSettings } from "../../utils/windowUtility";
-import { state } from "@/core/pluginState";
+import { getPlugin } from "@/core/pluginRegistry";
 import { Heatmap } from "./Heatmap";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
@@ -29,7 +29,8 @@ export const HeatmapCell = ({
 	squared,
 }: HeatmapCellProps) => {
 	const handleClick = async (_event: React.MouseEvent<HTMLDivElement>) => {
-		if (!state.plugin.data.settings.heatmapNavigation) return;
+		const app = getPlugin().app;
+		if (!getPlugin().data.settings.heatmapNavigation) return;
 
 		const dailyNotesSettings = getCorePluginSettings("daily-notes");
 		let notePath = "";
@@ -50,22 +51,18 @@ export const HeatmapCell = ({
 
 		notePath += ".md";
 
-		const existingFile =
-			state.plugin.app.vault.getAbstractFileByPath(notePath);
+		const existingFile = app.vault.getAbstractFileByPath(notePath);
 
 		if (existingFile instanceof obsidian.TFile) {
-			const existingLeaf = getLeafWithFile(
-				state.plugin.app,
-				existingFile,
-			);
+			const existingLeaf = getLeafWithFile(app, existingFile);
 			if (existingLeaf) {
-				state.plugin.app.workspace.setActiveLeaf(existingLeaf);
+				app.workspace.setActiveLeaf(existingLeaf);
 			} else {
-				state.plugin.app.workspace.getLeaf(true).openFile(existingFile);
+				app.workspace.getLeaf(true).openFile(existingFile);
 			}
 		} else {
-			const newFile = await state.plugin.app.vault.create(notePath, "");
-			await state.plugin.app.workspace.getLeaf(true).openFile(newFile);
+			const newFile = await app.vault.create(notePath, "");
+			await app.workspace.getLeaf(true).openFile(newFile);
 		}
 	};
 

@@ -2,7 +2,8 @@ import { getDateStreaks, sumTimeEntries } from "@/utils/utils";
 import { getDB } from "./db";
 import { TargetCount, CalculationType } from "../defs/types";
 import { formatDate } from "@/utils/dateUtils";
-import { EVENTS, state } from "@/core/pluginState";
+import { useStore } from "@/core/store";
+import { getPlugin } from "@/core/pluginRegistry";
 import {
 	getStartOfMonth,
 	getStartOfWeek,
@@ -12,6 +13,17 @@ import { DailyActivity } from "./types";
 import { moment as _moment, Notice } from "obsidian";
 
 const moment = _moment as unknown as typeof _moment.default;
+
+/**
+ * Context for getCurrentCount.  React components pass store selector
+ * values so useLiveQuery can depend on them; non-React callers omit
+ * and the function falls back to useStore.getState().
+ */
+export interface QueryContext {
+	today: string;
+	currentActivity: DailyActivity | null;
+	daysWithCompletedGoal: string[];
+}
 
 export async function getActivityByDate(date: string) {
 	return await getDB().dailyActivity.where("date").equals(date).toArray();
@@ -97,12 +109,17 @@ export function sumLast24Hours(
 export async function getCurrentCount(
 	target: TargetCount,
 	calc?: CalculationType,
+	ctx?: QueryContext,
 ): Promise<number> {
+	// Fall back to store when no context is provided (non-React callers).
+	const { today, currentActivity, daysWithCompletedGoal } =
+		ctx ?? useStore.getState();
+
 	if (target === TargetCount.CURRENT_FILE) {
-		if (state.currentActivity) {
-			return sumTimeEntries(state?.currentActivity) || 0;
+		if (currentActivity) {
+			return sumTimeEntries(currentActivity) || 0;
 		} else {
-			const activeFile = state.plugin.app.workspace.getActiveFile();
+			const activeFile = getPlugin().app.workspace.getActiveFile();
 			if (activeFile) {
 				const activities = await getDB()
 					.dailyActivity.where("filePath")
@@ -121,34 +138,31 @@ export async function getCurrentCount(
 
 	switch (target) {
 		case TargetCount.CURRENT_STREAK:
-			// return state.plugin.data?.stats?.currentStreak || 0;
-			if (state.plugin.data.stats?.daysWithCompletedGoal) {
-				const { currentStreak } = getDateStreaks(
-					state.plugin.data.stats?.daysWithCompletedGoal,
-				);
+			if (daysWithCompletedGoal?.length) {
+				const { currentStreak } = getDateStreaks(daysWithCompletedGoal);
 				return currentStreak;
 			} else {
 				return 0;
 			}
 
 		case TargetCount.CURRENT_DAY:
-			return await getTotalValueByDate(state.today);
+			return await getTotalValueByDate(today);
 
 		case TargetCount.CURRENT_WEEK:
 			startDate = formatDate(getStartOfWeek(new Date()));
-			totalDays = moment(state.today).diff(startDate, "days") + 1;
+			totalDays = moment(today).diff(startDate, "days") + 1;
 			break;
 
 		case TargetCount.CURRENT_MONTH:
 			startDate = formatDate(getStartOfMonth(new Date()));
-			totalDays = moment(state.today).diff(startDate, "days") + 1;
+			totalDays = moment(today).diff(startDate, "days") + 1;
 			break;
 
 		case TargetCount.CURRENT_YEAR:
 			startDate = formatDate(getStartOfYear(new Date()));
 			totalDays =
 				Math.floor(
-					(new Date(state.today).getTime() -
+					(new Date(today).getTime() -
 						new Date(startDate).getTime()) /
 						(1000 * 3600 * 24),
 				) + 1;
@@ -156,24 +170,23 @@ export async function getCurrentCount(
 
 		case TargetCount.LAST_DAY:
 			return getTotalValueFromLast24Hours();
-			break;
 
 		case TargetCount.LAST_WEEK:
-			startDate = moment(state.today)
+			startDate = moment(today)
 				.subtract(7, "days")
 				.format("YYYY-MM-DD");
 			totalDays = 7;
 			break;
 
 		case TargetCount.LAST_MONTH:
-			startDate = moment(state.today)
+			startDate = moment(today)
 				.subtract(30, "days")
 				.format("YYYY-MM-DD");
 			totalDays = 30;
 			break;
 
 		case TargetCount.LAST_YEAR:
-			startDate = moment(state.today)
+			startDate = moment(today)
 				.subtract(365, "days")
 				.format("YYYY-MM-DD");
 			totalDays = 365;
@@ -184,7 +197,7 @@ export async function getCurrentCount(
 			throw new Error("Unsupported target type");
 	}
 
-	const value = await getTotalValueInDateRange(startDate, state.today);
+	const value = await getTotalValueInDateRange(startDate, today);
 	return calc === CalculationType.AVG ? Math.round(value / totalDays) : value;
 }
 
@@ -192,8 +205,9 @@ export const deleteActivityFromDate = async (
 	filePath: string,
 	date: string,
 ) => {
-	if (filePath == state.currentActivity?.filePath) {
-		state.setCurrentActivity(null);
+	const store = useStore.getState();
+	if (filePath == store.currentActivity?.filePath) {
+		store.setCurrentActivity(null);
 	}
 
 	try {
@@ -201,31 +215,26 @@ export const deleteActivityFromDate = async (
 			.dailyActivity.where("[date+filePath]")
 			.equals([date, filePath])
 			.delete();
-		// Scope the UI refresh by the actual date deleted, and always
-		// request JSON persist since a DB row was removed. If the current
-		// activity was just nullified, TODAY_DATA_CHANGED also picks up
-		// the current-slot reset.
-		state.emit(
-			date === state.today
-				? EVENTS.TODAY_DATA_CHANGED
-				: EVENTS.HISTORY_DATA_CHANGED,
-		);
-		state.emit(EVENTS.DATA_PERSIST_NEEDED);
+		// DB row removed → request JSON persist.  useLiveQuery in Slot /
+		// Entries auto-responds to the DB mutation, so no manual UI event
+		// is needed.  If currentActivity was just nullified, Slot's store
+		// selector picks that up automatically.
+		store.requestPersist();
 	} catch {
-		const notice = new Notice(
+		new Notice(
 			"Failed to delete this entry! This is a bug, contact the developer.",
 		);
 	}
 };
 
 /**
- * Applies `wordsDelta` to the given activity's DB row and broadcasts the
- * appropriate events. Callers (e.g. ManualEntry modal) should NOT emit any
- * event themselves after calling this — it's handled here so the data layer
- * is the single source of truth for when things changed.
+ * Applies `wordsDelta` to the given activity's DB row. Callers (e.g.
+ * ManualEntry modal) should NOT request persist themselves after calling
+ * this — it's handled here so the data layer is the single source of truth.
  *
- * The date on `dailyActivity` determines whether we broadcast TODAY vs
- * HISTORY scope; a PERSIST signal is always emitted since the DB mutated.
+ * The DB mutation is picked up automatically by useLiveQuery in Slot /
+ * Entries / Heatmap, so no manual UI event is needed.  We only request
+ * JSON persist so the change eventually lands in data.json.
  */
 export async function addDeltaToActivity(
 	dailyActivity: DailyActivity,
@@ -238,10 +247,5 @@ export async function addDeltaToActivity(
 			selectedEntry.wordsAdded = (selectedEntry.wordsAdded || 0) + wordsDelta;
 		});
 
-	state.emit(
-		dailyActivity.date === state.today
-			? EVENTS.TODAY_DATA_CHANGED
-			: EVENTS.HISTORY_DATA_CHANGED,
-	);
-	state.emit(EVENTS.DATA_PERSIST_NEEDED);
+	useStore.getState().requestPersist();
 }

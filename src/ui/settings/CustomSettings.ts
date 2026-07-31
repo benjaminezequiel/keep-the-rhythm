@@ -5,13 +5,13 @@ import { Notice, Setting, TextComponent } from "obsidian";
 import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
 import { DEFAULT_SETTINGS } from "@/defs/types";
 import { ConfirmationModal } from "./ConfirmationModal";
-import { state } from "@/core/pluginState";
+import { getPlugin } from "@/core/pluginRegistry";
 
 // ------------------------
 // Color pickers for light/dark themes
 // ------------------------
 export function createColorSettings(setting: Setting, theme: "light" | "dark") {
-  const settings = state.plugin.data.settings;
+  const settings = getPlugin().data.settings;
   if (!settings.heatmapConfig.colors) return;
 
   const mode = settings.heatmapConfig.intensityMode;
@@ -35,8 +35,8 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
     setting.addColorPicker((color) =>
       color.setValue(colorValues[level]).onChange(async (value) => {
         colorValues[level] = value;
-        await state.plugin.updateAndSaveEverything();
-        state.plugin.applyColorStyles();
+        await getPlugin().updateAndSaveEverything();
+        getPlugin().applyColorStyles();
         // propagate visibility if needed
         updateVisibility(`heatmapConfig.colors[${theme}]`, value);
       }),
@@ -47,15 +47,15 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
     button.setIcon("rotate-ccw");
     button.onClick(() => {
       new ConfirmationModal(
-        state.plugin.app,
+        getPlugin().app,
         `Are you sure you want to reset the ${theme} theme colors to their default values?`,
         async () => {
           if (!settings.heatmapConfig.colors) return;
           settings.heatmapConfig.colors[theme] = {
             ...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
           };
-          await state.plugin.updateAndSaveEverything();
-          state.plugin.applyColorStyles();
+          await getPlugin().updateAndSaveEverything();
+          getPlugin().applyColorStyles();
         },
       ).open();
     });
@@ -75,7 +75,7 @@ const LANGUAGE_PRESETS: Record<string, { label: string; scripts: Language[] }> =
 };
 
 export function createLanguageDropdown(setting: Setting) {
-  const settings = state.plugin.data.settings;
+  const settings = getPlugin().data.settings;
   const enabled = settings.enabledLanguages || [];
 
   const loadedKey =
@@ -95,7 +95,7 @@ export function createLanguageDropdown(setting: Setting) {
       if (!preset) return;
       const newScripts = [...preset.scripts];
       settings.enabledLanguages = newScripts;
-      state.plugin.updateAndSaveEverything();
+      getPlugin().updateAndSaveEverything();
       updateVisibility("enabledLanguages", newScripts);
     });
   });
@@ -105,7 +105,7 @@ export function createLanguageDropdown(setting: Setting) {
 // Coloring mode dropdown
 // ------------------------
 export function createColorModeSettings(setting: Setting) {
-  const settings = state.plugin.data.settings;
+  const settings = getPlugin().data.settings;
 
   setting.setClass("ktr-first").addDropdown((dropdown) => {
     dropdown
@@ -122,7 +122,7 @@ export function createColorModeSettings(setting: Setting) {
 // Threshold inputs
 // ------------------------
 export function createThresholdSettings(setting: Setting) {
-  const settings = state.plugin.data.settings;
+  const settings = getPlugin().data.settings;
   const { intensityMode, intensityStops } = settings.heatmapConfig;
 
   const thresholds: {
@@ -152,7 +152,7 @@ export function createThresholdSettings(setting: Setting) {
                 ...settings.heatmapConfig,
                 intensityStops: newStops,
               };
-              await state.plugin.updateAndSaveEverything();
+              await getPlugin().updateAndSaveEverything();
               updateVisibility("heatmapConfig.intensityStops", newStops);
             }
           }),
@@ -163,7 +163,7 @@ export function createThresholdSettings(setting: Setting) {
 }
 
 export async function changeColorMode(value: string) {
-  const settings = state.plugin.data.settings;
+  const settings = getPlugin().data.settings;
   const mode = value.toLowerCase() as HeatmapColorModes;
 
   // Ensure intensityStops exist
@@ -182,11 +182,11 @@ export async function changeColorMode(value: string) {
 
   updateThresholdVisibility();
 
-  await state.plugin.updateAndSaveEverything();
+  await getPlugin().updateAndSaveEverything();
 }
 
 export function updateThresholdVisibility() {
-  const mode = state.plugin.data.settings.heatmapConfig.intensityMode;
+  const mode = getPlugin().data.settings.heatmapConfig.intensityMode;
 
   const lowEl = document.querySelector<HTMLInputElement>(
     '[data-threshold-key="low"]',
@@ -208,7 +208,7 @@ export function createBackupFolderPathSetting(
   setting: Setting,
   config: SettingItem,
 ): void {
-  const currentValue = getByPath(state.plugin.data.settings, config.key);
+  const currentValue = getByPath(getPlugin().data.settings, config.key);
 
   setting.addText((text) => {
     text
@@ -218,11 +218,11 @@ export function createBackupFolderPathSetting(
         const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
 
         setByPath(
-          state.plugin.data.settings,
+          getPlugin().data.settings,
           "backupConfig.folderPath",
           cleanPath || ".keep-the-rhythm",
         );
-        await state.plugin.updateAndSaveEverything();
+        await getPlugin().updateAndSaveEverything();
       });
   });
 }
@@ -266,30 +266,30 @@ export function createTrackedFoldersSetting(
     const normalized = raw.trim().replace(/^\/+|\/+$/g, "");
     if (!normalized) return;
 
-    const folders = state.plugin.data.settings.trackedFolders || [];
+    const folders = getPlugin().data.settings.trackedFolders || [];
     if (folders.includes(normalized)) {
       new Notice("This folder is already in the tracking scope.");
       return;
     }
 
-    state.plugin.data.settings.trackedFolders = [...folders, normalized];
+    getPlugin().data.settings.trackedFolders = [...folders, normalized];
     textComponent.setValue("");
-    await state.plugin.updateAndSaveEverything();
+    await getPlugin().updateAndSaveEverything();
     renderList();
   }
 
   async function removeFolder(index: number) {
-    const folders = state.plugin.data.settings.trackedFolders || [];
-    state.plugin.data.settings.trackedFolders = folders.filter(
+    const folders = getPlugin().data.settings.trackedFolders || [];
+    getPlugin().data.settings.trackedFolders = folders.filter(
       (_, i) => i !== index,
     );
-    await state.plugin.updateAndSaveEverything();
+    await getPlugin().updateAndSaveEverything();
     renderList();
   }
 
   function renderList() {
     listContainer.empty();
-    const folders = state.plugin.data.settings.trackedFolders || [];
+    const folders = getPlugin().data.settings.trackedFolders || [];
 
     if (folders.length === 0) {
       listContainer.createEl("div", {
