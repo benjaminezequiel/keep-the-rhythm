@@ -13,7 +13,6 @@ import {
 } from "@/defs/types";
 
 import { getDB, initDatabase } from "@/db/db";
-import { getActivityByDateAndFile } from "@/db/queries";
 import { setPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
@@ -24,6 +23,7 @@ import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
 import { initializeDataFromJSON, flushToJSON, setupPersistenceScheduling, PersistenceScheduler } from "@/core/dataPersistence";
+import { handleExternalSettingsChange } from "@/core/externalSync";
 
 
 export default class KeepTheRhythm extends Plugin {
@@ -202,56 +202,7 @@ export default class KeepTheRhythm extends Plugin {
 	// #endregion
 
 	async onExternalSettingsChange() {
-		try {
-			const newData = (await this.loadData()) as PluginData;
-
-			if (JSON.stringify(newData) == JSON.stringify(this.data)) {
-				return;
-			}
-
-			let dbMutated = false;
-			// Note: this forEach runs async work in "fire and forget"; any
-			// actual DB put() still resolves eventually and the events
-			// below remain semantically correct ("something may have
-			// changed — re-render and re-snapshot").
-			newData.stats?.dailyActivity.forEach(async (activity, index) => {
-				let existingActivity;
-
-				existingActivity = await getActivityByDateAndFile(
-					activity.date, activity.filePath);
-
-				/** Find any new activity and add it to the db */
-				if (
-					existingActivity &&
-					JSON.stringify(existingActivity) == JSON.stringify(activity)
-				) {
-					return;
-				} else {
-					getDB().dailyActivity.put(activity);
-					dbMutated = true;
-				}
-			});
-
-			/** Assign new external settings*/
-			if (this.data.settings !== newData.settings) {
-				this.data.settings = {
-					...DEFAULT_SETTINGS,
-					...newData.settings,
-				};
-			}
-
-			// External settings file could have changed settings, DB rows,
-			// or both. Re-sync the store from plugin.data so useStore
-			// selectors (settings + daysWithCompletedGoal) re-render, and
-			// let useLiveQuery pick up any DB rows we just put().  Only
-			// request a JSON persist if we actually wrote to IndexedDB.
-			useStore.getState().hydrateFromPluginData();
-			if (dbMutated) {
-				useStore.getState().requestPersist();
-			}
-		} catch (error) {
-			console.error("Error in onExternalSettingsChange:", error);
-		}
+		await handleExternalSettingsChange(this);
 	}
 
 	/**
