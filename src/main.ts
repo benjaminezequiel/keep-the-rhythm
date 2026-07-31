@@ -59,16 +59,10 @@ export default class KeepTheRhythm extends Plugin {
 
 		await this.initializeDataFromJSON(loadedData);
 
-		await this.saveData(this.data);
-
 		// Sync Zustand store with loaded plugin data before any React
 		// component mounts.  After this point, store.settings /
 		// store.daysWithCompletedGoal / store.today are all populated.
 		useStore.getState().hydrateFromPluginData();
-
-		// #endregion
-
-		// /** Set of utility functions that registers required objects and sets plugin state */
 
 		/** Initialize SIDEBAR view */
 		this.registerView(VIEW_TYPE, (leaf) => {
@@ -77,24 +71,9 @@ export default class KeepTheRhythm extends Plugin {
 
 		this.initializeCommands();
 		this.initializeEvents();
+		this.initializeCodeBlocks();
 		this.applyColorStyles();
 		this.addSettingTab(new SettingsTab(this.app, this));
-
-		/** Registers CUSTOM CODE BLOCKS */
-		this.registerMarkdownCodeBlockProcessor(
-			"ktr-heatmap",
-			codeBlocks.createHeatmapCodeBlock,
-		);
-
-		this.registerMarkdownCodeBlockProcessor(
-			"ktr-slots",
-			codeBlocks.createSlotsCodeBlock,
-		);
-
-		this.registerMarkdownCodeBlockProcessor(
-			"ktr-entries",
-			codeBlocks.createEntriesCodeBlock,
-		);
 
 		// The JSON save pipeline subscribes to the store's persistVersion
 		// counter, which is incremented (via requestPersist, rAF-coalesced)
@@ -233,6 +212,23 @@ export default class KeepTheRhythm extends Plugin {
 			this.app.workspace.on("file-open", (file) => {
 				if (file) events.handleFileOpen(file);
 			}),
+		);
+	}
+
+	private initializeCodeBlocks() {
+		this.registerMarkdownCodeBlockProcessor(
+			"ktr-heatmap",
+			codeBlocks.createHeatmapCodeBlock,
+		);
+
+		this.registerMarkdownCodeBlockProcessor(
+			"ktr-slots",
+			codeBlocks.createSlotsCodeBlock,
+		);
+
+		this.registerMarkdownCodeBlockProcessor(
+			"ktr-entries",
+			codeBlocks.createEntriesCodeBlock,
 		);
 	}
 
