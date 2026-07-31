@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { DailyActivity } from "@/defs/types";
 import { Settings, DEFAULT_SETTINGS } from "@/defs/types";
-import { formatDate } from "@/utils/dateUtils";
+import { getToday } from "@/utils/dateUtils";
 import { getPlugin } from "./pluginRegistry";
 
 /**
@@ -95,7 +95,7 @@ let pendingPersist = false;
 
 export const useStore = create<KTRState>()(
 	subscribeWithSelector((set, get) => ({
-		today: formatDate(new Date()),
+		today: getToday(),
 		currentActivity: null,
 		settings: DEFAULT_SETTINGS,
 		daysWithCompletedGoal: [],
@@ -103,11 +103,11 @@ export const useStore = create<KTRState>()(
 		dailyActivity: [],
 
 		setToday: () => {
-			set({ today: formatDate(new Date()) });
+			set({ today: getToday() });
 		},
 
 		checkDayChange: () => {
-			const today = formatDate(new Date());
+			const today = getToday();
 			if (today !== get().today) {
 				set({ today });
 			}
@@ -215,7 +215,7 @@ export const useStore = create<KTRState>()(
 					...(plugin.data.stats?.daysWithCompletedGoal || []),
 				],
 				dailyActivity: [...(plugin.data.stats?.dailyActivity || [])],
-				today: formatDate(new Date()),
+				today: getToday(),
 				currentActivity: null,
 			});
 		},

@@ -1,15 +1,11 @@
 import { getLeafWithFile } from "../../utils/utils";
-import { formatDate } from "@/utils/dateUtils";
-import { weekdaysNames, monthNames } from "../texts";
+import { getToday } from "@/utils/dateUtils";
 import React from "react";
-import { HeatmapColorModes, IntensityConfig } from "../../defs/types";
+import { HeatmapColorModes } from "../../defs/types";
 import * as obsidian from "obsidian";
 import { Tooltip } from "./Tooltip";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { useCtrlKey } from "../../utils/useModiferKey";
 import { getCorePluginSettings } from "../../utils/windowUtility";
 import { getPlugin } from "@/core/pluginRegistry";
-import { Heatmap } from "./Heatmap";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -81,7 +77,7 @@ export const HeatmapCell = ({
 		intensityClass = "liquid-intensity";
 	}
 	const isTodayClass =
-		date == formatDate(new Date()) ? "heatmap-square-today" : "";
+		date == getToday() ? "heatmap-square-today" : "";
 
 	const isSquaredClass = squared ? "cell-squared" : "cell-rounded";
 

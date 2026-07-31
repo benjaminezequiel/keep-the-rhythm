@@ -46,6 +46,20 @@ export const formatDate = (date: Date): string => {
   return moment(date).format("YYYY-MM-DD");
 };
 
+let _todayCache = { date: "", expiresAt: 0 };
+
+export function getToday(): string {
+  const now = Date.now();
+  if (now >= _todayCache.expiresAt) {
+    const m = moment();
+    _todayCache = {
+      date: m.format("YYYY-MM-DD"),
+      expiresAt: m.clone().endOf("day").valueOf() + 1,
+    };
+  }
+  return _todayCache.date;
+}
+
 export function getDateBasedOnIndex(index: number) {
   const today = moment();
   const monday = today.clone().startOf("isoWeek"); // isoWeek starts on Monday
