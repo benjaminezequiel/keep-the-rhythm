@@ -28,14 +28,15 @@ export async function checkPreviousStreak() {
     }
   }
 
-  // Sync the store's streak list so Slot / Entries selectors re-render.
+  // Sync the store's streak list so Slot / Entries selectors re-render,
+  // and schedule a unified debounced JSON save.
   if (changed) {
     useStore.setState({
       daysWithCompletedGoal: [
         ...(plugin.data.stats?.daysWithCompletedGoal || []),
       ],
     });
-    await plugin.quietSave();
+    useStore.getState().requestPersist();
   }
 }
 
