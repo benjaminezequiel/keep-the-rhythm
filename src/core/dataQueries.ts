@@ -1,4 +1,4 @@
-import { getDateStreaks, sumTimeEntries } from "@/utils/utils";
+import { getDateStreaks } from "@/utils/utils";
 import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
 import { useStore } from "./store";
 import { getPlugin } from "./pluginRegistry";
@@ -105,13 +105,13 @@ export function getCurrentCount(
 
 	if (target === TargetCount.CURRENT_FILE) {
 		if (currentActivity) {
-			return sumTimeEntries(currentActivity) || 0;
+			return currentActivity.wordsAdded;
 		}
 		const activeFile = getPlugin().app.workspace.getActiveFile();
 		if (activeFile) {
 			return dailyActivity
 				.filter((a) => a.filePath === activeFile.path)
-				.reduce((sum, a) => sum + sumTimeEntries(a), 0);
+				.reduce((sum, a) => sum + a.wordsAdded, 0);
 		}
 		return 0;
 	}

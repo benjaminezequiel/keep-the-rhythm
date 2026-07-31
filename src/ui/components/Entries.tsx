@@ -4,10 +4,9 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
 import { useMemo } from "react";
 import { getActivityByDate } from "@/core/dataQueries";
-import { sumTimeEntries, getFileNameWithoutExtension } from "@/utils/utils";
+import { getFileNameWithoutExtension } from "@/utils/utils";
 import { useStore } from "@/core/store";
 import { getPlugin } from "@/core/pluginRegistry";
-import { DailyActivity } from "@/defs/types";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
@@ -29,7 +28,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	const dailyActivity = useStore((s) => s.dailyActivity);
 	const entries = useMemo(() => {
 		return getActivityByDate(dailyActivity, date)
-			.filter((entry) => sumTimeEntries(entry, true) != 0)
+			.filter((entry) => entry.wordsAdded != 0)
 			.filter((entry) => {
 				if (!filters || filters.length === 0) return true;
 				return filters.every((f) => {
@@ -41,9 +40,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 				});
 			})
 			.sort((a, b) => {
-				const aCount = sumTimeEntries(a, true);
-				const bCount = sumTimeEntries(b, true);
-				return bCount - aCount;
+				return b.wordsAdded - a.wordsAdded;
 			});
 	}, [dailyActivity, date, filters]);
 
@@ -68,7 +65,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 				</div>
 				{entries && entries.length > 0 ? (
 					entries.map((entry) => {
-						const delta = sumTimeEntries(entry, true);
+						const delta = entry.wordsAdded;
 						const prefix = delta > 0 ? "+" : "";
 
 						return (

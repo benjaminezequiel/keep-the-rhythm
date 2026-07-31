@@ -2,7 +2,7 @@ import React from "react";
 import { useMemo } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { weekdaysNames, monthNames } from "../texts";
-import { getDateForCell, sumTimeEntries } from "@/utils/utils";
+import { getDateForCell } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/defs/types";
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
@@ -86,7 +86,7 @@ export const Heatmap = ({
 		const dateMap: Record<string, number> = {};
 
 		for (const entry of results) {
-			const entryValue = sumTimeEntries(entry, true);
+			const entryValue = entry.wordsAdded;
 			const valueUntilNow = dateMap[entry.date] || 0;
 			dateMap[entry.date] = valueUntilNow + entryValue;
 		}

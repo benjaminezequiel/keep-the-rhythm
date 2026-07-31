@@ -110,14 +110,6 @@ export function getTotalWords(activity: DailyActivity): number {
 	return (activity.wordCountStart || 0) + (activity.wordsAdded || 0);
 }
 
-export function sumTimeEntries(
-	dailyActivity: DailyActivity,
-	excludeStart?: boolean,
-): number {
-	const start = excludeStart ? 0 : dailyActivity?.wordCountStart || 0;
-	const delta = dailyActivity?.wordsAdded || 0;
-	return start + delta;
-}
 
 export interface PathCondition {
 	path: string;
