@@ -1,13 +1,12 @@
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
-import jsep, { Expression } from "jsep";
+import jsep from "jsep";
 import { DailyActivity } from "@/db/types";
 import {
 	isValidCalculationType,
 	isValidTargetCount,
-	isValidUnit,
 	isValidColoringMode,
 } from "@/utils/utils";
-import { SlotConfig, TargetCount, Unit, CalculationType } from "@/defs/types";
+import { SlotConfig, TargetCount, CalculationType } from "@/defs/types";
 import { getPlugin } from "./pluginRegistry";
 
 export function parseSlotQuery(query: string): SlotConfig[] {
@@ -21,7 +20,6 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 		const parts = arrayOfLines[i].replace(/ /g, "").split(",");
 
 		let type = parts[0];
-		let unit = Unit.WORD;
 		let calc = CalculationType.TOTAL;
 
 		if (!isValidTargetCount(type)) {
@@ -30,9 +28,6 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 			// deveria mostrar o erro no codeblock mesmo, mas nao sei fazer isso ainda
 		}
 
-		if (parts[1] && isValidUnit(parts[1])) {
-			unit = parts[1];
-		}
 		if (parts[2] && isValidCalculationType(parts[2])) {
 			calc = parts[2];
 		}
@@ -40,7 +35,6 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 		slots.push({
 			index: i,
 			option: type as TargetCount,
-			unit: unit as Unit,
 			calc: (calc as CalculationType) ?? CalculationType.TOTAL,
 		});
 	}

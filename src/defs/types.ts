@@ -36,11 +36,6 @@ export interface ThemeColors {
 	dark: ColorConfig;
 }
 
-export enum Unit {
-	CHAR = "CHAR",
-	WORD = "WORD",
-}
-
 export enum TargetCount {
 	CURRENT_FILE = "CURRENT_FILE",
 	CURRENT_STREAK = "CURRENT_STREAK", // not done yet
@@ -93,7 +88,6 @@ export interface Settings {
 export interface SlotConfig {
 	index: number;
 	option: TargetCount;
-	unit: Unit;
 	calc: CalculationType;
 }
 
@@ -175,19 +169,16 @@ export const DEFAULT_SETTINGS: Settings = {
 			{
 				index: 0,
 				option: TargetCount.CURRENT_DAY,
-				unit: Unit.WORD,
 				calc: CalculationType.TOTAL,
 			},
 			{
 				index: 1,
 				option: TargetCount.CURRENT_WEEK,
-				unit: Unit.WORD,
 				calc: CalculationType.TOTAL,
 			},
 			{
 				index: 2,
 				option: TargetCount.LAST_MONTH,
-				unit: Unit.WORD,
 				calc: CalculationType.AVG,
 			},
 		],

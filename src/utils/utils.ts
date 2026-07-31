@@ -7,7 +7,6 @@ import { App } from "obsidian";
 import { Language } from "../defs/types";
 import { getDB } from "../db/db";
 import { getActivityByDateAndFile } from "@/db/queries";
-import { Unit } from "../defs/types";
 import KeepTheRhythm from "../main";
 import { TFile } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
@@ -175,10 +174,6 @@ export async function getFileWordAndCharCount(
 
 export function isValidTargetCount(value: string): value is TargetCount {
 	return Object.values(TargetCount).includes(value as TargetCount);
-}
-
-export function isValidUnit(value: string): value is Unit {
-	return Object.values(Unit).includes(value as Unit);
 }
 
 export function isValidCalculationType(

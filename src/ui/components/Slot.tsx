@@ -9,13 +9,12 @@ import { getCurrentCount } from "@/db/queries";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
-import { TargetCount, SlotConfig, Unit } from "@/defs/types";
+import { TargetCount, SlotConfig } from "@/defs/types";
 import { useStore } from "@/core/store";
 
 export const Slot = ({
 	index,
 	option,
-	unit,
 	calc,
 	onDelete,
 	isCodeBlock,
@@ -23,12 +22,10 @@ export const Slot = ({
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
 }) => {
-	const [unitType, setUnitType] = useState<Unit>(unit);
 	const [optionType, setOptionType] = useState<TargetCount>(option);
 	const [calcMode, setCalcType] = useState<CalculationType>(calc);
 
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
-	const unitButtonRef = useRef<HTMLButtonElement>(null);
 	const typeButtonRef = useRef<HTMLButtonElement>(null);
 	const calcButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -60,11 +57,11 @@ export const Slot = ({
 		0,
 	);
 
-	const unitSupportingText = () => {
+	const unitText = () => {
 		if (optionType === TargetCount.CURRENT_STREAK) {
 			return "days";
 		} else {
-			return unitType.toLowerCase() + "s";
+			return "words";
 		}
 	};
 
@@ -72,9 +69,6 @@ export const Slot = ({
 	if (calcButtonRef.current) {
 		const icon = calcMode == "TOTAL" ? "chart-spline" : "sigma";
 		setIcon(calcButtonRef.current, icon);
-	}
-	if (unitButtonRef.current) {
-		setIcon(unitButtonRef.current, "case-sensitive");
 	}
 	if (typeButtonRef.current) {
 		setIcon(typeButtonRef.current, "list");
@@ -106,15 +100,6 @@ export const Slot = ({
 			draft.sidebarConfig.slots[index].calc = newCalc;
 		});
 		setCalcType(newCalc);
-	};
-
-	const toggleUnit = () => {
-		const newUnit: Unit = unitType === Unit.WORD ? Unit.CHAR : Unit.WORD;
-
-		mutateSettings((draft) => {
-			draft.sidebarConfig.slots[index].unit = newUnit;
-		});
-		setUnitType(newUnit);
 	};
 
 	const toggleSlotType = () => {
@@ -163,15 +148,6 @@ export const Slot = ({
 								</Tooltip>
 							)}
 
-							<Tooltip content="Change Unit">
-								<button
-									className="KTR-min-button"
-									ref={unitButtonRef}
-									onClick={() => {
-										toggleUnit();
-									}}
-								></button>
-							</Tooltip>
 							<Tooltip content="Change Type">
 								<button
 									className="KTR-min-button"
@@ -199,14 +175,13 @@ export const Slot = ({
 					{(value ?? 0).toLocaleString()}
 				</div>
 				<div className="slot__unit">
-					{unitSupportingText()}
+					{unitText()}
 					<span className="slot__unit-avg">
 						{showCalcType && calcMode == "AVG" ? "/day" : ""}
 					</span>
 				</div>
 			</div>
-			{optionType === TargetCount.CURRENT_DAY &&
-				unitType !== Unit.CHAR && (
+			{optionType === TargetCount.CURRENT_DAY && (
 					<div className="today-progress-bar">
 						<div
 							className="progress"

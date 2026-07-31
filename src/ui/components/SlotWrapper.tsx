@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
-import { CalculationType, SlotConfig, TargetCount, Unit } from "@/defs/types";
+import { CalculationType, SlotConfig, TargetCount } from "@/defs/types";
 import { Slot } from "./Slot";
 import { useStore } from "@/core/store";
 import { useState, useRef, useEffect } from "react";
@@ -67,7 +67,6 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
     const newSlot: SlotConfig = {
       index: effectiveSlots?.length ?? 0,
       option: TargetCount.CURRENT_FILE,
-      unit: Unit.WORD,
       calc: CalculationType.TOTAL,
     };
 
@@ -104,7 +103,6 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
                 <Slot
                   index={i}
                   option={slot.option}
-                  unit={slot.unit}
                   calc={slot.calc}
                   onDelete={handleDeleteClick}
                   isCodeBlock={isCodeBlock}
