@@ -53,11 +53,10 @@ export function getDailySummaryMap(
 		cachedTodayVersion = todayVersion;
 		cachedTodayDate = today;
 	}
-	if (!changed) {
-		return cachedHistoricalMap!;
-	}
-
 	// ── Merge: O(k), k = today entries (typically < 10) ──
+	// Always merge — the historical partition never includes today's
+	// entries, so skipping the merge would cause CURRENT_DAY and
+	// CURRENT_MONTH reads to see a map missing today's data.
 	const result = { ...cachedHistoricalMap };
 	for (const entry of cachedTodayEntries!) {
 		result[entry.date] = (result[entry.date] || 0) + entry.wordsAdded;
