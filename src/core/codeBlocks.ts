@@ -1,7 +1,7 @@
 import { Entries } from "@/ui/components/Entries";
 import { SlotWrapper } from "@/ui/components/SlotWrapper";
 import { parseSlotQuery } from "./codeBlockQuery";
-import { getPlugin } from "./pluginRegistry";
+import { useStore } from "./store";
 import { MarkdownPostProcessorContext } from "obsidian";
 import { parseQueryToJSEP } from "./codeBlockQuery";
 import { createRoot } from "react-dom/client";
@@ -16,8 +16,8 @@ export function createHeatmapCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!getPlugin().data || !getPlugin().data.settings) {
-		return; // add log / error
+	if (!useStore.getState().settings) {
+		return;
 	}
 
 	const trimmedSource = source.trim();
@@ -56,11 +56,11 @@ export function createSlotsCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!getPlugin().data || !getPlugin().data.settings) {
-		return; // add log / error
+	if (!useStore.getState().settings) {
+		return;
 	}
 	const config = parseSlotQuery(source);
-	if (config.length === 0) return; // add log / error
+	if (config.length === 0) return;
 
 	const container = el.createDiv("slots-codeblock");
 	const root = createRoot(container);
@@ -106,7 +106,6 @@ function parseSource(source: string): {
 		} else if (excludeMatch) {
 			filters.push({ type: "excludes", value: excludeMatch[1] });
 		} else {
-			// Treat unrecognised lines as a date (existing behaviour)
 			date = line;
 		}
 	}
@@ -119,7 +118,7 @@ export function createEntriesCodeBlock(
 	el: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 ): void {
-	if (!getPlugin().data || !getPlugin().data.settings) {
+	if (!useStore.getState().settings) {
 		return;
 	}
 

@@ -1,4 +1,4 @@
-import { getPlugin } from "./pluginRegistry";
+import { useStore } from "./store";
 
 /**
  * Returns true when the given file path should be tracked according to the
@@ -13,12 +13,12 @@ import { getPlugin } from "./pluginRegistry";
  * `20-research` from accidentally matching `20-research-backup`.
  */
 export function isPathTracked(filePath: string): boolean {
-	const folders = getPlugin().data?.settings?.trackedFolders;
+	const folders = useStore.getState().settings.trackedFolders;
 	if (!folders || folders.length === 0) {
 		return true;
 	}
 	return folders.some(
-		(prefix) =>
+		(prefix: string) =>
 			filePath === prefix || filePath.startsWith(prefix + "/"),
 	);
 }

@@ -7,7 +7,7 @@ import {
 	isValidColoringMode,
 } from "@/utils/utils";
 import { SlotConfig, TargetCount, CalculationType } from "@/defs/types";
-import { getPlugin } from "./pluginRegistry";
+import { useStore } from "./store";
 
 export function parseSlotQuery(query: string): SlotConfig[] {
 	// returns a SlotConfig[]?
@@ -54,7 +54,7 @@ export function parseQueryToJSEP(query: string) {
 
 	let parsed;
 	let config: HeatmapConfig = structuredClone(
-		getPlugin().data.settings.heatmapConfig,
+		useStore.getState().settings.heatmapConfig,
 	);
 	config.hideMonthLabels = false;
 	config.hideWeekdayLabels = false;

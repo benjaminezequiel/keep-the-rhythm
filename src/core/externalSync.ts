@@ -1,73 +1,73 @@
-import { DEFAULT_SETTINGS } from "@/defs/types";
+import { DEFAULT_SETTINGS, DailyActivity } from "@/defs/types";
 import { useStore } from "./store";
 import KeepTheRhythm from "../main";
 
 /**
  * Handle external changes to data.json (e.g. from file sync, manual edits).
  *
- * Strategy: update plugin.data first, then hydrate the store from it.
- * This ensures hydrateFromPluginData reads the latest data.
+ * Strategy: load fresh data.json, merge with defaults, hydrate the store
+ * directly.  The store will be persisted back on the next debounced save.
  */
 export async function handleExternalSettingsChange(plugin: KeepTheRhythm) {
 	try {
 		const newData = await plugin.loadData();
 
-		if (JSON.stringify(newData) === JSON.stringify(plugin.data)) {
-			return;
-		}
+		if (!newData) return;
+
+		const cur = useStore.getState();
 
 		// Detect which parts changed
 		const settingsChanged =
-			JSON.stringify(plugin.data.settings) !==
+			JSON.stringify(cur.settings) !==
 			JSON.stringify(newData.settings);
 		const statsChanged =
-			JSON.stringify(plugin.data.stats) !==
-			JSON.stringify(newData.stats);
+			JSON.stringify({
+				daysWithCompletedGoal: cur.daysWithCompletedGoal,
+				dailyActivity: cur.dailyActivity,
+			}) !== JSON.stringify(newData.stats);
 
 		if (!settingsChanged && !statsChanged) {
 			return;
 		}
 
-		// 1. Update plugin.data so hydrateFromPluginData reads fresh data
-		if (settingsChanged) {
-			plugin.data.settings = {
-				...DEFAULT_SETTINGS,
-				...newData.settings,
-			};
-		}
-		if (statsChanged) {
-			plugin.data.stats = {
-				...plugin.data.stats,
-				daysWithCompletedGoal:
-					newData.stats?.daysWithCompletedGoal ??
-					plugin.data.stats?.daysWithCompletedGoal ??
-					[],
-				dailyActivity:
-					newData.stats?.dailyActivity ??
-					plugin.data.stats?.dailyActivity ??
-					[],
-			};
-		}
+		// Preserve currentActivity pointer before hydrate resets it
+		const preservedActivity = cur.currentActivity;
 
-		// 2. Preserve currentActivity pointer before hydrate resets it
-		const preservedActivity = useStore.getState().currentActivity;
+		// Build the new state directly and apply to store
+		const newSettings = settingsChanged
+			? { ...DEFAULT_SETTINGS, ...newData.settings }
+			: cur.settings;
+		const newDays = statsChanged
+			? newData.stats?.daysWithCompletedGoal ?? cur.daysWithCompletedGoal
+			: cur.daysWithCompletedGoal;
+		const newDaily = statsChanged
+			? newData.stats?.dailyActivity ?? cur.dailyActivity
+			: cur.dailyActivity;
 
-		// 3. Sync store from (now updated) plugin.data
-		useStore.getState().hydrateFromPluginData();
+		useStore.setState({
+			settings: newSettings,
+			daysWithCompletedGoal: newDays,
+			dailyActivity: newDaily,
+			today: cur.today,
+			currentActivity: null,
+			todayVersion: cur.todayVersion + 1,
+			historicalVersion: cur.historicalVersion + 1,
+		});
 
-		// 4. Restore currentActivity if its row still exists in the new data
+		// Restore currentActivity if its row still exists in the new data
 		if (preservedActivity) {
-			const match = useStore
-				.getState()
-				.dailyActivity.find(
-					(r) =>
-						r.date === preservedActivity.date &&
-						r.filePath === preservedActivity.filePath,
-				);
+			const match = (newDaily as DailyActivity[]).find(
+				(r) =>
+					r.date === preservedActivity.date &&
+					r.filePath === preservedActivity.filePath,
+			);
 			if (match) {
 				useStore.getState().setCurrentActivity(match);
 			}
 		}
+
+		// Trigger a persist to update data.json from store
+		useStore.getState().requestPersist();
 	} catch (error) {
 		console.error("Error in onExternalSettingsChange:", error);
 	}

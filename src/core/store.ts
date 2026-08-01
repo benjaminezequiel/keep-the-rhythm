@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { DailyActivity } from "@/defs/types";
+import { DailyActivity, PluginData } from "@/defs/types";
 import { Settings, DEFAULT_SETTINGS } from "@/defs/types";
 import { getToday } from "@/utils/dateUtils";
-import { getPlugin } from "./pluginRegistry";
 
 /**
  * Zustand store — the single source of truth for all in-memory reactive state.
@@ -15,22 +14,28 @@ import { getPlugin } from "./pluginRegistry";
  *                         (or null) — the mutation actions enforce this
  *                         invariant, so components can rely on it.
  *   • dailyActivity     — the full activity array (the in-memory mirror of
- *                         `plugin.data.stats.dailyActivity` in data.json).
+ *                         dailyActivity in data.json).
  *                         Components subscribe via selectors; mutations go
  *                         through `bulkSetDailyActivity` / `upsertActivity` /
  *                         `modifyActivity` / `deleteActivity` /
  *                         `deleteByFilePath` / `renameFilePath`.
- *   • settings          — immutable snapshot of plugin.data.settings; updated
- *                         via updateSettings / mutateSettings actions which
- *                         also persist to plugin.data + saveData()
- *   • daysWithCompletedGoal — streak data from plugin.data.stats
- *   • persistVersion    — monotonic counter; main.ts subscribes to it
- *                         (via subscribeWithSelector) to schedule debounced
- *                         JSON saves, replacing the old DATA_PERSIST_NEEDED
- *                         event.
+ *   • settings          — the single in-memory source of truth for settings.
+ *                         Mutate via updateSettings / mutateSettings which
+ *                         trigger requestPersist(). The debounced save
+ *                         serializes store → data.json.
+ *   • daysWithCompletedGoal — streak data
+ *   • persistVersion    — monotonic counter; dataPersistence.ts subscribes
+ *                         to it (via subscribeWithSelector) to schedule
+ *                         debounced JSON saves.
  *   • todayVersion     — increments when today's data changes, used to
  *                         invalidate the module-level partitioned cache
  *   • historicalVersion — increments when historical (non-today) data changes
+ *
+ * Data flow:
+ *   Boot:    data.json → hydrateFromData → store
+ *   Runtime: mutations → store.requestPersist() → persistVersion++
+ *            dataPersistence builds PluginData from store → saveData() → data.json
+ *   External: onExternalSettingsChange → direct store update
  *
  * What does NOT live here:
  *   • plugin reference  — see pluginRegistry.ts (service locator)
@@ -60,14 +65,14 @@ export interface KTRState {
 	 *  (or setting null).  This is the only "raw" set path; prefer the
 	 *  data actions (upsertActivity etc.) which auto-maintain the pointer. */
 	setCurrentActivity: (activity: DailyActivity | null) => void;
-	/** Apply updater to settings, persist, and sync store. */
+	/** Apply updater to settings, request persist. */
 	updateSettings: (updater: (draft: Settings) => Settings) => Promise<void>;
-	/** Mutate settings draft in-place, persist, and sync store. */
+	/** Mutate settings draft in-place, request persist. */
 	mutateSettings: (updater: (draft: Settings) => void) => Promise<void>;
-	/** Update streak list, persist, and sync store. */
+	/** Update streak list, request persist. */
 	updateStreak: (increase: boolean) => Promise<void>;
-	/** Sync store from plugin.data (used on boot and after external changes). */
-	hydrateFromPluginData: () => void;
+	/** Hydrate store from loaded data.json (used on boot and after external changes). */
+	hydrateFromData: (data: PluginData) => void;
 
 	// ─── Data actions (replace Dexie writes) ───
 	/** Replace the whole dailyActivity array.  Re-derives currentActivity
@@ -133,32 +138,26 @@ export const useStore = create<KTRState>()(
 		},
 
 		updateSettings: async (updater) => {
-			const plugin = getPlugin();
-			const next = updater(plugin.data.settings);
-			plugin.data.settings = next;
-			await plugin.saveData(plugin.data);
-			// Shallow-copy top level so reference changes for selectors.
+			const cur = get();
+			const next = updater(cur.settings);
 			set({ settings: { ...next } });
-			get().checkDayChange();
+			cur.requestPersist();
+			cur.checkDayChange();
 		},
 
 		mutateSettings: async (updater) => {
-			const plugin = getPlugin();
+			const cur = get();
 			// Mutate draft in-place (matches existing SlotWrapper/CustomSettings
 			// semantics where settings are directly modified).
-			updater(plugin.data.settings);
-			await plugin.saveData(plugin.data);
-			set({ settings: { ...plugin.data.settings } });
+			updater(cur.settings);
+			set({ settings: { ...cur.settings } });
+			cur.requestPersist();
 		},
 
 		updateStreak: async (increase) => {
-			const plugin = getPlugin();
-			if (!plugin.data.stats) return;
-			if (!plugin.data.stats.daysWithCompletedGoal) {
-				plugin.data.stats.daysWithCompletedGoal = [];
-			}
-			const list = plugin.data.stats.daysWithCompletedGoal;
-			const today = get().today;
+			const cur = get();
+			const list = [...cur.daysWithCompletedGoal];
+			const today = cur.today;
 			let changed = false;
 			if (increase) {
 				if (!list.includes(today)) {
@@ -167,31 +166,25 @@ export const useStore = create<KTRState>()(
 				}
 			} else {
 				if (list.includes(today)) {
-					plugin.data.stats.daysWithCompletedGoal = list.filter(
-						(d) => d !== today,
-					);
+					const idx = list.indexOf(today);
+					list.splice(idx, 1);
 					changed = true;
 				}
 			}
 			if (changed) {
-				await plugin.saveData(plugin.data);
-				set({
-					daysWithCompletedGoal: [
-						...plugin.data.stats.daysWithCompletedGoal,
-					],
-				});
+				set({ daysWithCompletedGoal: list });
+				cur.requestPersist();
 			}
 		},
 
-		hydrateFromPluginData: () => {
-			const plugin = getPlugin();
+		hydrateFromData: (data) => {
 			const cur = get();
 			set({
-				settings: { ...plugin.data.settings },
+				settings: { ...DEFAULT_SETTINGS, ...data.settings },
 				daysWithCompletedGoal: [
-					...(plugin.data.stats?.daysWithCompletedGoal || []),
+					...(data.stats?.daysWithCompletedGoal || []),
 				],
-				dailyActivity: [...(plugin.data.stats?.dailyActivity || [])],
+				dailyActivity: [...(data.stats?.dailyActivity || [])],
 				today: getToday(),
 				currentActivity: null,
 				todayVersion: cur.todayVersion + 1,

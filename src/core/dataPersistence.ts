@@ -1,55 +1,52 @@
-import { DEFAULT_SETTINGS, STARTING_STATS, PluginData } from "@/defs/types";
+import { DEFAULT_SETTINGS, PluginData } from "@/defs/types";
 import { useStore } from "./store";
-import KeepTheRhythm from "../main";
+import { Plugin } from "obsidian";
 
 const JSON_DEBOUNCE_TIME = 1000;
 
 /**
- * Initialize plugin data from loaded data.json content.
- * Populates plugin.data and the in-memory store (dailyActivity slice).
+ * Persist ALL in-memory state (settings, streak, dailyActivity) to
+ * data.json.  Constructs the PluginData object directly from the store
+ * — no intermediate staging buffer.
  */
-export async function initializeDataFromJSON(
-	plugin: { data: PluginData },
-	loadedData: PluginData,
-) {
-	if (!loadedData) {
-		plugin.data.stats = {
-			...STARTING_STATS,
-		};
-		return;
-	}
-	if (loadedData.settings) {
-		plugin.data.settings = {
-			...DEFAULT_SETTINGS,
-			...loadedData.settings,
-		};
-	}
-	if (loadedData.stats) {
-		plugin.data.stats = loadedData.stats;
-	}
+async function saveDataToJSON(plugin: Plugin) {
+	const { settings, daysWithCompletedGoal, dailyActivity } =
+		useStore.getState();
+
+	const data: PluginData = {
+		schema: "1.0",
+		settings,
+		stats: {
+			daysWithCompletedGoal,
+			dailyActivity,
+		},
+	};
+
+	await plugin.saveData(data);
 }
 
 /**
- * Persist in-memory dailyActivity to plugin.data and save to data.json.
- * The store IS the in-memory source of truth, so plugin.data and the store
- * cannot disagree — no safety guards needed.
+ * Build a PluginData snapshot from the current in-memory store state.
+ * Used for backup during unload.
  */
-async function saveDataToJSON(plugin: KeepTheRhythm) {
-	const dailyActivity = useStore.getState().dailyActivity;
-
-	plugin.data.stats = {
-		...plugin.data.stats,
-		dailyActivity,
+export function buildSnapshotFromStore(): PluginData {
+	const { settings, daysWithCompletedGoal, dailyActivity } =
+		useStore.getState();
+	return {
+		schema: "1.0",
+		settings,
+		stats: {
+			daysWithCompletedGoal,
+			dailyActivity,
+		},
 	};
-
-	await plugin.saveData(plugin.data);
 }
 
 /**
  * Immediately flush in-memory data to data.json.
  * Used during plugin unload to ensure data is persisted before teardown.
  */
-export async function flushToJSON(plugin: KeepTheRhythm) {
+export async function flushToJSON(plugin: Plugin) {
 	await saveDataToJSON(plugin);
 }
 
@@ -66,7 +63,7 @@ export interface PersistenceScheduler {
  * Returns scheduler with dispose to be called on unload.
  */
 export function setupPersistenceScheduling(
-	plugin: KeepTheRhythm,
+	plugin: Plugin,
 ): PersistenceScheduler {
 	let JsonDebounceTimeout: any = null;
 	let _saveGen = 0;

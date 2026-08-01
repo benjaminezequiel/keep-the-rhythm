@@ -2,6 +2,7 @@ import { formatDate } from "@/utils/dateUtils";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
 import { debounce } from "@/utils/utils";
+import { useStore } from "@/core/store";
 
 import { SETTINGS_SCHEMA, SettingItem } from "./SettingSchema";
 import {
@@ -15,12 +16,15 @@ import { createTrackedFoldersSetting } from "./TrackedFoldersSetting";
 
 export class SettingsTab extends PluginSettingTab {
   private plugin: any;
-  private settings: Settings;
 
   constructor(app: App, plugin: any) {
     super(app, plugin);
     this.plugin = plugin;
-    this.settings = plugin.data.settings;
+  }
+
+  /** Always returns the current store settings reference. */
+  private get settings(): Settings {
+    return useStore.getState().settings;
   }
 
   display(): void {

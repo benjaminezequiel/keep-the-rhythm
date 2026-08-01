@@ -5,6 +5,7 @@ import { createRoot, Root } from "react-dom/client";
 import { IntensityConfig } from "@/defs/types";
 import { formatDate } from "@/utils/dateUtils";
 import { KTRView } from "../components/SidebarView";
+import { useStore } from "@/core/store";
 
 export const VIEW_TYPE = "keep-the-rhythm";
 
@@ -34,7 +35,7 @@ export class PluginCoreUI extends ItemView {
 		container.empty();
 		const reactContainer = container.createEl("div");
 		const sideBarConfig =
-			this.plugin.data.settings.sidebarConfig.visibility;
+			useStore.getState().settings.sidebarConfig.visibility;
 		this.root = createRoot(reactContainer);
 
 		this.root.render(
@@ -56,13 +57,13 @@ export class PluginCoreUI extends ItemView {
 		if (!this.root) return;
 
 		const sideBarConfig =
-			this.plugin.data.settings.sidebarConfig.visibility;
+			useStore.getState().settings.sidebarConfig.visibility;
 
 		this.root.render(
 			React.createElement(KTRView, {
 				plugin: this.plugin,
 				showHeatmap: sideBarConfig.showHeatmap,
-				showSlots: sideBarConfig.showSlots, // if you're using that too
+				showSlots: sideBarConfig.showSlots,
 			}),
 		);
 	}

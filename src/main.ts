@@ -1,7 +1,7 @@
 import { ManualEntryModal } from "./ui/components/ManualEntry";
 import { Plugin, TFile, TAbstractFile, moment as _moment } from "obsidian";
 
-import { ColorConfig, DEFAULT_SETTINGS, PluginData } from "@/defs/types";
+import { ColorConfig } from "@/defs/types";
 
 import { setPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
@@ -13,8 +13,8 @@ import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
 import {
-	initializeDataFromJSON,
 	flushToJSON,
+	buildSnapshotFromStore,
 	setupPersistenceScheduling,
 	PersistenceScheduler,
 } from "@/core/dataPersistence";
@@ -22,14 +22,6 @@ import { handleExternalSettingsChange } from "@/core/externalSync";
 import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 
 export default class KeepTheRhythm extends Plugin {
-	data: PluginData = {
-		schema: "1.0",
-		settings: DEFAULT_SETTINGS,
-		stats: {
-			dailyActivity: [],
-		},
-	};
-
 	private onFocusHandler: (() => void) | null = null;
 
 	// Persistence scheduler with debounce state and unsubscribe handle
@@ -41,17 +33,15 @@ export default class KeepTheRhythm extends Plugin {
 		window.addEventListener("focus", this.onFocusHandler);
 
 		// No DB to initialise — the in-memory store is empty until
-		// initializeDataFromJSON hydrates it from data.json below.
+		// we hydrate it from data.json below.
 		const loadedData = await this.loadData();
 
 		await backupData(loadedData, this.app);
 
-		await initializeDataFromJSON(this, loadedData);
-
-		// Sync Zustand store with loaded plugin data before any React
+		// Sync Zustand store with loaded data before any React
 		// component mounts.  After this point, store.settings /
 		// store.daysWithCompletedGoal / store.today are all populated.
-		useStore.getState().hydrateFromPluginData();
+		useStore.getState().hydrateFromData(loadedData);
 		
 		checkPreviousStreak();
 
@@ -76,13 +66,14 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	public applyColorStyles() {
+		const { settings } = useStore.getState();
 		const containerStyle = this.app.workspace.containerEl.style;
 		let light = undefined;
 		let dark = undefined;
 
-		if (this.data.settings?.heatmapConfig?.colors) {
-			light = this.data.settings.heatmapConfig.colors?.light;
-			dark = this.data.settings.heatmapConfig.colors?.dark;
+		if (settings?.heatmapConfig?.colors) {
+			light = settings.heatmapConfig.colors?.light;
+			dark = settings.heatmapConfig.colors?.dark;
 		}
 
 		if (light && dark) {
@@ -181,7 +172,7 @@ export default class KeepTheRhythm extends Plugin {
 		// Persist and back up.  No DB to clear — the in-memory store is
 		// garbage-collected with the plugin.
 		await flushToJSON(this);
-		await backupData(this.data, this.app);
+		await backupData(buildSnapshotFromStore(), this.app);
 
 		// Reset the module-level partitioned cache so stale data doesn't
 		// leak into the next plugin load cycle.
@@ -195,30 +186,14 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	/**
-	 * Called by the settings UI (SettingsTab / CustomSettings) every time
-	 * a setting value changes. Hydrates the Zustand store from plugin.data
-	 * (so useStore selectors re-render with the new settings) and schedules
-	 * a debounced JSON save.  plugin.data.settings has already been mutated
-	 * by the caller before this method is called.
-	 *
-	 * Streak updates go through the store's updateStreak action (called
-	 * from events.ts checkStreak), not a separate plugin method.
-	 */
-	public updateAndSaveEverything() {
-		useStore.getState().hydrateFromPluginData();
-		useStore.getState().requestPersist();
-	}
-
-	/**
 	 * Lightweight persist for visual/settings-only changes.
-	 * Only updates the settings slice in the store without hydrating
-	 * dailyActivity or other non-settings data — avoiding unnecessary
-	 * array copies and preventing currentActivity from being nulled.
-	 * Use this for color, language, display-mode, threshold, and other
-	 * purely UI configuration changes.
+	 * Re-snapshots the store's current settings (breaking the shared
+	 * reference so selectors detect the change) and schedules a
+	 * debounced JSON save.
 	 */
 	public updateVisualSettingsOnly() {
-		useStore.setState({ settings: { ...this.data.settings } });
-		useStore.getState().requestPersist();
+		const cur = useStore.getState();
+		useStore.setState({ settings: { ...cur.settings } });
+		cur.requestPersist();
 	}
 }

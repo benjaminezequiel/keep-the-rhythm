@@ -5,14 +5,17 @@ import { useStore } from "./store";
 import { getDailySummaryMap } from "@/utils/dailySummaryCache";
 
 export function checkPreviousStreak() {
-	const plugin = getPlugin();
-	const data = plugin.data;
+	const {
+		dailyActivity,
+		today,
+		todayVersion,
+		historicalVersion,
+		settings,
+		daysWithCompletedGoal,
+		requestPersist,
+	} = useStore.getState();
 
-	if (!data.settings) return;
-	if (!data.stats?.dailyActivity) return;
-
-	const { dailyActivity, today, todayVersion, historicalVersion } =
-		useStore.getState();
+	if (!dailyActivity) return;
 
 	const wordsByDate = getDailySummaryMap(
 		dailyActivity,
@@ -21,26 +24,22 @@ export function checkPreviousStreak() {
 		historicalVersion,
 	);
 
+	const goal = settings.dailyWritingGoal;
+	const existingSet = new Set(daysWithCompletedGoal);
 	let changed = false;
+	const updated = [...daysWithCompletedGoal];
+
 	for (const [date, totalWords] of Object.entries(wordsByDate)) {
-		if (data.stats?.daysWithCompletedGoal?.includes(date)) {
-			continue;
-		}
-		if (totalWords > data.settings.dailyWritingGoal) {
-			data.stats?.daysWithCompletedGoal?.push(date);
+		if (existingSet.has(date)) continue;
+		if (totalWords > goal) {
+			updated.push(date);
 			changed = true;
 		}
 	}
 
-	// Sync the store's streak list so Slot / Entries selectors re-render,
-	// and schedule a unified debounced JSON save.
 	if (changed) {
-		useStore.setState({
-			daysWithCompletedGoal: [
-				...(plugin.data.stats?.daysWithCompletedGoal || []),
-			],
-		});
-		useStore.getState().requestPersist();
+		useStore.setState({ daysWithCompletedGoal: updated });
+		requestPersist();
 	}
 }
 

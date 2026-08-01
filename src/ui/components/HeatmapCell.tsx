@@ -6,6 +6,7 @@ import * as obsidian from "obsidian";
 import { Tooltip } from "./Tooltip";
 import { getCorePluginSettings } from "../../utils/windowUtility";
 import { getPlugin } from "@/core/pluginRegistry";
+import { useStore } from "@/core/store";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -26,7 +27,7 @@ export const HeatmapCell = ({
 }: HeatmapCellProps) => {
 	const handleClick = async (_event: React.MouseEvent<HTMLDivElement>) => {
 		const app = getPlugin().app;
-		if (!getPlugin().data.settings.heatmapNavigation) return;
+		if (!useStore.getState().settings.heatmapNavigation) return;
 
 		const dailyNotesSettings = getCorePluginSettings("daily-notes");
 		let notePath = "";

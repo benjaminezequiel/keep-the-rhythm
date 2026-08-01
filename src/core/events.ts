@@ -1,5 +1,3 @@
-import { TargetCount } from "@/defs/types";
-import { getCurrentCount } from "@/core/dataQueries";
 import { useStore } from "./store";
 import { TFile, Editor } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
@@ -119,20 +117,6 @@ async function runPendingEditorChange(): Promise<void> {
 	store().upsertActivity(activity);
 }
 
-/**
- * @function checkStreak
- */
-function checkStreak() {
-	const writtenToday = getCurrentCount(TargetCount.CURRENT_DAY);
-
-	const goal = store().settings?.dailyWritingGoal || 500;
-
-	if (writtenToday >= goal) {
-		store().updateStreak(true);
-	} else {
-		store().updateStreak(false);
-	}
-}
 
 /**
  * @function handleFileDelete
@@ -153,8 +137,6 @@ export function handleFileDelete(file: TFile) {
 		// currentActivity if it matched and calls requestPersist.
 		store().deleteActivity(store().today, file.path);
 
-		// Re-check streak in case the delete drops today's total below the goal.
-		checkStreak();
 	} catch (error) {
 		console.error(`KTR failed deleting ${file.path} | ${error}`);
 	}

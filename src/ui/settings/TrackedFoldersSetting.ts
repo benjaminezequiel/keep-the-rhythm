@@ -1,6 +1,7 @@
 import { Notice, Setting, TextComponent, Modal, TFolder, AbstractInputSuggest, App } from "obsidian";
 import { SettingItem } from "./SettingSchema";
 import { getPlugin } from "@/core/pluginRegistry";
+import { useStore } from "@/core/store";
 
 class FolderSuggest extends AbstractInputSuggest<TFolder> {
   app: App;
@@ -87,7 +88,7 @@ export class TrackedFoldersModal extends Modal {
       const normalized = raw.trim().replace(/^\/+|\/+$/g, "");
       if (!normalized) return;
 
-      const settings = getPlugin().data.settings;
+      const settings = useStore.getState().settings;
       const folders = settings.trackedFolders || [];
       if (folders.includes(normalized)) {
         new Notice("This folder is already in the tracking scope.");
@@ -123,7 +124,7 @@ export class TrackedFoldersModal extends Modal {
       }
     }
 
-    const settings = getPlugin().data.settings;
+    const settings = useStore.getState().settings;
     const folders = settings.trackedFolders || [];
 
     const listContainer = ce.createDiv({
@@ -158,8 +159,8 @@ export class TrackedFoldersModal extends Modal {
       deleteBtn.appendChild(deleteIcon);
 
       deleteBtn.addEventListener("click", () => {
-        const currentFolders = getPlugin().data.settings.trackedFolders || [];
-        getPlugin().data.settings.trackedFolders = currentFolders.filter(
+        const currentFolders = useStore.getState().settings.trackedFolders || [];
+        useStore.getState().settings.trackedFolders = currentFolders.filter(
           (f) => f !== folder,
         );
         getPlugin().updateVisualSettingsOnly();
@@ -195,7 +196,7 @@ export function createTrackedFoldersSetting(
 
   function renderList() {
     listContainer.empty();
-    const folders = getPlugin().data.settings.trackedFolders || [];
+    const folders = useStore.getState().settings.trackedFolders || [];
 
     if (folders.length === 0) {
       listContainer.createEl("div", {

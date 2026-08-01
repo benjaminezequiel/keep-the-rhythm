@@ -6,13 +6,14 @@ import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
 import { DEFAULT_SETTINGS } from "@/defs/types";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { getPlugin } from "@/core/pluginRegistry";
+import { useStore } from "@/core/store";
 import { debounce } from "@/utils/utils";
 
 // ------------------------
 // Color pickers for light/dark themes
 // ------------------------
 export function createColorSettings(setting: Setting, theme: "light" | "dark") {
-  const settings = getPlugin().data.settings;
+  const settings = useStore.getState().settings;
   if (!settings.heatmapConfig.colors) return;
 
   const mode = settings.heatmapConfig.intensityMode;
@@ -50,8 +51,9 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
         getPlugin().app,
         `Are you sure you want to reset the ${theme} theme colors to their default values?`,
         () => {
-          if (!settings.heatmapConfig.colors) return;
-          settings.heatmapConfig.colors[theme] = {
+          const storeSettings = useStore.getState().settings;
+          if (!storeSettings.heatmapConfig.colors) return;
+          storeSettings.heatmapConfig.colors[theme] = {
             ...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
           };
           getPlugin().updateVisualSettingsOnly();
@@ -75,7 +77,7 @@ const LANGUAGE_PRESETS: Record<string, { label: string; scripts: Language[] }> =
 };
 
 export function createLanguageDropdown(setting: Setting) {
-  const settings = getPlugin().data.settings;
+  const settings = useStore.getState().settings;
   const enabled = settings.enabledLanguages || [];
 
   const loadedKey =
@@ -94,7 +96,8 @@ export function createLanguageDropdown(setting: Setting) {
       const preset = LANGUAGE_PRESETS[value];
       if (!preset) return;
       const newScripts = [...preset.scripts];
-      settings.enabledLanguages = newScripts;
+      const storeSettings = useStore.getState().settings;
+      storeSettings.enabledLanguages = newScripts;
       getPlugin().updateVisualSettingsOnly();
       updateVisibility("enabledLanguages", newScripts);
     });
@@ -105,7 +108,7 @@ export function createLanguageDropdown(setting: Setting) {
 // Coloring mode dropdown
 // ------------------------
 export function createColorModeSettings(setting: Setting) {
-  const settings = getPlugin().data.settings;
+  const settings = useStore.getState().settings;
 
   setting.setClass("ktr-first").addDropdown((dropdown) => {
     dropdown
@@ -122,7 +125,7 @@ export function createColorModeSettings(setting: Setting) {
 // Threshold inputs
 // ------------------------
 export function createThresholdSettings(setting: Setting) {
-  const settings = getPlugin().data.settings;
+  const settings = useStore.getState().settings;
   const { intensityMode, intensityStops } = settings.heatmapConfig;
 
   const thresholds: {
@@ -151,10 +154,11 @@ export function createThresholdSettings(setting: Setting) {
           .onChange((value) => {
             const num = parseInt(value);
             if (!isNaN(num)) {
-              const currentStops = settings.heatmapConfig.intensityStops;
+              const storeSettings = useStore.getState().settings;
+              const currentStops = storeSettings.heatmapConfig.intensityStops;
               const newStops = { ...currentStops, [key]: num };
-              settings.heatmapConfig = {
-                ...settings.heatmapConfig,
+              storeSettings.heatmapConfig = {
+                ...storeSettings.heatmapConfig,
                 intensityStops: newStops,
               };
               debouncedSave();
@@ -168,7 +172,7 @@ export function createThresholdSettings(setting: Setting) {
 }
 
 export function changeColorMode(value: string) {
-  const settings = getPlugin().data.settings;
+  const settings = useStore.getState().settings;
   const mode = value.toLowerCase() as HeatmapColorModes;
 
   // Ensure intensityStops exist
@@ -191,7 +195,7 @@ export function changeColorMode(value: string) {
 }
 
 export function updateThresholdVisibility() {
-  const mode = getPlugin().data.settings.heatmapConfig.intensityMode;
+  const mode = useStore.getState().settings.heatmapConfig.intensityMode;
 
   const lowEl = document.querySelector<HTMLInputElement>(
     '[data-threshold-key="low"]',
@@ -210,7 +214,7 @@ export function createBackupFolderPathSetting(
   setting: Setting,
   config: SettingItem,
 ): void {
-  const currentValue = getByPath(getPlugin().data.settings, config.key);
+  const currentValue = getByPath(useStore.getState().settings, config.key);
 
   const debouncedSave = debounce(() => {
     getPlugin().updateVisualSettingsOnly();
@@ -224,7 +228,7 @@ export function createBackupFolderPathSetting(
         const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
 
         setByPath(
-          getPlugin().data.settings,
+          useStore.getState().settings,
           "backupConfig.folderPath",
           cleanPath || ".keep-the-rhythm",
         );
