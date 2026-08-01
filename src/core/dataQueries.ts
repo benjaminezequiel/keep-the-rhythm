@@ -7,7 +7,9 @@ import {
 	getStartOfWeek,
 	getStartOfYear,
 } from "@/utils/dateUtils";
-import { moment as _moment } from "obsidian";
+import { getLanguageBasedWordCount } from "@/core/wordCounting";
+import { getPlugin } from "@/core/pluginRegistry";
+import { moment as _moment, TFile } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -153,7 +155,8 @@ export function getCurrentCount(
 			totalDays = 365;
 			break;
 		default:
-			throw new Error("Unsupported target type");
+			console.error("Unsupported target type: " + target);
+			return 0;
 	}
 
 	const value = getTotalValueInDateRange(dailyActivity, startDate, today);
@@ -166,35 +169,64 @@ export function getCurrentCount(
  * internals.  All persist signaling is handled by the store actions.
  * ────────────────────────────────────────────────────────────────────── */
 
+export async function getExistingOrCreateNewEntry(
+	file: TFile,
+	date: string,
+): Promise<DailyActivity> {
+	const { dailyActivity } = useStore.getState();
+	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
+	
+	if (!entry) {
+		entry = await createActivityObject(file, date);
+	}
+	return entry;
+}
+
+async function createActivityObject(file: TFile, date: string) {
+	const plugin = getPlugin();
+	const content = await plugin.app.vault.read(file);
+	const currentWordCount = getLanguageBasedWordCount(
+		content,
+		useStore.getState().settings.enabledLanguages,
+	);
+
+	const newActivity: DailyActivity = {
+		date: date,
+		filePath: file.path,
+		wordCountStart: currentWordCount,
+		wordsAdded: 0,
+	};
+
+	return newActivity;
+}
+
 /**
  * Remove the activity row for (date, filePath).  If the deleted row is the
- * currently open file, also clears `currentActivity`.  Replacement for the
- * old async deleteActivityFromDate that called `getDB().delete()`.
+ * currently open file, also clears `currentActivity`. 
  */
 export const deleteActivityFromDate = (
 	filePath: string,
 	date: string,
 ): void => {
-	const store = useStore.getState();
-	if (filePath == store.currentActivity?.filePath) {
-		store.setCurrentActivity(null);
-	}
-	store.deleteActivity(date, filePath);
-	// deleteActivity already calls requestPersist.
+	useStore.getState().deleteActivity(date, filePath);
 };
 
 /**
- * Apply `wordsDelta` to the given activity's row.  Replaces the old async
- * addDeltaToActivity that called `getDB().modify()`.  Persist signaling is
- * handled by modifyActivity.
+ * Add or update the activity row for (date, filePath).  If the row exists,
+ * update the word count and words added.  If it doesn't exist, create a new row.
  */
-export const addDeltaToActivity = (
-	dailyActivity: DailyActivity,
-	wordsDelta: number,
-): void => {
-	useStore
-		.getState()
-		.modifyActivity(dailyActivity.date, dailyActivity.filePath, (row) => {
-			row.wordsAdded = (row.wordsAdded || 0) + wordsDelta;
-		});
+export const addOrUpdateActivity = async (
+	file: TFile,
+	date: string,
+	wordAdded: number,
+): Promise<void> => {
+	const { dailyActivity } = useStore.getState();
+	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
+	if (!entry) {
+		// 这里的 wordCountStart 并不准确，因为读的最新的文件，不知道历史日期的字数是多少
+		entry = await createActivityObject(file, date);
+		entry.wordCountStart -= wordAdded;
+	}
+	entry.wordsAdded = wordAdded;
+	useStore.getState().upsertActivity(entry);
 };

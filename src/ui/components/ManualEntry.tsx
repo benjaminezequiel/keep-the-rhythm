@@ -1,32 +1,25 @@
-import { addDeltaToActivity } from "@/core/dataQueries";
-import { TFile } from "obsidian";
-import { useStore } from "@/core/store";
+import { addOrUpdateActivity } from "@/core/dataQueries";
+import { Notice, TFile } from "obsidian";
 import { AbstractInputSuggest } from "obsidian";
 import { App, Modal, Setting, TextComponent } from "obsidian";
 import {
-	getExistingOrCreateNewEntry,
 	getFileNameWithoutExtension,
 } from "@/utils/utils";
-import { DailyActivity } from "@/defs/types";
+import { getToday } from "@/utils/dateUtils";
 
 export class ManualEntryModal extends Modal {
-	private entry: DailyActivity;
-
-	private wordsDelta = 0;
+	private thisDate: string;
+	private filePath: string;
+	private wordAdded: number;
 
 	constructor(app: App) {
 		super(app);
-		// Read today / currentActivity once, at modal-open time.  The modal
-		// is short-lived so a snapshot is fine — no need for reactive
-		// subscriptions here.
-		const store = useStore.getState();
-		this.entry = {
-			date: store.today,
-			filePath: "",
-			wordCountStart: 0,
-			wordsAdded: 0,
-		};
-		this.setTitle("Add a new entry:");
+		
+		this.thisDate = getToday();
+		this.filePath = "";
+		this.wordAdded = 0;
+
+		this.setTitle("Add or Update entry:");
 
 		new Setting(this.contentEl)
 			.setName("File")
@@ -34,34 +27,24 @@ export class ManualEntryModal extends Modal {
 			.addSearch((search) => {
 				search
 					.setPlaceholder("Example: folder1/folder2")
-					.setValue(store.currentActivity?.filePath || "")
+					.setValue("")
 					.onChange(async (value) => {
-						this.entry.filePath = value;
+						this.filePath = value;
 					});
 
 				new FileSuggest(this.app, search.inputEl);
 
 				search.inputEl.addEventListener("blur", async () => {
-					const value = search.getValue();
-					const file = this.app.vault.getFileByPath(value);
-
-					if (!file) {
-						console.error("KTR: Invalid file selection");
-						return;
-					}
-					this.entry = await getExistingOrCreateNewEntry(
-						file,
-						useStore.getState().today,
-					);
+					this.filePath = search.getValue();
 				});
 			});
 
 		new Setting(this.contentEl)
 			.setClass("ktr-no-border")
-			.setName("Word Count")
+			.setName("Word Added")
 			.addText((text) => {
 				text.onChange((value) => {
-					this.wordsDelta = Number(value);
+					this.wordAdded = Number(value);
 				});
 			});
 
@@ -74,9 +57,9 @@ export class ManualEntryModal extends Modal {
 			.addText((text) => {
 				momentTextComponent = text;
 				text.setPlaceholder("YYYY-MM-DD")
-					.setValue(store.today)
+					.setValue(this.thisDate)
 					.onChange((value) => {
-						this.entry.date = value;
+						this.thisDate = value;
 						const m = window.moment(value, "YYYY-MM-DD", true);
 						if (m.isValid() && hiddenDateInput)
 							hiddenDateInput.value = m.format("YYYY-MM-DD");
@@ -91,9 +74,7 @@ export class ManualEntryModal extends Modal {
 				hiddenDateInput = btn.buttonEl.createEl("input");
 				hiddenDateInput.type = "date";
 				hiddenDateInput.addClass("ktr-hidden-date-input");
-				hiddenDateInput.value = window
-					.moment(store.today, "YYYY-MM-DD")
-					.format("YYYY-MM-DD");
+				hiddenDateInput.value = getToday();
 
 				hiddenDateInput.addEventListener("change", () => {
 					const picked = window.moment(
@@ -103,26 +84,37 @@ export class ManualEntryModal extends Modal {
 					if (picked.isValid()) {
 						const formatted = picked.format("YYYY-MM-DD");
 						momentTextComponent.setValue(formatted);
-						this.entry.date = formatted;
+						this.thisDate = formatted;
 					}
 				});
 			});
 
 		new Setting(this.contentEl).addButton((btn) =>
 			btn
-				.setButtonText("Save New Entry")
+				.setButtonText("Save Entry")
 				.setCta()
 				.onClick(() => {
 					this.saveNewEntry();
-					// Persist is handled inside addDeltaToActivity (data
-					// layer) — UI layers must not request persist directly.
 					this.close();
 				}),
 		);
 	}
 
 	private async saveNewEntry() {
-		await addDeltaToActivity(this.entry, this.wordsDelta);
+		if (this.wordAdded <= 0) {
+			new Notice("Please enter a valid word added");
+			return;
+		}
+		if (this.thisDate > getToday()) {
+			new Notice("Date must be before today");
+			return;
+		}
+		const file = this.app.vault.getFileByPath(this.filePath);
+		if (!file) {
+			new Notice(`File not found: ${this.filePath}`);
+			return;
+		}
+		await addOrUpdateActivity(file, this.thisDate, this.wordAdded);
 	}
 }
 
@@ -145,7 +137,7 @@ export class FileSuggest extends AbstractInputSuggest<TFile> {
 	}
 
 	renderSuggestion(file: TFile, el: HTMLElement) {
-		el.setText(getFileNameWithoutExtension(file.name));
+		el.setText(file.path);
 	}
 
 	selectSuggestion(file: TFile) {

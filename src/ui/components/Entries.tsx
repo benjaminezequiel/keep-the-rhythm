@@ -55,7 +55,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 					<div className="todayEntries__section-title">
 						{date == today ? "ENTRIES TODAY" : `ENTRIES (${date})`}
 					</div>
-					<Tooltip content="Add Entry">
+					<Tooltip content="Add or Update Entry">
 						<button
 							className="todayEntries__manual-entry"
 							ref={(el) => el && setIcon(el, "list-plus")}

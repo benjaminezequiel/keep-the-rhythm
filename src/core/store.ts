@@ -55,8 +55,6 @@ interface KTRState {
 	 *  (or setting null).  This is the only "raw" set path; prefer the
 	 *  data actions (upsertActivity etc.) which auto-maintain the pointer. */
 	setCurrentActivity: (activity: DailyActivity | null) => void;
-	/** Add delta to currentActivity.wordsAdded via modifyActivity. */
-	accumulateCurrentActivityWords: (delta: number) => void;
 	/** Apply updater to settings, persist, and sync store. */
 	updateSettings: (updater: (draft: Settings) => Settings) => Promise<void>;
 	/** Mutate settings draft in-place, persist, and sync store. */
@@ -72,12 +70,6 @@ interface KTRState {
 	bulkSetDailyActivity: (rows: DailyActivity[]) => void;
 	/** Insert or update by [date+filePath]. */
 	upsertActivity: (row: DailyActivity) => void;
-	/** Functional update by key.  No-op if the row doesn't exist. */
-	modifyActivity: (
-		date: string,
-		filePath: string,
-		mutator: (row: DailyActivity) => void,
-	) => void;
 	/** Remove one row by [date+filePath].  Nulls currentActivity if matched. */
 	deleteActivity: (date: string, filePath: string) => void;
 	/** Remove all rows for a path.  Nulls currentActivity if matched. */
@@ -114,33 +106,7 @@ export const useStore = create<KTRState>()(
 		},
 
 		setCurrentActivity: (activity) => {
-			if (activity === null) {
-				set({ currentActivity: null });
-				return;
-			}
-			// Enforce invariant: currentActivity must be a reference to a
-			// row currently in dailyActivity[].  If the caller passes a
-			// stale object, look up the live row instead.  Falls back to
-			// null if no match (row was deleted concurrently).
-			const match = get().dailyActivity.find(
-				(r) =>
-					r.date === activity.date &&
-					r.filePath === activity.filePath,
-			);
-			set({ currentActivity: match ?? null });
-		},
-
-		accumulateCurrentActivityWords: (delta) => {
-			const cur = get();
-			if (!cur.currentActivity) return;
-			cur.modifyActivity(
-				cur.currentActivity.date,
-				cur.currentActivity.filePath,
-				(row) => {
-					row.wordsAdded = (row.wordsAdded || 0) + (delta || 0);
-				},
-			);
-			// modifyActivity already calls requestPersist; no need to repeat.
+			set({ currentActivity: activity });
 		},
 
 		requestPersist: () => {
@@ -253,27 +219,6 @@ export const useStore = create<KTRState>()(
 			set({
 				dailyActivity: next,
 				currentActivity: isCurrent ? row : cur.currentActivity,
-			});
-			get().requestPersist();
-		},
-
-		modifyActivity: (date, filePath, mutator) => {
-			const cur = get();
-			const idx = cur.dailyActivity.findIndex(
-				(r) => r.date === date && r.filePath === filePath,
-			);
-			if (idx === -1) return; // no-op
-			const updated = { ...cur.dailyActivity[idx] };
-			mutator(updated);
-			const next = cur.dailyActivity.map((r, i) =>
-				i === idx ? updated : r,
-			);
-			const isCurrent =
-				cur.currentActivity?.date === date &&
-				cur.currentActivity?.filePath === filePath;
-			set({
-				dailyActivity: next,
-				currentActivity: isCurrent ? updated : cur.currentActivity,
 			});
 			get().requestPersist();
 		},

@@ -35,7 +35,7 @@ export const Slot = ({
 	// replacing the old SETTINGS_CHANGED / DAY_CHANGED / HISTORY_DATA_CHANGED
 	// event listeners.
 	const today = useStore((s) => s.today);
-	const currentActivity = useStore((s) => s.currentActivity);
+	const dailyActivity = useStore((s) => s.dailyActivity);
 	const daysWithCompletedGoal = useStore((s) => s.daysWithCompletedGoal);
 	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
 	const mutateSettings = useStore((s) => s.mutateSettings);
@@ -44,7 +44,7 @@ export const Slot = ({
 	// synchronously, so we just memoize on the slices the count depends on.
 	const value = useMemo(
 		() => getCurrentCount(optionType, calcMode),
-		[optionType, calcMode, today, currentActivity, daysWithCompletedGoal],
+		[optionType, calcMode, today, dailyActivity, daysWithCompletedGoal],
 	);
 
 	const unitText = () => {

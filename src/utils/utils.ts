@@ -1,11 +1,7 @@
-import { getPlugin } from "@/core/pluginRegistry";
-import { useStore } from "@/core/store";
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
-import { DailyActivity } from "../defs/types";
 import { App } from "obsidian";
 import { Language } from "../defs/types";
-import { getActivityByDateAndFile } from "@/core/dataQueries";
 import KeepTheRhythm from "../main";
 import { TFile } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
@@ -104,10 +100,6 @@ export function getRandomInt(min: number, max: number) {
 	const minCeiled = Math.ceil(min);
 	const maxFloored = Math.floor(max);
 	return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
-}
-
-export function getTotalWords(activity: DailyActivity): number {
-	return (activity.wordCountStart || 0) + (activity.wordsAdded || 0);
 }
 
 
@@ -219,39 +211,3 @@ export function debounce<T extends (...args: any[]) => void>(
 	} as T;
 }
 
-async function createActivityObject(file: TFile, date: string) {
-	const plugin = getPlugin();
-	const content = await plugin.app.vault.read(file);
-	const currentWordCount = getLanguageBasedWordCount(
-		content,
-		plugin.data.settings.enabledLanguages,
-	);
-
-	const newActivity: DailyActivity = {
-		date: date,
-		filePath: file.path,
-		wordCountStart: currentWordCount,
-		wordsAdded: 0,
-	};
-
-	return newActivity;
-}
-
-export async function getExistingOrCreateNewEntry(
-	file: TFile,
-	date: string,
-): Promise<DailyActivity> {
-	const { dailyActivity } = useStore.getState();
-	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
-
-	/** File was not yet seen today, create an entry for it */
-	if (!entry) {
-		entry = await createActivityObject(file, date);
-		// upsertActivity mutates the in-memory store and calls
-		// requestPersist, so no manual UI refresh or DB write is needed —
-		// Slot/Entries/Heatmap selectors fire automatically.
-		useStore.getState().upsertActivity(entry);
-	}
-
-	return entry;
-}

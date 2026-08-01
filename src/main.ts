@@ -124,17 +124,12 @@ export default class KeepTheRhythm extends Plugin {
 	private initializeEvents() {
 		this.registerEvent(
 			this.app.workspace.on("editor-change", (editor, info) => {
-				events.handleEditorChange(editor, info, this);
+				events.handleEditorChange(editor, info);
 			}),
 		);
 		this.registerEvent(
 			this.app.vault.on("delete", (file: TAbstractFile) => {
 				if (file instanceof TFile) events.handleFileDelete(file);
-			}),
-		);
-		this.registerEvent(
-			this.app.vault.on("create", (file: TAbstractFile) => {
-				if (file instanceof TFile) events.handleFileCreate(file);
 			}),
 		);
 		this.registerEvent(
@@ -145,11 +140,6 @@ export default class KeepTheRhythm extends Plugin {
 						events.handleFileRename(file, oldPath);
 				},
 			),
-		);
-		this.registerEvent(
-			this.app.workspace.on("file-open", (file) => {
-				if (file) events.handleFileOpen(file);
-			}),
 		);
 	}
 
@@ -183,7 +173,7 @@ export default class KeepTheRhythm extends Plugin {
 
 		// Flush any pending editor-change sample so the final deltas land
 		// in the in-memory store before we snapshot it for the JSON save.
-		await events.cleanDBTimeout();
+		await events.flushPendingEditorChange();
 
 		// Persist and back up.  No DB to clear — the in-memory store is
 		// garbage-collected with the plugin.
