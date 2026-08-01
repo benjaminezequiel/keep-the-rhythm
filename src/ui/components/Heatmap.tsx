@@ -23,8 +23,6 @@ export const Heatmap = ({
 	query,
 	isCodeBlock,
 }: HeatmapProps) => {
-	let startDate: Date | null = null;
-	let endDate: Date | null = null;
 	const weeksToShow = heatmapConfig.numberOfWeeks || 52;
 	const baseDate = heatmapConfig.startDate
 		? new Date(heatmapConfig.startDate)
@@ -35,66 +33,65 @@ export const Heatmap = ({
 	// (re-runs when underlying rows change) but synchronously.
 	const dailyActivity = useStore((s) => s.dailyActivity);
 
+	const compiledEvaluator = useMemo(() => {
+		if (!query) return null;
+		try {
+			return compileEvaluator(query);
+		} catch (e) {
+			console.error("Error compiling query:", e);
+			return null;
+		}
+	}, [query]);
+
 	const heatmapData = useMemo(() => {
 		const requiredDates = new Set<string>();
 
 		for (let week = 0; week < weeksToShow; week++) {
 			for (let day = 0; day < 7; day++) {
 				const date = getDateForCell(week, day, weeksToShow, baseDate);
-
 				requiredDates.add(formatDate(date));
-
-				if (!startDate || date < startDate) startDate = date;
-				if (!endDate || date > endDate) endDate = date;
 			}
 		}
 
 		let results: DailyActivity[];
-		let filterFn: ((entry: DailyActivity) => boolean) | null = null;
-		if (query) {
-			try {
-				filterFn = compileEvaluator(query);
-			} catch (e) {
-				console.error("Error compiling query:", e);
-			}
-		}
 
 		if (
-			query?.type == "BinaryExpression" &&
+			query?.type === "BinaryExpression" &&
 			query?.operator === "starts_with"
 		) {
-			let value = query.right.value;
+			const value = query.right.value;
 			if (typeof value === "string") {
-				value = value.startsWith("/") ? value.substring(1) : value;
-				const startStr = startDate ? formatDate(startDate) : "";
-				const endStr = endDate ? formatDate(endDate) : "";
+				const prefix = value.startsWith("/")
+					? value.substring(1)
+					: value;
 				results = dailyActivity.filter(
 					(e) =>
-						e.filePath.startsWith(value) &&
-						e.date >= startStr &&
-						e.date <= endStr,
+						requiredDates.has(e.date) &&
+						e.filePath.startsWith(prefix),
 				);
 			} else {
 				results = [];
 			}
-		} else if (query && filterFn) {
+		} else if (compiledEvaluator) {
 			results = dailyActivity.filter(
-				(e) => requiredDates.has(e.date) && filterFn!(e),
+				(e) =>
+					requiredDates.has(e.date) && compiledEvaluator(e),
 			);
 		} else {
-			results = dailyActivity.filter((e) => requiredDates.has(e.date));
+			results = dailyActivity.filter((e) =>
+				requiredDates.has(e.date),
+			);
 		}
 
 		const dateMap: Record<string, number> = {};
 
 		for (const entry of results) {
-			const entryValue = entry.wordsAdded;
-			const valueUntilNow = dateMap[entry.date] || 0;
-			dateMap[entry.date] = valueUntilNow + entryValue;
+			dateMap[entry.date] =
+				(dateMap[entry.date] || 0) + entry.wordsAdded;
 		}
 
 		return dateMap;
-	}, [dailyActivity, query, weeksToShow, baseDate]);
+	}, [dailyActivity, query, weeksToShow, baseDate, compiledEvaluator]);
 
 	const monthLabels = useMemo(() => {
 		const labels: { month: string; week: number }[] = [];
