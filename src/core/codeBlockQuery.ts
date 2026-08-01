@@ -23,8 +23,8 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 		let calc = CalculationType.TOTAL;
 
 		if (!isValidTargetCount(type)) {
-			console.error("Invalid Type on Slots Codeblock");
-			return [];
+			console.error("Invalid Type on Slots Codeblock: ", type);
+			continue;
 			// deveria mostrar o erro no codeblock mesmo, mas nao sei fazer isso ainda
 		}
 

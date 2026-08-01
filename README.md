@@ -111,7 +111,7 @@ Keep the Rhythm provides three types of embeddable code blocks.
 Embed customizable heatmaps with filtering and display options:
 
 ````
-```js
+```ktr-heatmap
 filePath starts_with "journal"
 
 OPTIONS                                    // must always start with the OPTIONS header
@@ -142,10 +142,9 @@ Display inline statistics with customizable metrics:
 
 ````
 ```ktr-slots
-CURRENT_WEEK, WORDS
-CURRENT_DAY, CHARS
+CURRENT_WEEK
+CURRENT_DAY, WORDS
 CURRENT_STREAK
-WHOLE_VAULT
 CURRENT_MONTH, WORDS, AVG
 CURRENT_YEAR
 ```
@@ -175,7 +174,7 @@ Display writing activity for specific dates:
 
 ````
 ```ktr-entries
-2024-03-15
+2026-08-01
 ```
 ````
 

@@ -17,8 +17,6 @@ export async function initializeDataFromJSON(
 		plugin.data.stats = {
 			...STARTING_STATS,
 		};
-		// No data.json existed; seed the store with an empty array.
-		useStore.setState({ dailyActivity: [] });
 		return;
 	}
 	if (loadedData.settings) {
@@ -30,13 +28,6 @@ export async function initializeDataFromJSON(
 	if (loadedData.stats) {
 		plugin.data.stats = loadedData.stats;
 		checkPreviousStreak();
-
-		// Push the freshly loaded array into the store.  Doing this here
-		// (rather than via hydrateFromPluginData) keeps initializeDataFromJSON
-		// self-contained: callers don't need a separate hydrate step.
-		useStore
-			.getState()
-			.bulkSetDailyActivity(plugin.data.stats?.dailyActivity || []);
 	}
 }
 

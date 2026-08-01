@@ -72,8 +72,6 @@ interface KTRState {
 	upsertActivity: (row: DailyActivity) => void;
 	/** Remove one row by [date+filePath].  Nulls currentActivity if matched. */
 	deleteActivity: (date: string, filePath: string) => void;
-	/** Remove all rows for a path.  Nulls currentActivity if matched. */
-	deleteByFilePath: (filePath: string) => void;
 	/** Update filePath on all matching rows. */
 	renameFilePath: (oldPath: string, newPath: string) => void;
 }
@@ -231,19 +229,6 @@ export const useStore = create<KTRState>()(
 			const wasCurrent =
 				cur.currentActivity?.date === date &&
 				cur.currentActivity?.filePath === filePath;
-			set({
-				dailyActivity: next,
-				currentActivity: wasCurrent ? null : cur.currentActivity,
-			});
-			get().requestPersist();
-		},
-
-		deleteByFilePath: (filePath) => {
-			const cur = get();
-			const next = cur.dailyActivity.filter(
-				(r) => r.filePath !== filePath,
-			);
-			const wasCurrent = cur.currentActivity?.filePath === filePath;
 			set({
 				dailyActivity: next,
 				currentActivity: wasCurrent ? null : cur.currentActivity,
