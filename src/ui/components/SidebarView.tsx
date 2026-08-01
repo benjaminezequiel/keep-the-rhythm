@@ -10,7 +10,6 @@ export const KTRView = () => {
   // about.  Zustand's default Object.is equality means the component only
   // re-renders when the selected value actually changes.
   const heatmapConfig = useStore((s) => s.settings.heatmapConfig);
-  const slots = useStore((s) => s.settings.sidebarConfig.slots);
   const showHeatmap = useStore(
     (s) => s.settings.sidebarConfig.visibility.showHeatmap,
   );
@@ -22,14 +21,10 @@ export const KTRView = () => {
   );
 
   return (
-    <div
-      className={`
-			sideBarView 
-			`}
-    >
+    <div className="sideBarView">
       <KeyProvider>
-        {showSlots && <SlotWrapper slots={slots} />}
-        {showHeatmap && <Heatmap heatmapConfig={heatmapConfig} query={""} />}
+        {showSlots && <SlotWrapper />}
+        {showHeatmap && <Heatmap heatmapConfig={heatmapConfig} />}
         {showEntries && <Entries />}
       </KeyProvider>
     </div>

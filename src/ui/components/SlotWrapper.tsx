@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 interface SlotWrapperProps {
-  slots: SlotConfig[] | undefined;
+  slots?: SlotConfig[];
   isCodeBlock?: boolean;
 }
 
