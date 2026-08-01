@@ -33,11 +33,13 @@ export function getDailySummaryMap(
 	todayVersion: number,
 	historicalVersion: number,
 ): Record<string, number> {
+	let changed = false;
 	// ── Rebuild historical partition if needed ──
 	if (
 		historicalVersion !== cachedHistoricalVersion ||
 		cachedHistoricalToday !== today
 	) {
+		changed = true;
 		const historical = dailyActivity.filter((a) => a.date < today);
 		cachedHistoricalMap = aggregateByDate(historical);
 		cachedHistoricalVersion = historicalVersion;
@@ -46,9 +48,13 @@ export function getDailySummaryMap(
 
 	// ── Rebuild today partition if needed ──
 	if (todayVersion !== cachedTodayVersion || cachedTodayDate !== today) {
+		changed = true;
 		cachedTodayEntries = dailyActivity.filter((a) => a.date === today);
 		cachedTodayVersion = todayVersion;
 		cachedTodayDate = today;
+	}
+	if (!changed) {
+		return cachedHistoricalMap!;
 	}
 
 	// ── Merge: O(k), k = today entries (typically < 10) ──
