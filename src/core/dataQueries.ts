@@ -75,21 +75,58 @@ export function getTotalValueFromLast24Hours(
 	);
 }
 
-export function sumLast24Hours(
-	activities: DailyActivity[],
-	now: Date = new Date(),
-): number {
-	const cutoff = moment(now).subtract(24, "hours").format("YYYY-MM-DD");
+/**
+ * Compute the inclusive date range [startDate, today] and elapsed days
+ * for period-based targets.  Returns null for non-period targets.
+ */
+function getPeriodRange(
+	target: TargetCount,
+	today: string,
+): { startDate: string; totalDays: number } | null {
+	const now = new Date();
 
-	let total = 0;
-
-	for (const activity of activities) {
-		if (activity.date >= cutoff) {
-			total += activity.wordsAdded || 0;
+	switch (target) {
+		case TargetCount.CURRENT_WEEK: {
+			const startDate = formatDate(getStartOfWeek(now));
+			return {
+				startDate,
+				totalDays: moment(today).diff(startDate, "days") + 1,
+			};
 		}
+		case TargetCount.CURRENT_MONTH: {
+			const startDate = formatDate(getStartOfMonth(now));
+			return {
+				startDate,
+				totalDays: moment(today).diff(startDate, "days") + 1,
+			};
+		}
+		case TargetCount.CURRENT_YEAR: {
+			const startDate = formatDate(getStartOfYear(now));
+			return {
+				startDate,
+				totalDays: moment(today).diff(startDate, "days") + 1,
+			};
+		}
+		case TargetCount.LAST_WEEK:
+			return {
+				startDate: moment(today).subtract(7, "days").format("YYYY-MM-DD"),
+				totalDays: 7,
+			};
+		case TargetCount.LAST_MONTH:
+			return {
+				startDate: moment(today).subtract(30, "days").format("YYYY-MM-DD"),
+				totalDays: 30,
+			};
+		case TargetCount.LAST_YEAR:
+			return {
+				startDate: moment(today)
+					.subtract(365, "days")
+					.format("YYYY-MM-DD"),
+				totalDays: 365,
+			};
+		default:
+			return null;
 	}
-
-	return total;
 }
 
 /**
@@ -105,62 +142,31 @@ export function getCurrentCount(
 		useStore.getState();
 
 	if (target === TargetCount.CURRENT_STREAK) {
-		if (daysWithCompletedGoal?.length) {
-			return getDateStreaks(daysWithCompletedGoal).currentStreak;
-		}
-		return 0;
+		return daysWithCompletedGoal?.length
+			? getDateStreaks(daysWithCompletedGoal).currentStreak
+			: 0;
 	}
-
 	if (target === TargetCount.CURRENT_DAY) {
 		return getTotalValueByDate(dailyActivity, today);
 	}
-
 	if (target === TargetCount.LAST_DAY) {
 		return getTotalValueFromLast24Hours(dailyActivity);
 	}
 
-	let startDate: string;
-	let totalDays: number;
-
-	switch (target) {
-		case TargetCount.CURRENT_WEEK:
-			startDate = formatDate(getStartOfWeek(new Date()));
-			totalDays = moment(today).diff(startDate, "days") + 1;
-			break;
-		case TargetCount.CURRENT_MONTH:
-			startDate = formatDate(getStartOfMonth(new Date()));
-			totalDays = moment(today).diff(startDate, "days") + 1;
-			break;
-		case TargetCount.CURRENT_YEAR:
-			startDate = formatDate(getStartOfYear(new Date()));
-			totalDays =
-				Math.floor(
-					(new Date(today).getTime() -
-						new Date(startDate).getTime()) /
-						(1000 * 3600 * 24),
-				) + 1;
-			break;
-		case TargetCount.LAST_WEEK:
-			startDate = moment(today).subtract(7, "days").format("YYYY-MM-DD");
-			totalDays = 7;
-			break;
-		case TargetCount.LAST_MONTH:
-			startDate = moment(today).subtract(30, "days").format("YYYY-MM-DD");
-			totalDays = 30;
-			break;
-		case TargetCount.LAST_YEAR:
-			startDate = moment(today)
-				.subtract(365, "days")
-				.format("YYYY-MM-DD");
-			totalDays = 365;
-			break;
-		default:
-			console.error("Unsupported target type: " + target);
-			return 0;
+	const range = getPeriodRange(target, today);
+	if (!range) {
+		console.error("Unsupported target type: " + target);
+		return 0;
 	}
 
-	const value = getTotalValueInDateRange(dailyActivity, startDate, today);
-	return calc === CalculationType.AVG ? Math.round(value / totalDays) : value;
+	const value = getTotalValueInDateRange(
+		dailyActivity,
+		range.startDate,
+		today,
+	);
+	return calc === CalculationType.AVG
+		? Math.round(value / range.totalDays)
+		: value;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
