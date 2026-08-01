@@ -10,8 +10,8 @@ import {
   createColorModeSettings,
   createThresholdSettings,
   createBackupFolderPathSetting,
-  createTrackedFoldersSetting,
 } from "./CustomSettings";
+import { createTrackedFoldersSetting } from "./TrackedFoldersSetting";
 
 export class SettingsTab extends PluginSettingTab {
   private plugin: any;
