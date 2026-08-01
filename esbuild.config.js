@@ -12,6 +12,7 @@ const prod = process.argv[2] === "production";
 
 const context = await esbuild.context({
   metafile: true,
+  bundle: true,
   banner: {
     js: banner,
   },
