@@ -2,29 +2,31 @@ import { VIEW_TYPE } from "@/ui/views/PluginView";
 
 import { getPlugin } from "./pluginRegistry";
 import { useStore } from "./store";
+import { getDailySummaryMap } from "@/utils/dailySummaryCache";
 
 export function checkPreviousStreak() {
 	const plugin = getPlugin();
 	const data = plugin.data;
 
 	if (!data.settings) return;
+	if (!data.stats?.dailyActivity) return;
 
-	const dailyActivity = useStore.getState().dailyActivity;
+	const { dailyActivity, today, todayVersion, historicalVersion } =
+		useStore.getState();
 
-	const wordsByDate = dailyActivity.reduce<Record<string, number>>(
-		(acc, act) => {
-			acc[act.date] = (acc[act.date] || 0) + act.wordsAdded;
-			return acc;
-		},
-		{},
+	const wordsByDate = getDailySummaryMap(
+		dailyActivity,
+		today,
+		todayVersion,
+		historicalVersion,
 	);
 
 	let changed = false;
 	for (const [date, totalWords] of Object.entries(wordsByDate)) {
-		if (
-			totalWords > data.settings.dailyWritingGoal &&
-			!data.stats?.daysWithCompletedGoal?.includes(date)
-		) {
+		if (data.stats?.daysWithCompletedGoal?.includes(date)) {
+			continue;
+		}
+		if (totalWords > data.settings.dailyWritingGoal) {
 			data.stats?.daysWithCompletedGoal?.push(date);
 			changed = true;
 		}

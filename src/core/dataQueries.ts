@@ -1,6 +1,6 @@
 import { getDateStreaks } from "@/utils/utils";
 import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
-import { useStore } from "./store";
+import { useStore, KTRState } from "./store";
 import {
 	formatDate,
 	getStartOfMonth,
@@ -9,8 +9,13 @@ import {
 } from "@/utils/dateUtils";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getPlugin } from "@/core/pluginRegistry";
+import { getDailySummaryMap } from "@/utils/dailySummaryCache";
 import { moment as _moment, TFile } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
+
+/** Version selectors for React components to subscribe to. */
+export const selectTodayVersion = (s: KTRState) => s.todayVersion;
+export const selectHistoricalVersion = (s: KTRState) => s.historicalVersion;
 
 /* ─────────────────────────────────────────────────────────────────────────
  * Pure read helpers (array → value).
@@ -131,15 +136,20 @@ function getPeriodRange(
 
 /**
  * Resolve the count for the given target.  Reads everything it needs from
- * the store synchronously.  Replaces the old async getCurrentCount which
- * existed only to await Dexie queries.
+ * the store synchronously.  Uses the partitioned cache for O(1) lookups
+ * instead of scanning the full dailyActivity array on every call.
  */
 export function getCurrentCount(
 	target: TargetCount,
 	calc?: CalculationType,
 ): number {
-	const { today, daysWithCompletedGoal, dailyActivity } =
-		useStore.getState();
+	const {
+		today,
+		daysWithCompletedGoal,
+		dailyActivity,
+		todayVersion,
+		historicalVersion,
+	} = useStore.getState();
 
 	if (target === TargetCount.CURRENT_STREAK) {
 		return daysWithCompletedGoal?.length
@@ -147,7 +157,13 @@ export function getCurrentCount(
 			: 0;
 	}
 	if (target === TargetCount.CURRENT_DAY) {
-		return getTotalValueByDate(dailyActivity, today);
+		const map = getDailySummaryMap(
+			dailyActivity,
+			today,
+			todayVersion,
+			historicalVersion,
+		);
+		return map[today] || 0;
 	}
 	if (target === TargetCount.LAST_DAY) {
 		return getTotalValueFromLast24Hours(dailyActivity);
@@ -159,14 +175,35 @@ export function getCurrentCount(
 		return 0;
 	}
 
-	const value = getTotalValueInDateRange(
+	const map = getDailySummaryMap(
 		dailyActivity,
-		range.startDate,
 		today,
+		todayVersion,
+		historicalVersion,
 	);
+	const value = sumRangeFromMap(map, range.startDate, today);
 	return calc === CalculationType.AVG
 		? Math.round(value / range.totalDays)
 		: value;
+}
+
+/**
+ * Sum word totals from a pre-aggregated date map over an inclusive date
+ * range.  O(days) — at most 365 iterations for yearly targets.
+ */
+function sumRangeFromMap(
+	map: Record<string, number>,
+	startDate: string,
+	endDate: string,
+): number {
+	let sum = 0;
+	const cursor = moment(startDate);
+	while (cursor.format("YYYY-MM-DD") <= endDate) {
+		const dateStr = cursor.format("YYYY-MM-DD");
+		sum += map[dateStr] || 0;
+		cursor.add(1, "days");
+	}
+	return sum;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { deleteActivityFromDate } from "@/core/dataQueries";
+import { deleteActivityFromDate, selectTodayVersion } from "@/core/dataQueries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
@@ -7,6 +7,7 @@ import { getActivityByDate } from "@/core/dataQueries";
 import { getFileNameWithoutExtension } from "@/utils/utils";
 import { useStore } from "@/core/store";
 import { getPlugin } from "@/core/pluginRegistry";
+import { getTodayEntries } from "@/utils/dailySummaryCache";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
@@ -21,13 +22,18 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// the calendar rolls over.
 	const today = useStore((s) => s.today);
 	const date = dateProp ?? today;
+	const todayVersion = useStore(selectTodayVersion);
 
-	// Subscribe to the dailyActivity slice and derive the entries view
-	// synchronously.  The store is hydrated before the view mounts, so
-	// there is no "loading" state.
-	const dailyActivity = useStore((s) => s.dailyActivity);
+	// Use the partitioned cache for today's entries (O(1) lookup after
+	// initial build).  For historical dates, fall back to array filtering.
 	const entries = useMemo(() => {
-		return getActivityByDate(dailyActivity, date)
+		const { dailyActivity } = useStore.getState();
+		const rawEntries =
+			date === today
+				? getTodayEntries(dailyActivity, today, todayVersion)
+				: getActivityByDate(dailyActivity, date);
+
+		return rawEntries
 			.filter((entry) => entry.wordsAdded != 0)
 			.filter((entry) => {
 				if (!filters || filters.length === 0) return true;
@@ -42,7 +48,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 			.sort((a, b) => {
 				return b.wordsAdded - a.wordsAdded;
 			});
-	}, [dailyActivity, date, filters]);
+	}, [date, today, todayVersion, filters]);
 
 	const addManualEntry = () => {
 		new ManualEntryModal(getPlugin().app).open();

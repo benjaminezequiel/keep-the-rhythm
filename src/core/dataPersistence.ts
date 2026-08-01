@@ -1,7 +1,6 @@
 import { DEFAULT_SETTINGS, STARTING_STATS, PluginData } from "@/defs/types";
 import { useStore } from "./store";
 import KeepTheRhythm from "../main";
-import { checkPreviousStreak } from "./commands";
 
 const JSON_DEBOUNCE_TIME = 1000;
 
@@ -27,7 +26,6 @@ export async function initializeDataFromJSON(
 	}
 	if (loadedData.stats) {
 		plugin.data.stats = loadedData.stats;
-		checkPreviousStreak();
 	}
 }
 

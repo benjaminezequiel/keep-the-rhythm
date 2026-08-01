@@ -19,6 +19,7 @@ import {
 	PersistenceScheduler,
 } from "@/core/dataPersistence";
 import { handleExternalSettingsChange } from "@/core/externalSync";
+import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 
 export default class KeepTheRhythm extends Plugin {
 	data: PluginData = {
@@ -51,6 +52,8 @@ export default class KeepTheRhythm extends Plugin {
 		// component mounts.  After this point, store.settings /
 		// store.daysWithCompletedGoal / store.today are all populated.
 		useStore.getState().hydrateFromPluginData();
+		
+		checkPreviousStreak();
 
 		/** Initialize SIDEBAR view */
 		this.registerView(VIEW_TYPE, (leaf) => {
@@ -179,6 +182,10 @@ export default class KeepTheRhythm extends Plugin {
 		// garbage-collected with the plugin.
 		await flushToJSON(this);
 		await backupData(this.data, this.app);
+
+		// Reset the module-level partitioned cache so stale data doesn't
+		// leak into the next plugin load cycle.
+		resetDailySummaryCache();
 	}
 
 	// #endregion

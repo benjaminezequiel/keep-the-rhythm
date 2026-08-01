@@ -9,6 +9,8 @@ import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
 import { useStore } from "@/core/store";
+import { selectTodayVersion, selectHistoricalVersion } from "@/core/dataQueries";
+import { getDailySummaryMap } from "@/utils/dailySummaryCache";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -28,9 +30,9 @@ export const Heatmap = ({
 		? new Date(heatmapConfig.startDate)
 		: undefined;
 
-	// Subscribe to the in-memory dailyActivity slice; memoize the heatmap
-	// aggregation on it.  Mirrors the previous useLiveQuery behaviour
-	// (re-runs when underlying rows change) but synchronously.
+	const today = useStore((s) => s.today);
+	const todayVersion = useStore(selectTodayVersion);
+	const historicalVersion = useStore(selectHistoricalVersion);
 	const dailyActivity = useStore((s) => s.dailyActivity);
 
 	const compiledEvaluator = useMemo(() => {
@@ -43,6 +45,12 @@ export const Heatmap = ({
 		}
 	}, [query]);
 
+	const hasFilter =
+		(query?.type === "BinaryExpression" &&
+			(query?.operator === "starts_with" ||
+				query?.operator === "STARTS_WITH")) ||
+		compiledEvaluator;
+
 	const heatmapData = useMemo(() => {
 		const requiredDates = new Set<string>();
 
@@ -53,11 +61,28 @@ export const Heatmap = ({
 			}
 		}
 
+		// No filter: use the partitioned cache for O(1) lookup
+		if (!hasFilter) {
+			const fullMap = getDailySummaryMap(
+				dailyActivity,
+				today,
+				todayVersion,
+				historicalVersion,
+			);
+			const filteredMap: Record<string, number> = {};
+			for (const date of requiredDates) {
+				filteredMap[date] = fullMap[date] || 0;
+			}
+			return filteredMap;
+		}
+
+		// Filtered case (codeBlock): need full array for path-based filtering
 		let results: DailyActivity[];
 
 		if (
 			query?.type === "BinaryExpression" &&
-			query?.operator === "starts_with"
+			(query?.operator === "starts_with" ||
+				query?.operator === "STARTS_WITH")
 		) {
 			const value = query.right.value;
 			if (typeof value === "string") {
@@ -91,7 +116,17 @@ export const Heatmap = ({
 		}
 
 		return dateMap;
-	}, [dailyActivity, query, weeksToShow, baseDate, compiledEvaluator]);
+	}, [
+		dailyActivity,
+		today,
+		todayVersion,
+		historicalVersion,
+		hasFilter,
+		query,
+		weeksToShow,
+		baseDate,
+		compiledEvaluator,
+	]);
 
 	const monthLabels = useMemo(() => {
 		const labels: { month: string; week: number }[] = [];

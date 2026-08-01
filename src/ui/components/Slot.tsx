@@ -4,7 +4,7 @@ import { setIcon } from "obsidian";
 import { useState, useRef, useMemo, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
-import { getCurrentCount } from "@/core/dataQueries";
+import { getCurrentCount, selectTodayVersion, selectHistoricalVersion } from "@/core/dataQueries";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
@@ -35,16 +35,19 @@ export const Slot = ({
 	// replacing the old SETTINGS_CHANGED / DAY_CHANGED / HISTORY_DATA_CHANGED
 	// event listeners.
 	const today = useStore((s) => s.today);
-	const dailyActivity = useStore((s) => s.dailyActivity);
+	const todayVersion = useStore(selectTodayVersion);
+	const historicalVersion = useStore(selectHistoricalVersion);
 	const daysWithCompletedGoal = useStore((s) => s.daysWithCompletedGoal);
 	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
 	const mutateSettings = useStore((s) => s.mutateSettings);
 
 	// useLiveQuery is gone — getCurrentCount reads useStore.getState()
 	// synchronously, so we just memoize on the slices the count depends on.
+	// Using version numbers instead of the dailyActivity array reference
+	// avoids unnecessary recomputation when only unrelated entries change.
 	const value = useMemo(
 		() => getCurrentCount(optionType, calcMode),
-		[optionType, calcMode, today, dailyActivity, daysWithCompletedGoal],
+		[optionType, calcMode, today, todayVersion, historicalVersion, daysWithCompletedGoal],
 	);
 
 	const unitText = () => {

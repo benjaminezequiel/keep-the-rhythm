@@ -28,12 +28,15 @@ import { getPlugin } from "./pluginRegistry";
  *                         (via subscribeWithSelector) to schedule debounced
  *                         JSON saves, replacing the old DATA_PERSIST_NEEDED
  *                         event.
+ *   • todayVersion     — increments when today's data changes, used to
+ *                         invalidate the module-level partitioned cache
+ *   • historicalVersion — increments when historical (non-today) data changes
  *
  * What does NOT live here:
  *   • plugin reference  — see pluginRegistry.ts (service locator)
  *   • isUpdatingActivity — module-level var in events.ts (internal guard)
  */
-interface KTRState {
+export interface KTRState {
 	// ─── Core state ───
 	today: string;
 	currentActivity: DailyActivity | null;
@@ -41,6 +44,8 @@ interface KTRState {
 	daysWithCompletedGoal: string[];
 	persistVersion: number;
 	dailyActivity: DailyActivity[];
+	todayVersion: number;
+	historicalVersion: number;
 
 	// ─── Persist signal (replaces DATA_PERSIST_NEEDED event) ───
 	requestPersist: () => void;
@@ -91,6 +96,8 @@ export const useStore = create<KTRState>()(
 		daysWithCompletedGoal: [],
 		persistVersion: 0,
 		dailyActivity: [],
+		todayVersion: 0,
+		historicalVersion: 0,
 
 		setToday: () => {
 			set({ today: getToday() });
@@ -98,8 +105,13 @@ export const useStore = create<KTRState>()(
 
 		checkDayChange: () => {
 			const today = getToday();
-			if (today !== get().today) {
-				set({ today });
+			const cur = get();
+			if (today !== cur.today) {
+				set({
+					today,
+					todayVersion: cur.todayVersion + 1,
+					historicalVersion: cur.historicalVersion + 1,
+				});
 			}
 		},
 
@@ -173,6 +185,7 @@ export const useStore = create<KTRState>()(
 
 		hydrateFromPluginData: () => {
 			const plugin = getPlugin();
+			const cur = get();
 			set({
 				settings: { ...plugin.data.settings },
 				daysWithCompletedGoal: [
@@ -181,6 +194,8 @@ export const useStore = create<KTRState>()(
 				dailyActivity: [...(plugin.data.stats?.dailyActivity || [])],
 				today: getToday(),
 				currentActivity: null,
+				todayVersion: cur.todayVersion + 1,
+				historicalVersion: cur.historicalVersion + 1,
 			});
 		},
 
@@ -188,9 +203,11 @@ export const useStore = create<KTRState>()(
 
 		bulkSetDailyActivity: (rows) => {
 			const cur = get();
-			set({ dailyActivity: rows });
-			// Re-derive currentActivity from the new array to maintain the
-			// "currentActivity is always a row in dailyActivity" invariant.
+			set({
+				dailyActivity: rows,
+				todayVersion: cur.todayVersion + 1,
+				historicalVersion: cur.historicalVersion + 1,
+			});
 			if (cur.currentActivity) {
 				const match = rows.find(
 					(r) =>
@@ -214,9 +231,16 @@ export const useStore = create<KTRState>()(
 			const isCurrent =
 				cur.currentActivity?.date === row.date &&
 				cur.currentActivity?.filePath === row.filePath;
+			const isToday = row.date === cur.today;
 			set({
 				dailyActivity: next,
 				currentActivity: isCurrent ? row : cur.currentActivity,
+				todayVersion: isToday
+					? cur.todayVersion + 1
+					: cur.todayVersion,
+				historicalVersion: !isToday
+					? cur.historicalVersion + 1
+					: cur.historicalVersion,
 			});
 			get().requestPersist();
 		},
@@ -229,9 +253,16 @@ export const useStore = create<KTRState>()(
 			const wasCurrent =
 				cur.currentActivity?.date === date &&
 				cur.currentActivity?.filePath === filePath;
+			const isToday = date === cur.today;
 			set({
 				dailyActivity: next,
 				currentActivity: wasCurrent ? null : cur.currentActivity,
+				todayVersion: isToday
+					? cur.todayVersion + 1
+					: cur.todayVersion,
+				historicalVersion: !isToday
+					? cur.historicalVersion + 1
+					: cur.historicalVersion,
 			});
 			get().requestPersist();
 		},
@@ -246,7 +277,11 @@ export const useStore = create<KTRState>()(
 				? (next.find((r) => r.date === cur.currentActivity!.date) ??
 					null)
 				: cur.currentActivity;
-			set({ dailyActivity: next, currentActivity: newCurrent });
+			set({
+				dailyActivity: next,
+				currentActivity: newCurrent,
+				historicalVersion: cur.historicalVersion + 1,
+			});
 			get().requestPersist();
 		},
 	})),
