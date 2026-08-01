@@ -69,3 +69,28 @@ export function getDateBasedOnIndex(index: number) {
 export function getCurrentTimeKey() {
   return floorMomentToFive(moment()).format("HH:mm");
 }
+
+export const getDateForCell = (
+	weekIndex: number,
+	dayIndex: number,
+	totalAmountOfWeeks: number,
+	baseDate?: Date,
+): Date => {
+	if (baseDate) {
+		const d = new Date(baseDate);
+		d.setDate(d.getDate() + weekIndex * 7 + dayIndex);
+		return d;
+	}
+
+	const today = new Date();
+	const monday = new Date(today);
+	monday.setDate(monday.getDate() - getDayIndex(monday.getDay()));
+
+	const weekOffset = weekIndex - (totalAmountOfWeeks - 1);
+	monday.setDate(monday.getDate() + weekOffset * 7 + dayIndex);
+	return monday;
+};
+
+const getDayIndex = (dayIndex: number): number => {
+	return dayIndex === 0 ? 6 : dayIndex - 1;
+};

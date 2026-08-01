@@ -60,37 +60,7 @@ export async function openFileByPath(app: App, path: string): Promise<void> {
 	}
 }
 
-export const getDateForCell = (
-	weekIndex: number,
-	dayIndex: number,
-	totalAmountOfWeeks: number,
-	baseDate?: Date, // <-- optional new parameter
-): Date => {
-	let date: Date;
 
-	if (baseDate) {
-		// Start from the provided base date (e.g., January 1st)
-		date = new Date(baseDate);
-		date.setDate(date.getDate() + weekIndex * 7 + dayIndex);
-	} else {
-		// Original behavior: calculate relative to today
-		const today = new Date();
-		date = new Date(today);
-
-		const currentDayIndex = getDayIndex(date.getDay()); // Monday=0 etc
-		date.setDate(date.getDate() - currentDayIndex);
-
-		// Offset from the current week's Monday
-		const weekOffset = weekIndex - (totalAmountOfWeeks - 1);
-		date.setDate(date.getDate() + weekOffset * 7 + dayIndex);
-	}
-
-	return date;
-};
-
-export const getDayIndex = (dayIndex: number): number => {
-	return dayIndex === 0 ? 6 : dayIndex - 1;
-};
 
 // function getRandomArbitrary(min, max) {
 // 	return Math.random() * (max - min) + min;

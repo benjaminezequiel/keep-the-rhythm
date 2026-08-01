@@ -2,13 +2,15 @@ import React from "react";
 import { useMemo } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { weekdaysNames, monthNames } from "../texts";
-import { getDateForCell } from "@/utils/utils";
+import { getDateForCell } from "@/utils/dateUtils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/defs/types";
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
 import { useStore } from "@/core/store";
+import { moment as _moment } from "obsidian";
+const moment = _moment as unknown as typeof _moment.default;
 
 interface HeatmapProps {
 	heatmapConfig: HeatmapConfig;
@@ -94,29 +96,24 @@ export const Heatmap = ({
 		return dateMap;
 	}, [dailyActivity, query, weeksToShow, baseDate]);
 
-	const getMonthLabels = () => {
-		const labels = [];
+	const monthLabels = useMemo(() => {
+		const labels: { month: string; week: number }[] = [];
 		let lastMonth = -1;
 
 		for (let week = 0; week < weeksToShow; week++) {
 			const date = getDateForCell(week, 0, weeksToShow, baseDate);
-
-			const localDate = new Date(
-				date.getTime() - date.getTimezoneOffset() * 60000,
-			);
-			const month = localDate.getMonth();
-			const dayOfMonth = localDate.getDate();
+			const m = moment(date);
+			const month = m.month();
+			const dayOfMonth = m.date();
 
 			if (month !== lastMonth && dayOfMonth <= 7) {
-				labels.push({
-					month: monthNames[month],
-					week: week,
-				});
+				labels.push({ month: monthNames[month], week });
 				lastMonth = month;
 			}
 		}
+
 		return labels;
-	};
+	}, [weeksToShow, baseDate]);
 
 	const wrapperClasses = `
 		heatmap-wrapper 
@@ -151,7 +148,7 @@ export const Heatmap = ({
 									gridTemplateColumns: `repeat(${weeksToShow}, 10px)`,
 								}}
 							>
-								{getMonthLabels().map(({ month, week }) => (
+								{monthLabels.map(({ month, week }) => (
 									<div
 										key={`${month}-${week}`}
 										className="month-label"
