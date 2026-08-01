@@ -7,8 +7,6 @@ import { TFile } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
-import { moment as _moment } from "obsidian";
-const moment = _moment as unknown as typeof _moment.default;
 
 export function getLeafWithFile(app: App, file: TFile): WorkspaceLeaf | null {
 	let result: WorkspaceLeaf | null = null;
@@ -137,33 +135,47 @@ export function isValidColoringMode(value: string): value is HeatmapColorModes {
 }
 
 export function getDateStreaks(dateStrings: string[]) {
-	const dateSet = new Set(dateStrings);
-	const sortedDates = [...dateSet].sort(); // YYYY-MM-DD format sorts lexicographically
-
-	let longestStreak = 0;
-	let currentStreak = 0;
-
-	for (let i = 0; i < sortedDates.length; i++) {
-		const startDate = moment(sortedDates[i]);
-		const prevDay = startDate
-			.clone()
-			.subtract(1, "day")
-			.format("YYYY-MM-DD");
-		if (!dateSet.has(prevDay)) {
-			let streak = 1;
-			let nextDate = startDate.clone().add(1, "day");
-			while (dateSet.has(nextDate.format("YYYY-MM-DD"))) {
-				streak++;
-				nextDate.add(1, "day");
-			}
-			longestStreak = Math.max(longestStreak, streak);
-		}
+	if (dateStrings.length === 0) {
+		return { longestStreak: 0, currentStreak: 0 };
 	}
 
-	let today = moment().startOf("day");
-	while (dateSet.has(today.format("YYYY-MM-DD"))) {
+	const sortedDates = [...new Set(dateStrings)].sort();
+
+	const fmt = (d: Date) =>
+		d.getFullYear() +
+		"-" +
+		String(d.getMonth() + 1).padStart(2, "0") +
+		"-" +
+		String(d.getDate()).padStart(2, "0");
+
+	// Longest streak: single O(n) pass through sorted dates
+	// Compare calendar days (not raw timestamps) to be DST-safe
+	let longestStreak = 1;
+	let streak = 1;
+	const prevDate = new Date(sortedDates[0] + "T00:00:00");
+
+	for (let i = 1; i < sortedDates.length; i++) {
+		prevDate.setDate(prevDate.getDate() + 1);
+		if (fmt(prevDate) === sortedDates[i]) {
+			streak++;
+		} else {
+			longestStreak = Math.max(longestStreak, streak);
+			streak = 1;
+			prevDate.setTime(
+				new Date(sortedDates[i] + "T00:00:00").getTime(),
+			);
+		}
+	}
+	longestStreak = Math.max(longestStreak, streak);
+
+	// Current streak: count backward from today
+	let currentStreak = 0;
+	const dateSet = new Set(dateStrings);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	while (dateSet.has(fmt(today))) {
 		currentStreak++;
-		today.subtract(1, "day");
+		today.setDate(today.getDate() - 1);
 	}
 
 	return { longestStreak, currentStreak };
