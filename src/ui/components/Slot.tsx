@@ -1,7 +1,7 @@
 import { getDateBasedOnIndex } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount } from "@/core/dataQueries";
@@ -55,27 +55,26 @@ export const Slot = ({
 		}
 	};
 
-	/** SETUP BUTTON ICONS USING OBSIDIAN UTILITY */
-	if (calcButtonRef.current) {
-		const icon = calcMode == "TOTAL" ? "chart-spline" : "sigma";
-		setIcon(calcButtonRef.current, icon);
-	}
-	if (typeButtonRef.current) {
-		setIcon(typeButtonRef.current, "list");
-	}
-	if (deleteButtonRef.current) {
-		setIcon(deleteButtonRef.current, "x");
-	}
-
-	if (calcButtonRef.current) {
-		const icon = calcMode == "TOTAL" ? "chart-spline" : "sigma";
-		setIcon(calcButtonRef.current, icon);
-	}
-
 	const showCalcType =
 		optionType !== TargetCount.CURRENT_DAY &&
 		optionType !== TargetCount.LAST_DAY &&
 		optionType !== TargetCount.CURRENT_STREAK;
+
+	useEffect(() => {
+		if (calcButtonRef.current) {
+			const icon = calcMode === "TOTAL" ? "chart-spline" : "sigma";
+			setIcon(calcButtonRef.current, icon);
+		}
+	}, [calcMode, showCalcType]);
+
+	useEffect(() => {
+		if (typeButtonRef.current) {
+			setIcon(typeButtonRef.current, "list");
+		}
+		if (deleteButtonRef.current) {
+			setIcon(deleteButtonRef.current, "x");
+		}
+	}, []);
 
 	const toggleCalculation = () => {
 		const newCalc =
