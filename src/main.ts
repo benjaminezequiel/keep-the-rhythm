@@ -201,4 +201,17 @@ export default class KeepTheRhythm extends Plugin {
 		useStore.getState().hydrateFromPluginData();
 		useStore.getState().requestPersist();
 	}
+
+	/**
+	 * Lightweight persist for visual/settings-only changes.
+	 * Only updates the settings slice in the store without hydrating
+	 * dailyActivity or other non-settings data — avoiding unnecessary
+	 * array copies and preventing currentActivity from being nulled.
+	 * Use this for color, language, display-mode, threshold, and other
+	 * purely UI configuration changes.
+	 */
+	public updateVisualSettingsOnly() {
+		useStore.setState({ settings: { ...this.data.settings } });
+		useStore.getState().requestPersist();
+	}
 }

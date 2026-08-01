@@ -1,6 +1,7 @@
 import { formatDate } from "@/utils/dateUtils";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
+import { debounce } from "@/utils/utils";
 
 import { SETTINGS_SCHEMA, SettingItem } from "./SettingSchema";
 import {
@@ -58,9 +59,9 @@ export class SettingsTab extends PluginSettingTab {
     switch (config.type) {
       case "toggle":
         setting.addToggle((toggle) =>
-          toggle.setValue(!!currentValue).onChange(async (value) => {
+          toggle.setValue(!!currentValue).onChange((value) => {
             setByPath(this.settings, config.key, value);
-            await this.plugin.updateAndSaveEverything();
+            this.plugin.updateVisualSettingsOnly();
             updateVisibility(config.key, value);
           }),
         );
@@ -69,10 +70,10 @@ export class SettingsTab extends PluginSettingTab {
       case "date":
         setting.addText((text) => {
           text.inputEl.setAttribute("type", "date");
-          text.setValue(formatDate(currentValue)).onChange(async (value) => {
+          text.setValue(formatDate(currentValue)).onChange((value) => {
             const date = value ? new Date(value) : null;
             setByPath(this.settings, config.key, date);
-            await this.plugin.updateAndSaveEverything();
+            this.plugin.updateVisualSettingsOnly();
             updateVisibility(config.key, date);
           });
         });
@@ -81,10 +82,9 @@ export class SettingsTab extends PluginSettingTab {
             .setIcon("trash")
             .setTooltip("Clear date")
             .setDisabled(currentValue !== "")
-            .onClick(async () => {
-              // Clear the date in settings
+            .onClick(() => {
               setByPath(this.settings, config.key, undefined);
-              await this.plugin.updateAndSaveEverything();
+              this.plugin.updateVisualSettingsOnly();
 
               const inputEl = setting.controlEl.querySelector(
                 'input[type="date"]',
@@ -94,30 +94,35 @@ export class SettingsTab extends PluginSettingTab {
         });
         break;
 
-      case "number":
+      case "number": {
+        const debouncedNumSave = debounce(() => {
+          this.plugin.updateVisualSettingsOnly();
+        }, 400);
+
         setting.addText((text) =>
           text
             .setPlaceholder(config.placeholder ?? "")
             .setValue(String(currentValue ?? ""))
-            .onChange(async (value) => {
+            .onChange((value) => {
               const num = parseInt(value);
               if (!isNaN(num)) {
                 setByPath(this.settings, config.key, num);
-                await this.plugin.updateAndSaveEverything(); // Maybe add debounce
+                debouncedNumSave();
               }
               updateVisibility(config.key, num);
             }),
         );
         break;
+      }
 
       case "dropdown":
         setting.addDropdown((dropdown) => {
           dropdown
             .addOptions(config.options)
             .setValue(currentValue)
-            .onChange(async (value) => {
+            .onChange((value) => {
               setByPath(this.settings, config.key, value);
-              await this.plugin.updateAndSaveEverything();
+              this.plugin.updateVisualSettingsOnly();
               updateVisibility(config.key, value);
             });
         });

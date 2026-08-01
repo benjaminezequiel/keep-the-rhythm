@@ -6,6 +6,7 @@ import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
 import { DEFAULT_SETTINGS } from "@/defs/types";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { getPlugin } from "@/core/pluginRegistry";
+import { debounce } from "@/utils/utils";
 
 // ------------------------
 // Color pickers for light/dark themes
@@ -33,11 +34,10 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 
   levelsToShow.forEach((level) => {
     setting.addColorPicker((color) =>
-      color.setValue(colorValues[level]).onChange(async (value) => {
+      color.setValue(colorValues[level]).onChange((value) => {
         colorValues[level] = value;
-        await getPlugin().updateAndSaveEverything();
+        getPlugin().updateVisualSettingsOnly();
         getPlugin().applyColorStyles();
-        // propagate visibility if needed
         updateVisibility(`heatmapConfig.colors[${theme}]`, value);
       }),
     );
@@ -49,12 +49,12 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
       new ConfirmationModal(
         getPlugin().app,
         `Are you sure you want to reset the ${theme} theme colors to their default values?`,
-        async () => {
+        () => {
           if (!settings.heatmapConfig.colors) return;
           settings.heatmapConfig.colors[theme] = {
             ...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
           };
-          await getPlugin().updateAndSaveEverything();
+          getPlugin().updateVisualSettingsOnly();
           getPlugin().applyColorStyles();
         },
       ).open();
@@ -95,7 +95,7 @@ export function createLanguageDropdown(setting: Setting) {
       if (!preset) return;
       const newScripts = [...preset.scripts];
       settings.enabledLanguages = newScripts;
-      getPlugin().updateAndSaveEverything();
+      getPlugin().updateVisualSettingsOnly();
       updateVisibility("enabledLanguages", newScripts);
     });
   });
@@ -111,8 +111,8 @@ export function createColorModeSettings(setting: Setting) {
     dropdown
       .addOptions({ ...HeatmapColorModes })
       .setValue(settings.heatmapConfig.intensityMode.toUpperCase())
-      .onChange(async (value) => {
-        await changeColorMode(value); // use callback instead of this.changeColorMode
+      .onChange((value) => {
+        changeColorMode(value);
         updateVisibility("heatmapConfig.intensityMode", value);
       });
   });
@@ -139,20 +139,25 @@ export function createThresholdSettings(setting: Setting) {
   thresholds.push({ key: "high", placeholder: "1000", label: "High" });
 
   thresholds.forEach(({ key, placeholder }) => {
+    const debouncedSave = debounce(() => {
+      getPlugin().updateVisualSettingsOnly();
+    }, 400);
+
     setting
       .addText((text) => {
         text
           .setValue(intensityStops[key].toString())
           .setPlaceholder(placeholder)
-          .onChange(async (value) => {
+          .onChange((value) => {
             const num = parseInt(value);
             if (!isNaN(num)) {
-              const newStops = { ...intensityStops, [key]: num };
+              const currentStops = settings.heatmapConfig.intensityStops;
+              const newStops = { ...currentStops, [key]: num };
               settings.heatmapConfig = {
                 ...settings.heatmapConfig,
                 intensityStops: newStops,
               };
-              await getPlugin().updateAndSaveEverything();
+              debouncedSave();
               updateVisibility("heatmapConfig.intensityStops", newStops);
             }
           }),
@@ -162,7 +167,7 @@ export function createThresholdSettings(setting: Setting) {
   });
 }
 
-export async function changeColorMode(value: string) {
+export function changeColorMode(value: string) {
   const settings = getPlugin().data.settings;
   const mode = value.toLowerCase() as HeatmapColorModes;
 
@@ -182,7 +187,7 @@ export async function changeColorMode(value: string) {
 
   updateThresholdVisibility();
 
-  await getPlugin().updateAndSaveEverything();
+  getPlugin().updateVisualSettingsOnly();
 }
 
 export function updateThresholdVisibility() {
@@ -193,9 +198,6 @@ export function updateThresholdVisibility() {
   );
   const mediumEl = document.querySelector<HTMLInputElement>(
     '[data-threshold-key="medium"]',
-  );
-  const highEl = document.querySelector<HTMLInputElement>(
-    '[data-threshold-key="high"]',
   );
 
   if (lowEl)
@@ -210,11 +212,15 @@ export function createBackupFolderPathSetting(
 ): void {
   const currentValue = getByPath(getPlugin().data.settings, config.key);
 
+  const debouncedSave = debounce(() => {
+    getPlugin().updateVisualSettingsOnly();
+  }, 400);
+
   setting.addText((text) => {
     text
       .setPlaceholder(config.placeholder || "")
       .setValue(currentValue || "")
-      .onChange(async (value) => {
+      .onChange((value) => {
         const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
 
         setByPath(
@@ -222,7 +228,7 @@ export function createBackupFolderPathSetting(
           "backupConfig.folderPath",
           cleanPath || ".keep-the-rhythm",
         );
-        await getPlugin().updateAndSaveEverything();
+        debouncedSave();
       });
   });
 }
@@ -274,7 +280,7 @@ export function createTrackedFoldersSetting(
 
     getPlugin().data.settings.trackedFolders = [...folders, normalized];
     textComponent.setValue("");
-    await getPlugin().updateAndSaveEverything();
+    getPlugin().updateVisualSettingsOnly();
     renderList();
   }
 
@@ -283,7 +289,7 @@ export function createTrackedFoldersSetting(
     getPlugin().data.settings.trackedFolders = folders.filter(
       (_, i) => i !== index,
     );
-    await getPlugin().updateAndSaveEverything();
+    getPlugin().updateVisualSettingsOnly();
     renderList();
   }
 
