@@ -134,9 +134,27 @@ export function isValidColoringMode(value: string): value is HeatmapColorModes {
 	);
 }
 
+// Module-level cache keyed on the input array reference.  The streak
+// only changes when daysWithCompletedGoal itself changes (checkPreviousStreak,
+// updateStreak, hydrate), not on every keystroke — so a reference-keyed
+// cache lets Slot components re-render without re-running this O(n log n)
+// computation.  Without this, every typed word in a .md file would
+// re-sort and re-walk the full completed-days array for any
+// CURRENT_STREAK slot.
+let _streakCache: {
+	input: string[] | null;
+	result: { longestStreak: number; currentStreak: number };
+} = { input: null, result: { longestStreak: 0, currentStreak: 0 } };
+
 export function getDateStreaks(dateStrings: string[]) {
+	if (_streakCache.input === dateStrings) return _streakCache.result;
+
 	if (dateStrings.length === 0) {
-		return { longestStreak: 0, currentStreak: 0 };
+		_streakCache = {
+			input: dateStrings,
+			result: { longestStreak: 0, currentStreak: 0 },
+		};
+		return _streakCache.result;
 	}
 
 	const sortedDates = [...new Set(dateStrings)].sort();
@@ -178,7 +196,9 @@ export function getDateStreaks(dateStrings: string[]) {
 		today.setDate(today.getDate() - 1);
 	}
 
-	return { longestStreak, currentStreak };
+	const result = { longestStreak, currentStreak };
+	_streakCache = { input: dateStrings, result };
+	return result;
 }
 
 export function debounce<T extends (...args: any[]) => void>(
