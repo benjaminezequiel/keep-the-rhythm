@@ -133,4 +133,19 @@ export function createEntriesCodeBlock(
 			filters,
 		}),
 	);
+
+	// Without ctx.addChild the React root leaks: every time the markdown
+	// is re-rendered (theme switch, layout change, etc.) a new root is
+	// created and the previous one keeps its Zustand subscriptions alive.
+	// The other two code blocks already do this — see createHeatmapCodeBlock.
+	ctx.addChild(
+		new (class extends MarkdownRenderChild {
+			constructor(containerEl: HTMLElement) {
+				super(containerEl);
+			}
+			onunload() {
+				root.unmount();
+			}
+		})(container),
+	);
 }
