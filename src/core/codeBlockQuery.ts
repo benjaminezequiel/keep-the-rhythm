@@ -9,6 +9,23 @@ import {
 import { SlotConfig, TargetCount, CalculationType } from "@/defs/types";
 import { useStore } from "./store";
 
+// Register custom binary operators once at module load.  These calls are
+// idempotent but we used to do them inside parseQueryToJSEP on every
+// markdown re-render.
+jsep.addBinaryOp("starts_with", 6);
+jsep.addBinaryOp("STARTS_WITH", 6);
+jsep.addBinaryOp("contains", 6);
+jsep.addBinaryOp("CONTAINS", 6);
+
+// AST cache for heatmap filter expressions.  The AST is a pure function
+// of the source text, so caching by string makes the `query` prop stable
+// across markdown re-renders.  Without this, every theme switch / layout
+// change would re-parse and yield a fresh AST reference, which then
+// invalidated Heatmap's compiledEvaluator useMemo on every keystroke.
+// 256 entries is plenty for any realistic vault.
+const MAX_AST_CACHE = 256;
+const filterAstCache = new Map<string, any | null>();
+
 export function parseSlotQuery(query: string): SlotConfig[] {
 	// returns a SlotConfig[]?
 	const arrayOfLines = query.match(/[^\r\n]+/g);
@@ -42,33 +59,54 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 	return slots;
 }
 
+/**
+ * Parse a heatmap filter expression into a jsep AST, with caching.
+ * Returns undefined when there's no filter, null when parsing failed.
+ */
+function getFilterAst(filterText: string): any | undefined | null {
+	const trimmed = filterText?.trim();
+	if (!trimmed) return undefined;
+
+	if (filterAstCache.has(trimmed)) {
+		return filterAstCache.get(trimmed);
+	}
+
+	const normalized = normalizeLogicalOperators(trimmed);
+	let ast: any = null;
+	try {
+		ast = jsep(normalized);
+	} catch (error) {
+		console.error("Error parsing filter expression:", error);
+		console.error("Normalized query:", normalized);
+		// null = "valid but empty filter that matches everything"
+		ast = null;
+	}
+
+	if (filterAstCache.size >= MAX_AST_CACHE) {
+		// Drop the oldest entry (Map preserves insertion order).
+		const firstKey = filterAstCache.keys().next().value;
+		if (firstKey !== undefined) filterAstCache.delete(firstKey);
+	}
+	filterAstCache.set(trimmed, ast);
+	return ast;
+}
+
 export function parseQueryToJSEP(query: string) {
-	// Configure jsep with custom operators
-	jsep.addBinaryOp("starts_with", 6);
-	jsep.addBinaryOp("STARTS_WITH", 6);
-	jsep.addBinaryOp("contains", 6);
-	jsep.addBinaryOp("CONTAINS", 6);
-
 	const { filterText, optionsText } = splitFilterAndOptions(query);
-	let normalized = normalizeLogicalOperators(filterText);
+	const parsed = getFilterAst(filterText);
 
-	let parsed;
-	let config: HeatmapConfig = structuredClone(
-		useStore.getState().settings.heatmapConfig,
-	);
+	// Build a mutable copy of the user's heatmap config.  The original
+	// was being deep-cloned via structuredClone on every call; we only
+	// mutate hideMonthLabels, hideWeekdayLabels, intensityStops fields,
+	// intensityMode, roundCells, startDate, and numberOfWeeks — so a
+	// shallow clone + one nested clone of intensityStops is sufficient.
+	const base = useStore.getState().settings.heatmapConfig;
+	const config: HeatmapConfig = {
+		...base,
+		intensityStops: { ...base.intensityStops },
+	};
 	config.hideMonthLabels = false;
 	config.hideWeekdayLabels = false;
-
-	if (filterText && filterText.trim()) {
-		try {
-			parsed = jsep(normalized);
-		} catch (error) {
-			console.error("Error parsing filter expression:", error);
-			console.error("Normalized query:", normalized);
-			// Return a valid but empty filter that matches everything
-			parsed = null;
-		}
-	}
 
 	if (optionsText) {
 		const arrayOfLines = optionsText.match(/[^\r\n]+/g);
