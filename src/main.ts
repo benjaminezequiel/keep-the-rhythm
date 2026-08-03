@@ -17,7 +17,7 @@ import {
 	setupPersistenceScheduling,
 	PersistenceScheduler,
 } from "@/core/dataPersistence";
-import { handleExternalSettingsChange } from "@/core/externalSync";
+import { handleExternalDataChange } from "@/core/externalSync";
 import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 
 export default class KeepTheRhythm extends Plugin {
@@ -210,7 +210,7 @@ export default class KeepTheRhythm extends Plugin {
 	// #endregion
 
 	async onExternalSettingsChange() {
-		await handleExternalSettingsChange(this);
+		await handleExternalDataChange(this);
 	}
 
 	/**
