@@ -1,4 +1,8 @@
-import { deleteActivityFromDate, selectTodayVersion } from "@/core/dataQueries";
+import {
+	deleteActivityFromDate,
+	selectHistoricalVersion,
+	selectTodayVersion,
+} from "@/core/dataQueries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
@@ -23,16 +27,31 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	const today = useStore((s) => s.today);
 	const date = dateProp ?? today;
 	const todayVersion = useStore(selectTodayVersion);
+	const historicalVersion = useStore(selectHistoricalVersion);
+	const isToday = date === today;
 
-	// Use the partitioned cache for today's entries (O(1) lookup after
-	// initial build).  For historical dates, fall back to array filtering.
-	const entries = useMemo(() => {
+	// Today's path: O(1) from the partitioned cache, only refreshes when
+	// todayVersion moves.  The cache returns a stable reference for
+	// unchanged today data, so unrelated re-renders stay free.
+	const todayEntries = useMemo(() => {
+		return getTodayEntries();
+	}, [today, todayVersion]);
+
+	// Historical path: O(N) filter over dailyActivity, but only runs when
+	// historicalVersion moves.  Keystrokes that only touch today bump
+	// todayVersion - not historicalVersion - so this stays cached.
+	const historicalEntries = useMemo(() => {
 		const { dailyActivity } = useStore.getState();
-		const rawEntries =
-			date === today
-				? getTodayEntries()
-				: getActivityByDate(dailyActivity, date);
+		return getActivityByDate(dailyActivity, date);
+	}, [date, today, historicalVersion]);
 
+	const rawEntries = isToday ? todayEntries : historicalEntries;
+
+	// Filter + sort live in their own useMemo so a `filters` change does
+	// not re-fetch data, and a data change does not re-run the filter
+	// against the same predicate.  The work is cheap (k < 10) but the
+	// reference identity matters for the children below.
+	const entries = useMemo(() => {
 		return rawEntries
 			.filter((entry) => entry.wordsAdded != 0)
 			.filter((entry) => {
@@ -48,7 +67,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 			.sort((a, b) => {
 				return b.wordsAdded - a.wordsAdded;
 			});
-	}, [date, today, todayVersion, filters]);
+	}, [rawEntries, filters]);
 
 	const addManualEntry = () => {
 		new ManualEntryModal(getPlugin().app).open();
