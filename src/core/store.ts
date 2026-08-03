@@ -173,10 +173,22 @@ export const useStore = create<KTRState>()(
 
 		mutateSettings: async (updater) => {
 			const cur = get();
-			// Mutate draft in-place (matches existing SlotWrapper/CustomSettings
-			// semantics where settings are directly modified).
-			updater(cur.settings);
-			set({ settings: { ...cur.settings } });
+			// Clone deeply enough so that Zustand selectors (which use
+			// Object.is by default) detect changes to nested objects.
+			// Without this, mutating cur.settings in-place and then
+			// shallow-spreading leaves sidebarConfig / slots with the
+			// same references, and subscribers silently miss the update.
+			const newSettings: Settings = {
+				...cur.settings,
+				sidebarConfig: {
+					...cur.settings.sidebarConfig,
+					slots: cur.settings.sidebarConfig.slots.map((s) => ({
+						...s,
+					})),
+				},
+			};
+			updater(newSettings);
+			set({ settings: newSettings });
 			cur.requestPersist();
 		},
 
