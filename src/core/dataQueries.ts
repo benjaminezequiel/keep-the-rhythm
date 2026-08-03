@@ -142,29 +142,12 @@ export function getCurrentCount(
 	target: TargetCount,
 	calc?: CalculationType,
 ): number {
-	const {
-		today,
-		settings,
-		dailyActivity,
-		todayVersion,
-		historicalVersion,
-	} = useStore.getState();
+	const { today } = useStore.getState();
 	if (target === TargetCount.CURRENT_STREAK) {
-		return getStreak(
-			dailyActivity,
-			today,
-			todayVersion,
-			historicalVersion,
-			settings.dailyWritingGoal,
-		);
+		return getStreak();
 	}
 	if (target === TargetCount.CURRENT_DAY) {
-		const map = getDailySummaryMap(
-			dailyActivity,
-			today,
-			todayVersion,
-			historicalVersion,
-		);
+		const map = getDailySummaryMap();
 		return map[today] || 0;
 	}
 	if (target === TargetCount.LAST_DAY) {
@@ -172,12 +155,7 @@ export function getCurrentCount(
 		// which is O(N) on the full array.  The cutoff is "yesterday" because
 		// moment(now).subtract(24h).format("YYYY-MM-DD") always lands on the
 		// previous calendar day — so the answer is exactly yesterday + today.
-		const map = getDailySummaryMap(
-			dailyActivity,
-			today,
-			todayVersion,
-			historicalVersion,
-		);
+		const map = getDailySummaryMap();
 		const yesterday = moment(today).subtract(1, "day").format("YYYY-MM-DD");
 		return (map[yesterday] || 0) + (map[today] || 0);
 	}
@@ -188,12 +166,7 @@ export function getCurrentCount(
 		return 0;
 	}
 
-	const map = getDailySummaryMap(
-		dailyActivity,
-		today,
-		todayVersion,
-		historicalVersion,
-	);
+	const map = getDailySummaryMap();
 	const value = sumRangeFromMap(map, range.startDate, today);
 	return calc === CalculationType.AVG
 		? Math.round(value / range.totalDays)

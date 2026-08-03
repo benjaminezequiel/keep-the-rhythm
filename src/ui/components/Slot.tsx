@@ -113,8 +113,7 @@ export const Slot = ({
 
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);
-		const { dailyActivity } = useStore.getState();
-		const map = getDailySummaryMap(dailyActivity, today, todayVersion, historicalVersion);
+		const map = getDailySummaryMap();
 		return (map[date] ?? 0) >= dailyWritingGoal;
 	}
 

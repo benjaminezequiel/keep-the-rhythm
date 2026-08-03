@@ -1,4 +1,5 @@
 import { DailyActivity } from "@/defs/types";
+import { useStore } from "@/core/store";
 
 // ─── Partitioned Cache ────────────────────────────────────────────
 // Two independent partitions so that typing (today data changes)
@@ -31,12 +32,10 @@ let cachedMergedMap: Record<string, number> | null = null;
  *
  * Merging the two partitions is O(k).
  */
-export function getDailySummaryMap(
-	dailyActivity: DailyActivity[],
-	today: string,
-	todayVersion: number,
-	historicalVersion: number,
-): Record<string, number> {
+export function getDailySummaryMap(): Record<string, number> {
+	const { dailyActivity, today, todayVersion, historicalVersion } =
+		useStore.getState();
+
 	let changed = false;
 	// ── Rebuild historical partition if needed ──
 	if (
@@ -77,11 +76,8 @@ export function getDailySummaryMap(
  * Returns a cached copy that only rebuilds when todayVersion changes
  * or the date boundary shifts.
  */
-export function getTodayEntries(
-	dailyActivity: DailyActivity[],
-	today: string,
-	todayVersion: number,
-): DailyActivity[] {
+export function getTodayEntries(): DailyActivity[] {
+	const { dailyActivity, today, todayVersion } = useStore.getState();
 	if (todayVersion !== cachedTodayVersion || cachedTodayDate !== today) {
 		cachedTodayEntries = dailyActivity.filter((a) => a.date === today);
 		cachedTodayVersion = todayVersion;
@@ -122,13 +118,11 @@ let cachedHistoricalStreakKey = "";
  *   (today, historicalVersion, goal) — NOT todayVersion — so it survives
  *   every keystroke and avoids the O(N) full-map iteration.
  */
-export function getStreak(
-	dailyActivity: DailyActivity[],
-	today: string,
-	todayVersion: number,
-	historicalVersion: number,
-	goal: number,
-): number {
+export function getStreak(): number {
+	const { today, todayVersion, historicalVersion, settings } =
+		useStore.getState();
+	const goal = settings.dailyWritingGoal;
+
 	const key = `${today}|${todayVersion}|${historicalVersion}|${goal}`;
 	if (cachedStreakKey === key) return cachedStreak;
 
@@ -139,9 +133,7 @@ export function getStreak(
 		// Piggyback on getDailySummaryMap's historical partition cache.
 		// The merge is O(N) but this block is only entered when
 		// historicalVersion, today, or goal changes — not on every keystroke.
-		const map = getDailySummaryMap(
-			dailyActivity, today, todayVersion, historicalVersion,
-		);
+		const map = getDailySummaryMap();
 		cachedHistoricalStreak = 0;
 		let cursor = previousDay(today);
 		while (true) {
@@ -154,7 +146,7 @@ export function getStreak(
 	}
 
 	// Check today's total via getTodayEntries (cached, O(k) k < 10)
-	const todayEntries = getTodayEntries(dailyActivity, today, todayVersion);
+	const todayEntries = getTodayEntries();
 	if (todayEntries.reduce((sum, a) => sum + a.wordsAdded, 0) < goal) {
 		// Today not yet completed — return historical streak only
 		cachedStreak = cachedHistoricalStreak;

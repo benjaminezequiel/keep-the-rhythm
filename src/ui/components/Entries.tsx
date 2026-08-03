@@ -30,7 +30,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 		const { dailyActivity } = useStore.getState();
 		const rawEntries =
 			date === today
-				? getTodayEntries(dailyActivity, today, todayVersion)
+				? getTodayEntries()
 				: getActivityByDate(dailyActivity, date);
 
 		return rawEntries

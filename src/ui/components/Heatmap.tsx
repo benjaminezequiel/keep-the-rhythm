@@ -69,16 +69,7 @@ export const Heatmap = ({
 	// for the sidebar heatmap (no codeBlock filter) and must not invalidate
 	// on every keystroke.
 	const cachedHeatmapData = useMemo(() => {
-		// Read the latest array non-reactively: the cache is keyed on
-		// (todayVersion, historicalVersion) which are also in the deps, so
-		// any change that matters to the cache will retrigger this memo and
-		// pick up the fresh array.
-		const fullMap = getDailySummaryMap(
-			useStore.getState().dailyActivity,
-			today,
-			todayVersion,
-			historicalVersion,
-		);
+		const fullMap = getDailySummaryMap();
 		const filteredMap: Record<string, number> = {};
 		for (const date of requiredDates) {
 			filteredMap[date] = fullMap[date] || 0;
