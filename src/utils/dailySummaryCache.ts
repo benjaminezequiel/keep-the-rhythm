@@ -99,21 +99,28 @@ function aggregateByDate(entries: DailyActivity[]): Record<string, number> {
 }
 
 // ─── Streak Cache ────────────────────────────────────────────────
-// Separate cache for CURRENT_STREAK since it depends on the goal
-// threshold (a settings value) in addition to data versions.
+// Two-tier cache:
+// 1. Outer cache (cachedStreakKey) — keyed by everything, invalidated
+//    on every keystroke via todayVersion.
+// 2. Historical streak cache (cachedHistoricalStreakKey) — keyed by
+//    (today, historicalVersion, goal), NOT todayVersion, so it persists
+//    across keystrokes and avoids the O(N) full-map scan on every edit.
 // ──────────────────────────────────────────────────────────────────
 
 let cachedStreak = 0;
 let cachedStreakKey = "";
+let cachedHistoricalStreak = 0;
+let cachedHistoricalStreakKey = "";
 
 /**
  * Compute the current writing streak (consecutive days meeting the goal
- * ending today).  Results are cached keyed by data versions + goal so
- * that repeated calls during the same render are O(1).
+ * ending today).
  *
- * Uses the existing getDailySummaryMap partition cache — when neither
- * partition has changed, the map is reused and only the streak's own
- * cache key needs to match.
+ * Uses a two-tier cache strategy:
+ * - Today's check uses getTodayEntries (O(k), k < 10)
+ * - The historical streak (yesterday backwards) is cached separately by
+ *   (today, historicalVersion, goal) — NOT todayVersion — so it survives
+ *   every keystroke and avoids the O(N) full-map iteration.
  */
 export function getStreak(
 	dailyActivity: DailyActivity[],
@@ -125,34 +132,49 @@ export function getStreak(
 	const key = `${today}|${todayVersion}|${historicalVersion}|${goal}`;
 	if (cachedStreakKey === key) return cachedStreak;
 
-	const map = getDailySummaryMap(
-		dailyActivity,
-		today,
-		todayVersion,
-		historicalVersion,
-	);
-
-	const qualifying = new Set<string>();
-	for (const [date, words] of Object.entries(map)) {
-		if (words >= goal) qualifying.add(date);
+	// Historical streak (from yesterday backwards) — cached separately
+	// by (today, historicalVersion, goal) so it persists across keystrokes.
+	const histKey = `${today}|${historicalVersion}|${goal}`;
+	if (cachedHistoricalStreakKey !== histKey) {
+		// Piggyback on getDailySummaryMap's historical partition cache.
+		// The merge is O(N) but this block is only entered when
+		// historicalVersion, today, or goal changes — not on every keystroke.
+		const map = getDailySummaryMap(
+			dailyActivity, today, todayVersion, historicalVersion,
+		);
+		cachedHistoricalStreak = 0;
+		let cursor = previousDay(today);
+		while (true) {
+			const words = map[cursor];
+			if (words === undefined || words < goal) break;
+			cachedHistoricalStreak++;
+			cursor = previousDay(cursor);
+		}
+		cachedHistoricalStreakKey = histKey;
 	}
 
-	let streak = 0;
-	let cursor = today;
-	while (qualifying.has(cursor)) {
-		streak++;
-		cursor = previousDay(cursor);
+	// Check today's total via getTodayEntries (cached, O(k) k < 10)
+	const todayEntries = getTodayEntries(dailyActivity, today, todayVersion);
+	if (todayEntries.reduce((sum, a) => sum + a.wordsAdded, 0) < goal) {
+		// Today not yet completed — return historical streak only
+		cachedStreak = cachedHistoricalStreak;
+		cachedStreakKey = key;
+		return cachedStreak;
 	}
 
-	cachedStreak = streak;
+	cachedStreak = 1 + cachedHistoricalStreak;
 	cachedStreakKey = key;
-	return streak;
+	return cachedStreak;
 }
 
 function previousDay(date: string): string {
-	const d = new Date(date + "T00:00:00");
-	d.setDate(d.getDate() - 1);
-	return d.toISOString().slice(0, 10);
+	const [y, m, d] = date.split("-").map(Number);
+	const dt = new Date(y, m - 1, d);
+	dt.setDate(dt.getDate() - 1);
+	const yy = dt.getFullYear();
+	const mm = String(dt.getMonth() + 1).padStart(2, "0");
+	const dd = String(dt.getDate()).padStart(2, "0");
+	return `${yy}-${mm}-${dd}`;
 }
 
 /**
@@ -168,4 +190,6 @@ export function resetDailySummaryCache(): void {
 	cachedMergedMap = null;
 	cachedStreak = 0;
 	cachedStreakKey = "";
+	cachedHistoricalStreak = 0;
+	cachedHistoricalStreakKey = "";
 }
