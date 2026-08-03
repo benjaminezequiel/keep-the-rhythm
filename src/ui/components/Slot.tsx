@@ -1,7 +1,7 @@
 import { getDateBasedOnIndex } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount, selectTodayVersion, selectHistoricalVersion } from "@/core/dataQueries";
@@ -21,8 +21,12 @@ export const Slot = ({
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
 }) => {
-	const [optionType, setOptionType] = useState<TargetCount>(option);
-	const [calcMode, setCalcType] = useState<CalculationType>(calc);
+	// No local mirror: read directly from props.  The previous useState
+	// mirror was redundant (every toggle already called setOptionType /
+	// setCalcType) and would silently drift out of sync if the store was
+	// mutated externally (e.g. by another codeBlock).
+	const optionType = option;
+	const calcMode = calc;
 
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 	const typeButtonRef = useRef<HTMLButtonElement>(null);
@@ -90,7 +94,6 @@ export const Slot = ({
 		mutateSettings((draft) => {
 			draft.sidebarConfig.slots[index].calc = newCalc;
 		});
-		setCalcType(newCalc);
 	};
 
 	const toggleSlotType = () => {
@@ -101,7 +104,6 @@ export const Slot = ({
 		mutateSettings((draft) => {
 			draft.sidebarConfig.slots[index].option = newOption;
 		});
-		setOptionType(newOption);
 	};
 
 	const progressValue =
@@ -109,9 +111,17 @@ export const Slot = ({
 			? Math.min(((value ?? 0) / dailyWritingGoal) * 100, 100)
 			: 0;
 
+	// O(1) lookups for the 7 weekday dots.  Without this, the original
+	// .includes() would do up to 7 x N string comparisons on every render,
+	// which adds up as daysWithCompletedGoal grows.
+	const completedGoalSet = useMemo(
+		() => new Set(daysWithCompletedGoal ?? []),
+		[daysWithCompletedGoal],
+	);
+
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);
-		return daysWithCompletedGoal?.includes(date) ?? false;
+		return completedGoalSet.has(date);
 	}
 
 	return (
