@@ -1,10 +1,7 @@
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
 import { App } from "obsidian";
-import { Language } from "../defs/types";
-import KeepTheRhythm from "../main";
 import { TFile } from "obsidian";
-import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
 
@@ -33,90 +30,6 @@ export const getFileNameWithoutExtension = (path: string): string => {
 	const fileName = getFileName(path);
 	return fileName.replace(/\.[^/.]+$/, "");
 };
-
-export const log = (msg: string) => {
-	console.info(
-		`%cKEEP THE RHYTHM%c ${msg}`,
-		"font-weight: bold; color: purple;",
-		"font-weight: normal",
-	);
-};
-
-export async function getFileContent(file: TFile, plugin: KeepTheRhythm) {
-	return await plugin.app.vault.read(file);
-}
-
-export async function openFileByPath(app: App, path: string): Promise<void> {
-	const file = app.vault.getAbstractFileByPath(path);
-
-	if (file instanceof TFile) {
-		await app.workspace.getLeaf(true).openFile(file);
-	} else {
-		console.warn(
-			`[openFileByPath] File not found or not a TFile: "${path}"`,
-		);
-	}
-}
-
-
-
-// function getRandomArbitrary(min, max) {
-// 	return Math.random() * (max - min) + min;
-// }
-
-export function getRandomInt(min: number, max: number) {
-	const minCeiled = Math.ceil(min);
-	const maxFloored = Math.floor(max);
-	return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
-}
-
-
-export interface PathCondition {
-	path: string;
-	isInclusion: boolean;
-}
-
-export function parsePathFilters(query: string): PathCondition[] {
-	const conditions: PathCondition[] = [];
-
-	const regex = /PATH\s+((?:does\s+not\s+include)|includes)\s+"([^"]+)"/gi;
-	let match;
-	while ((match = regex.exec(query)) !== null) {
-		const isInclusion = match[1].toLowerCase() !== "does not include";
-		conditions.push({
-			path: match[2],
-			isInclusion,
-		});
-	}
-	return conditions;
-}
-
-export function parseToggles(query: string) {
-	const toggles = {
-		showHeatmap: true,
-		showOverview: true,
-		showEntries: true,
-	};
-
-	const hideHeatmap = query.match(/HIDE\s+HEATMAP/i);
-	const hideOverview = query.match(/HIDE\s+OVERVIEW/i);
-	const hideEntries = query.match(/HIDE\s+ENTRIES/i);
-
-	if (hideHeatmap) toggles.showHeatmap = false;
-	if (hideOverview) toggles.showOverview = false;
-	if (hideEntries) toggles.showEntries = false;
-
-	return toggles;
-}
-
-export async function getFileWordAndCharCount(
-	fileContent: string,
-	enabledLanguages: Language[],
-) {
-	const wordCount = getLanguageBasedWordCount(fileContent, enabledLanguages);
-	const charCount = fileContent.length;
-	return [wordCount, charCount];
-}
 
 export function isValidTargetCount(value: string): value is TargetCount {
 	return Object.values(TargetCount).includes(value as TargetCount);

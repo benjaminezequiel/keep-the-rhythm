@@ -1,27 +1,6 @@
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
-export function getRelativeDate(daysOffset: number) {
-  return moment().add(daysOffset, "days");
-}
-
-export function getLastSevenDays() {
-  return moment().subtract(7, "days").startOf("day");
-}
-
-export function getLastThirthyDays() {
-  return moment().subtract(30, "days").startOf("day");
-}
-export function getLastYearInDays() {
-  return moment().subtract(365, "days").startOf("day");
-}
-
-// export function getStartOfWeek(date: Date) {
-// 	const day = date.getDay();
-// 	const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-// 	return new Date(date.getFullYear(), date.getMonth(), diff, 0, 0, 0, 0);
-// }
-
 export function getStartOfWeek(date: Date, weekStart: number = 1): Date {
   const m = moment(date);
   return m.isoWeekday(weekStart).startOf("day").toDate();
@@ -36,10 +15,6 @@ export function getStartOfYear(date: Date) {
 }
 export function getLastDay() {
   return moment().subtract(1, "day");
-}
-export function floorMomentToFive(m: any) {
-  const ms = 1000 * 60 * 5;
-  return moment(Math.floor(m.valueOf() / ms) * ms);
 }
 
 export const formatDate = (date: Date): string => {
@@ -64,10 +39,6 @@ export function getDateBasedOnIndex(index: number) {
   const today = moment();
   const monday = today.clone().startOf("isoWeek"); // isoWeek starts on Monday
   return monday.clone().add(index, "days").format("YYYY-MM-DD");
-}
-
-export function getCurrentTimeKey() {
-  return floorMomentToFive(moment()).format("HH:mm");
 }
 
 export const getDateForCell = (
