@@ -13,7 +13,6 @@ import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
 import {
-	flushToJSON,
 	buildSnapshotFromStore,
 	setupPersistenceScheduling,
 	PersistenceScheduler,
@@ -23,6 +22,7 @@ import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 
 export default class KeepTheRhythm extends Plugin {
 	private onFocusHandler: (() => void) | null = null;
+	private onVisibilityHandler: (() => void) | null = null;
 
 	// Persistence scheduler with debounce state and unsubscribe handle
 	private persistenceScheduler: PersistenceScheduler | null = null;
@@ -63,6 +63,31 @@ export default class KeepTheRhythm extends Plugin {
 		// prevents racing saves when only an in-memory activity object was
 		// mutated before flushChangesToJSON.
 		this.persistenceScheduler = setupPersistenceScheduling(this);
+
+		// requestAnimationFrame is paused in background tabs, so the
+		// normal rAF-coalesced requestPersist() never fires while the
+		// user is in another app.  If the OS then hard-kills the
+		// renderer (or the user hard-reloads) the in-memory edits are
+		// lost.  Flush proactively whenever the tab goes hidden or the
+		// page is about to be discarded.
+		this.onVisibilityHandler = () => {
+			if (document.hidden) void this.flushNow();
+		};
+		document.addEventListener("visibilitychange", this.onVisibilityHandler);
+		window.addEventListener("pagehide", () => void this.flushNow());
+	}
+
+	/**
+	 * Drain any pending editor-change sample into the in-memory store
+	 * and immediately persist the store to data.json.  Used by the
+	 * visibilitychange / pagehide handlers (because requestAnimationFrame
+	 * is paused in background tabs) and during plugin unload so a
+	 * coalesced debounced save still lands on disk before the scheduler
+	 * is disposed.
+	 */
+	private async flushNow() {
+		await events.flushPendingEditorChange();
+		await this.persistenceScheduler?.flushNow();
 	}
 
 	public applyColorStyles() {
@@ -160,18 +185,21 @@ export default class KeepTheRhythm extends Plugin {
 		if (this.onFocusHandler !== null) {
 			window.removeEventListener("focus", this.onFocusHandler);
 		}
+		if (this.onVisibilityHandler !== null) {
+			document.removeEventListener("visibilitychange", this.onVisibilityHandler);
+		}
 
-		// Stop reacting to persist signals and invalidate pending saves.
+		// Drain pending editor deltas and persist to data.json before
+		// tearing down the scheduler, so a coalesced debounced save
+		// still lands on disk.
+		await this.flushNow();
+
+		// Stop reacting to persist signals.
 		this.persistenceScheduler?.dispose();
 		this.persistenceScheduler = null;
 
-		// Flush any pending editor-change sample so the final deltas land
-		// in the in-memory store before we snapshot it for the JSON save.
-		await events.flushPendingEditorChange();
-
-		// Persist and back up.  No DB to clear — the in-memory store is
+		// Back up.  No DB to clear — the in-memory store is
 		// garbage-collected with the plugin.
-		await flushToJSON(this);
 		await backupData(buildSnapshotFromStore(), this.app);
 
 		// Reset the module-level partitioned cache so stale data doesn't

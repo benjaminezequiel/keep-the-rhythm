@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, PluginData } from "@/defs/types";
+import { PluginData } from "@/defs/types";
 import { useStore } from "./store";
 import { Plugin } from "obsidian";
 
@@ -43,18 +43,18 @@ export function buildSnapshotFromStore(): PluginData {
 }
 
 /**
- * Immediately flush in-memory data to data.json.
- * Used during plugin unload to ensure data is persisted before teardown.
- */
-export async function flushToJSON(plugin: Plugin) {
-	await saveDataToJSON(plugin);
-}
-
-/**
  * Holds the debounce and generation state for persistence scheduling.
  */
 export interface PersistenceScheduler {
 	dispose: () => void;
+	/**
+	 * Cancel any pending debounced save and write the in-memory store to
+	 * data.json immediately.  Used by visibilitychange / pagehide handlers
+	 * because requestAnimationFrame is paused in background tabs — without
+	 * an explicit flush, a user who types and then switches apps for a while
+	 * can lose their last few edits to an OS kill or hard reload.
+	 */
+	flushNow: () => Promise<void>;
 }
 
 /**
@@ -85,6 +85,15 @@ export function setupPersistenceScheduling(
 		() => scheduleSave(),
 	);
 
+	const flushNow = async () => {
+		if (JsonDebounceTimeout) {
+			clearTimeout(JsonDebounceTimeout);
+			JsonDebounceTimeout = null;
+		}
+		_saveGen++; // invalidate any in-flight debounced save
+		await saveDataToJSON(plugin);
+	};
+
 	return {
 		dispose: () => {
 			unsub();
@@ -92,5 +101,6 @@ export function setupPersistenceScheduling(
 			clearTimeout(JsonDebounceTimeout);
 			JsonDebounceTimeout = null;
 		},
+		flushNow,
 	};
 }
