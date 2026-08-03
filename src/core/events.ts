@@ -31,17 +31,18 @@ const store = () => useStore.getState();
 // This handles file switches and midnight rollovers.
 async function ensureActivityExists(file: TFile) {
   if (isUpdatingActivity) return;
-  if (
-		file.path == store().currentActivity?.filePath &&
-		store().currentActivity?.date === store().today
-	) return;
+  // currentFilePath is the only "pointer" we maintain; today is implicit
+  // (the row we want is always today's row for this file).  If today has
+  // rolled over checkDayChange() will have cleared currentFilePath, so
+  // this comparison naturally re-fires after midnight.
+  if (file.path === store().currentFilePath) return;
 
 	isUpdatingActivity = true;
 	try {
 		await flushPendingEditorChange();
-		
+
 		const entry = await getExistingOrCreateNewEntry(file, store().today);
-		store().setCurrentActivity(entry);
+		store().setCurrentFilePath(entry.filePath);
 	} finally {
 		isUpdatingActivity = false;
 	}
@@ -104,17 +105,25 @@ async function runPendingEditorChange(): Promise<void> {
 	pendingInfo = null;
 	if (!editor || !info) return;
 
-	const activity = store().currentActivity;
+	const cur = store();
+	if (!cur.currentFilePath) return;
+
+	// Look up today's row by filePath; we never mutate the store object
+	// directly — pass a fresh copy to upsertActivity.
+	const activity = cur.dailyActivity.find(
+		(r) => r.date === cur.today && r.filePath === cur.currentFilePath,
+	);
 	if (!activity) return;
 
 	const newWordCount = getLanguageBasedWordCount(
 		editor.getValue(),
-		store().settings?.enabledLanguages,
+		cur.settings?.enabledLanguages,
 	);
 
-	activity.wordsAdded = newWordCount - activity.wordCountStart;
-
-	store().upsertActivity(activity);
+	cur.upsertActivity({
+		...activity,
+		wordsAdded: newWordCount - activity.wordCountStart,
+	});
 }
 
 
@@ -133,8 +142,7 @@ export function handleFileDelete(file: TFile) {
 	}
 	try {
 		// Only remove today's record for this file — historical data from
-		// previous days is preserved.  deleteActivity also nulls
-		// currentActivity if it matched and calls requestPersist.
+		// previous days is preserved.
 		store().deleteActivity(store().today, file.path);
 
 	} catch (error) {

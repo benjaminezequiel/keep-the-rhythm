@@ -56,7 +56,11 @@ function isNoop(
  *   2. 行级合并 dailyActivity:同 key 比总字数,本地独有行直接丢弃
  *   3. settings / daysWithCompletedGoal 直接用外部版本覆盖
  *   4. 浅快查:合并结果与当前 store 一致则 no-op,跳过 version bump / persist
- *   5. 一次性 setState + 还原 currentActivity + requestPersist
+ *   5. 一次性 setState 替换三块数据;selectCurrentActivity 自动从新数组里
+ *      找到(或找不到)对应行
+ *   6. 如果当前打开文件的行在外部被删了,清掉 currentFilePath,让下次
+ *      ensureActivityExists 自然重建
+ *   7. requestPersist
  */
 export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 	try {
@@ -101,25 +105,29 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 			return;
 		}
 
-		// 6. 一次性 setState
+		// 6. 一次性 setState —— selectCurrentActivity 会在下次读取时
+		//    自动从 mergedDaily 找对应行(找不到就返回 null)
 		useStore.setState({
 			settings: newSettings,
 			daysWithCompletedGoal: newDays,
 			dailyActivity: mergedDaily,
 			today: cur.today,
-			currentActivity: null,
 			todayVersion: cur.todayVersion + 1,
 			historicalVersion: cur.historicalVersion + 1,
 		});
 
-		// 7. 还原 currentActivity(它一定在 mergedDaily 里 —— 外部刚刚同步过)
-		if (cur.currentActivity) {
-			const match = mergedDaily.find(
+		// 7. 如果外部把当前打开文件的行删了,清掉 currentFilePath
+		//    —— 否则 ensureActivityExists 会因 file.path === currentFilePath
+		//    短路,不会重建今天的行
+		if (cur.currentFilePath) {
+			const hasRow = mergedDaily.some(
 				(r) =>
-					r.date === cur.currentActivity!.date &&
-					r.filePath === cur.currentActivity!.filePath,
+					r.date === cur.today &&
+					r.filePath === cur.currentFilePath,
 			);
-			if (match) useStore.getState().setCurrentActivity(match);
+			if (!hasRow) {
+				useStore.getState().setCurrentFilePath(null);
+			}
 		}
 
 		// 8. 写回磁盘

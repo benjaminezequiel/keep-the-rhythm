@@ -9,16 +9,24 @@ import { getToday } from "@/utils/dateUtils";
  *
  * What lives here:
  *   • today             — current date string, changes on day rollover
- *   • currentActivity   — pointer to the open file's row in dailyActivity.
- *                         Always a reference to a row in `dailyActivity`
- *                         (or null) — the mutation actions enforce this
- *                         invariant, so components can rely on it.
+ *   • currentFilePath   — the path of the file Obsidian currently has open.
+ *                         The "current activity" row is DERIVED from this
+ *                         plus dailyActivity via selectCurrentActivity().
+ *                         We never store the row itself: the date is always
+ *                         `today`, and the numeric fields live in
+ *                         dailyActivity, so a separate copy would just
+ *                         drift.  When this is set, dailyActivity is
+ *                         expected to contain a row with
+ *                         (date === today, filePath === currentFilePath);
+ *                         if that row is missing the selector returns null
+ *                         (and the next ensureActivityExists() re-creates
+ *                         it).  This is the only invariant callers need
+ *                         to respect.
  *   • dailyActivity     — the full activity array (the in-memory mirror of
  *                         dailyActivity in data.json).
  *                         Components subscribe via selectors; mutations go
  *                         through `bulkSetDailyActivity` / `upsertActivity` /
- *                         `modifyActivity` / `deleteActivity` /
- *                         `deleteByFilePath` / `renameFilePath`.
+ *                         `deleteActivity` / `renameFilePath`.
  *   • settings          — the single in-memory source of truth for settings.
  *                         Mutate via updateSettings / mutateSettings which
  *                         trigger requestPersist(). The debounced save
@@ -44,7 +52,7 @@ import { getToday } from "@/utils/dateUtils";
 export interface KTRState {
 	// ─── Core state ───
 	today: string;
-	currentActivity: DailyActivity | null;
+	currentFilePath: string | null;
 	settings: Settings;
 	daysWithCompletedGoal: string[];
 	persistVersion: number;
@@ -59,12 +67,14 @@ export interface KTRState {
 	/** Force-refresh today to wall-clock date. Use on boot to guarantee
 	 *  listeners fire at least once even if date hasn't changed. */
 	setToday: () => void;
-	/** Idempotent: only updates if wall-clock date actually differs. */
+	/** Idempotent: only updates if wall-clock date actually differs.
+	 *  Also clears `currentFilePath` so ensureActivityExists() rebuilds
+	 *  a fresh row for the new day. */
 	checkDayChange: () => void;
-	/** Replace currentActivity, verifying the row exists in dailyActivity
-	 *  (or setting null).  This is the only "raw" set path; prefer the
-	 *  data actions (upsertActivity etc.) which auto-maintain the pointer. */
-	setCurrentActivity: (activity: DailyActivity | null) => void;
+	/** Mark this file as the currently-open one.  Caller is responsible
+	 *  for ensuring the (today, filePath) row exists in dailyActivity
+	 *  (events.ts does this via getExistingOrCreateNewEntry first). */
+	setCurrentFilePath: (path: string | null) => void;
 	/** Apply updater to settings, request persist. */
 	updateSettings: (updater: (draft: Settings) => Settings) => Promise<void>;
 	/** Mutate settings draft in-place, request persist. */
@@ -75,16 +85,33 @@ export interface KTRState {
 	hydrateFromData: (data: PluginData) => void;
 
 	// ─── Data actions (replace Dexie writes) ───
-	/** Replace the whole dailyActivity array.  Re-derives currentActivity
-	 *  from the new array.  Used by initializeDataFromJSON and externalSync. */
+	/** Replace the whole dailyActivity array.  Used by initializeDataFromJSON
+	 *  and externalSync.  The current-activity selector recomputes against
+	 *  the new array automatically. */
 	bulkSetDailyActivity: (rows: DailyActivity[]) => void;
 	/** Insert or update by [date+filePath]. */
 	upsertActivity: (row: DailyActivity) => void;
-	/** Remove one row by [date+filePath].  Nulls currentActivity if matched. */
+	/** Remove one row by [date+filePath]. */
 	deleteActivity: (date: string, filePath: string) => void;
 	/** Update filePath on all matching rows. */
 	renameFilePath: (oldPath: string, newPath: string) => void;
 }
+
+/**
+ * Derived selector: returns today's activity row for the currently-open
+ * file, or null if no file is open / no row exists yet / today has
+ * rolled over.  Re-runs whenever dailyActivity, currentFilePath, or
+ * today changes — no manual pointer maintenance required.
+ */
+export const selectCurrentActivity = (s: KTRState): DailyActivity | null => {
+	const fp = s.currentFilePath;
+	if (!fp) return null;
+	return (
+		s.dailyActivity.find(
+			(r) => r.date === s.today && r.filePath === fp,
+		) ?? null
+	);
+};
 
 // ─── requestPersist rAF coalescing ───
 // Same semantics as the old emit() which used requestAnimationFrame to
@@ -96,7 +123,7 @@ let pendingPersist = false;
 export const useStore = create<KTRState>()(
 	subscribeWithSelector((set, get) => ({
 		today: getToday(),
-		currentActivity: null,
+		currentFilePath: null,
 		settings: DEFAULT_SETTINGS,
 		daysWithCompletedGoal: [],
 		persistVersion: 0,
@@ -112,16 +139,20 @@ export const useStore = create<KTRState>()(
 			const today = getToday();
 			const cur = get();
 			if (today !== cur.today) {
+				// Clear currentFilePath: any cached "row for this file"
+				// now belongs to yesterday, so the selector must return
+				// null until events.ts rebuilds today's row.
 				set({
 					today,
+					currentFilePath: null,
 					todayVersion: cur.todayVersion + 1,
 					historicalVersion: cur.historicalVersion + 1,
 				});
 			}
 		},
 
-		setCurrentActivity: (activity) => {
-			set({ currentActivity: activity });
+		setCurrentFilePath: (path) => {
+			set({ currentFilePath: path });
 		},
 
 		requestPersist: () => {
@@ -186,13 +217,16 @@ export const useStore = create<KTRState>()(
 				],
 				dailyActivity: [...(data.stats?.dailyActivity || [])],
 				today: getToday(),
-				currentActivity: null,
 				todayVersion: cur.todayVersion + 1,
 				historicalVersion: cur.historicalVersion + 1,
 			});
 		},
 
 		// ─── Data actions ───
+		// Note: none of these touch currentFilePath.  The "current
+		// activity" row is derived via selectCurrentActivity() from
+		// (currentFilePath, today, dailyActivity), so a mutation to
+		// dailyActivity automatically refreshes the view.
 
 		bulkSetDailyActivity: (rows) => {
 			const cur = get();
@@ -201,14 +235,6 @@ export const useStore = create<KTRState>()(
 				todayVersion: cur.todayVersion + 1,
 				historicalVersion: cur.historicalVersion + 1,
 			});
-			if (cur.currentActivity) {
-				const match = rows.find(
-					(r) =>
-						r.date === cur.currentActivity!.date &&
-						r.filePath === cur.currentActivity!.filePath,
-				);
-				set({ currentActivity: match ?? null });
-			}
 			get().requestPersist();
 		},
 
@@ -221,13 +247,9 @@ export const useStore = create<KTRState>()(
 				idx === -1
 					? [...cur.dailyActivity, row]
 					: cur.dailyActivity.map((r, i) => (i === idx ? row : r));
-			const isCurrent =
-				cur.currentActivity?.date === row.date &&
-				cur.currentActivity?.filePath === row.filePath;
 			const isToday = row.date === cur.today;
 			set({
 				dailyActivity: next,
-				currentActivity: isCurrent ? row : cur.currentActivity,
 				todayVersion: isToday
 					? cur.todayVersion + 1
 					: cur.todayVersion,
@@ -243,13 +265,9 @@ export const useStore = create<KTRState>()(
 			const next = cur.dailyActivity.filter(
 				(r) => !(r.date === date && r.filePath === filePath),
 			);
-			const wasCurrent =
-				cur.currentActivity?.date === date &&
-				cur.currentActivity?.filePath === filePath;
 			const isToday = date === cur.today;
 			set({
 				dailyActivity: next,
-				currentActivity: wasCurrent ? null : cur.currentActivity,
 				todayVersion: isToday
 					? cur.todayVersion + 1
 					: cur.todayVersion,
@@ -265,14 +283,12 @@ export const useStore = create<KTRState>()(
 			const next = cur.dailyActivity.map((r) =>
 				r.filePath === oldPath ? { ...r, filePath: newPath } : r,
 			);
-			const wasCurrent = cur.currentActivity?.filePath === oldPath;
-			const newCurrent = wasCurrent
-				? (next.find((r) => r.date === cur.currentActivity!.date) ??
-					null)
-				: cur.currentActivity;
+			// If we were tracking the renamed file, follow it.
+			if (cur.currentFilePath === oldPath) {
+				set({ currentFilePath: newPath });
+			}
 			set({
 				dailyActivity: next,
-				currentActivity: newCurrent,
 				historicalVersion: cur.historicalVersion + 1,
 			});
 			get().requestPersist();

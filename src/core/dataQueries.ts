@@ -232,6 +232,7 @@ export async function getExistingOrCreateNewEntry(
 	
 	if (!entry) {
 		entry = await createActivityObject(file, date);
+		useStore.getState().upsertActivity(entry);
 	}
 	return entry;
 }
@@ -255,8 +256,9 @@ async function createActivityObject(file: TFile, date: string) {
 }
 
 /**
- * Remove the activity row for (date, filePath).  If the deleted row is the
- * currently open file, also clears `currentActivity`. 
+ * Remove the activity row for (date, filePath).  If the deleted row is
+ * today's row for the currently open file, selectCurrentActivity() will
+ * naturally return null on the next read.
  */
 export const deleteActivityFromDate = (
 	filePath: string,
