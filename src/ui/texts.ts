@@ -27,7 +27,7 @@ export function getSlotLabel(option: TargetCount) {
 		case TargetCount.CURRENT_YEAR:
 			return "This Year";
 		case TargetCount.LAST_DAY:
-			return "Last 24 Hours";
+			return "Last 2 Days";
 		case TargetCount.LAST_WEEK:
 			return "Last 7 Days";
 		case TargetCount.LAST_MONTH:

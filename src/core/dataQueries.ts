@@ -166,7 +166,18 @@ export function getCurrentCount(
 		return map[today] || 0;
 	}
 	if (target === TargetCount.LAST_DAY) {
-		return getTotalValueFromLast24Hours(dailyActivity);
+		// Original implementation did `dailyActivity.filter(a => a.date >= cutoff)`
+		// which is O(N) on the full array.  The cutoff is "yesterday" because
+		// moment(now).subtract(24h).format("YYYY-MM-DD") always lands on the
+		// previous calendar day — so the answer is exactly yesterday + today.
+		const map = getDailySummaryMap(
+			dailyActivity,
+			today,
+			todayVersion,
+			historicalVersion,
+		);
+		const yesterday = moment(today).subtract(1, "day").format("YYYY-MM-DD");
+		return (map[yesterday] || 0) + (map[today] || 0);
 	}
 
 	const range = getPeriodRange(target, today);

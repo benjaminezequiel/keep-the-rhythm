@@ -157,7 +157,7 @@ Available Slots:
 - CURRENT_WEEK: displays the amount from the start of the week (currently defined as Monday, I'll add a setting soon)
 - CURRENT_MONTH: displays the amount from the start of the month
 - CURRENT_YEAR: displays the amount from the start of the year
-- LAST_DAY: amount written in the last 24 hours
+- LAST_DAY: amount written in the last 2 days
 - LAST_WEEK: amount written in the last 7 days
 - LAST_MONTH: amount written in the last 30 days
 - LAST_YEAR: amount written in the last 365 days
