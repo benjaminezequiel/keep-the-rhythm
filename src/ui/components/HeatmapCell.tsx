@@ -18,13 +18,20 @@ interface HeatmapCellProps {
 	squared?: boolean;
 }
 
-export const HeatmapCell = ({
+/**
+ * Memoized heatmap cell.  All props are primitives, so React's default
+ * Object.is shallow comparison is enough: when the user types in today's
+ * file, only the today cell's count / intensity change and the other 363
+ * cells skip the re-render.  Without this, every keystroke re-reconciles
+ * 7 x weeksToShow cells, which dominates the typing cost.
+ */
+export const HeatmapCell = React.memo(function HeatmapCell({
 	intensity,
 	count,
 	date,
 	mode,
 	squared,
-}: HeatmapCellProps) => {
+}: HeatmapCellProps) {
 	const handleClick = async (_event: React.MouseEvent<HTMLDivElement>) => {
 		const app = getPlugin().app;
 		if (!useStore.getState().settings.heatmapNavigation) return;
@@ -100,4 +107,4 @@ export const HeatmapCell = ({
 			<div onClick={handleClick} className={classes} style={style}></div>
 		</Tooltip>
 	);
-};
+});
