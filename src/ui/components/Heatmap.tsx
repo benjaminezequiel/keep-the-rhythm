@@ -51,32 +51,47 @@ export const Heatmap = ({
 				query?.operator === "STARTS_WITH")) ||
 		compiledEvaluator;
 
-	const heatmapData = useMemo(() => {
-		const requiredDates = new Set<string>();
-
+	// Date set is shared by both branches; build once per weeksToShow/baseDate.
+	const requiredDates = useMemo(() => {
+		const set = new Set<string>();
 		for (let week = 0; week < weeksToShow; week++) {
 			for (let day = 0; day < 7; day++) {
 				const date = getDateForCell(week, day, weeksToShow, baseDate);
-				requiredDates.add(formatDate(date));
+				set.add(formatDate(date));
 			}
 		}
+		return set;
+	}, [weeksToShow, baseDate]);
 
-		// No filter: use the partitioned cache for O(1) lookup
-		if (!hasFilter) {
-			const fullMap = getDailySummaryMap(
-				dailyActivity,
-				today,
-				todayVersion,
-				historicalVersion,
-			);
-			const filteredMap: Record<string, number> = {};
-			for (const date of requiredDates) {
-				filteredMap[date] = fullMap[date] || 0;
-			}
-			return filteredMap;
+	// No-filter path: depends ONLY on version numbers + grid shape.  The
+	// underlying getDailySummaryMap cache is version-keyed, so a stable
+	// dailyActivity reference is irrelevant here.  This is the hot path
+	// for the sidebar heatmap (no codeBlock filter) and must not invalidate
+	// on every keystroke.
+	const cachedHeatmapData = useMemo(() => {
+		// Read the latest array non-reactively: the cache is keyed on
+		// (todayVersion, historicalVersion) which are also in the deps, so
+		// any change that matters to the cache will retrigger this memo and
+		// pick up the fresh array.
+		const fullMap = getDailySummaryMap(
+			useStore.getState().dailyActivity,
+			today,
+			todayVersion,
+			historicalVersion,
+		);
+		const filteredMap: Record<string, number> = {};
+		for (const date of requiredDates) {
+			filteredMap[date] = fullMap[date] || 0;
 		}
+		return filteredMap;
+	}, [today, todayVersion, historicalVersion, requiredDates]);
 
-		// Filtered case (codeBlock): need full array for path-based filtering
+	// Filtered path: needs the full array because compiledEvaluator walks
+	// every entry.  This still runs on every keystroke, but only when the
+	// codeBlock actually has a filter — the sidebar is unaffected.
+	const filteredHeatmapData = useMemo(() => {
+		if (!hasFilter) return null;
+
 		let results: DailyActivity[];
 
 		if (
@@ -109,24 +124,20 @@ export const Heatmap = ({
 		}
 
 		const dateMap: Record<string, number> = {};
-
 		for (const entry of results) {
 			dateMap[entry.date] =
 				(dateMap[entry.date] || 0) + entry.wordsAdded;
 		}
-
 		return dateMap;
 	}, [
 		dailyActivity,
-		today,
-		todayVersion,
-		historicalVersion,
 		hasFilter,
 		query,
-		weeksToShow,
-		baseDate,
 		compiledEvaluator,
+		requiredDates,
 	]);
+
+	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;
 
 	const monthLabels = useMemo(() => {
 		const labels: { month: string; week: number }[] = [];
