@@ -15,6 +15,10 @@ let cachedTodayEntries: DailyActivity[] | null = null;
 let cachedTodayVersion = -1;
 let cachedTodayDate: string | null = null;
 
+// Merged result cache: set after a merge, reused when neither
+// partition has changed since the last call.
+let cachedMergedMap: Record<string, number> | null = null;
+
 /**
  * Get a date → total-words summary map built from partitioned caches.
  *
@@ -53,14 +57,18 @@ export function getDailySummaryMap(
 		cachedTodayVersion = todayVersion;
 		cachedTodayDate = today;
 	}
-	// ── Merge: O(k), k = today entries (typically < 10) ──
-	// Always merge — the historical partition never includes today's
-	// entries, so skipping the merge would cause CURRENT_DAY and
-	// CURRENT_MONTH reads to see a map missing today's data.
+	
+	// ── Merge (cached): O(N) clone + O(k) merge, skipped when
+	// neither partition has changed since the last call. ──
+	if (!changed && cachedMergedMap !== null) {
+		return cachedMergedMap;
+	}
+
 	const result = { ...cachedHistoricalMap };
 	for (const entry of cachedTodayEntries!) {
 		result[entry.date] = (result[entry.date] || 0) + entry.wordsAdded;
 	}
+	cachedMergedMap = result;
 	return result;
 }
 
@@ -90,6 +98,63 @@ function aggregateByDate(entries: DailyActivity[]): Record<string, number> {
 	return map;
 }
 
+// ─── Streak Cache ────────────────────────────────────────────────
+// Separate cache for CURRENT_STREAK since it depends on the goal
+// threshold (a settings value) in addition to data versions.
+// ──────────────────────────────────────────────────────────────────
+
+let cachedStreak = 0;
+let cachedStreakKey = "";
+
+/**
+ * Compute the current writing streak (consecutive days meeting the goal
+ * ending today).  Results are cached keyed by data versions + goal so
+ * that repeated calls during the same render are O(1).
+ *
+ * Uses the existing getDailySummaryMap partition cache — when neither
+ * partition has changed, the map is reused and only the streak's own
+ * cache key needs to match.
+ */
+export function getStreak(
+	dailyActivity: DailyActivity[],
+	today: string,
+	todayVersion: number,
+	historicalVersion: number,
+	goal: number,
+): number {
+	const key = `${today}|${todayVersion}|${historicalVersion}|${goal}`;
+	if (cachedStreakKey === key) return cachedStreak;
+
+	const map = getDailySummaryMap(
+		dailyActivity,
+		today,
+		todayVersion,
+		historicalVersion,
+	);
+
+	const qualifying = new Set<string>();
+	for (const [date, words] of Object.entries(map)) {
+		if (words >= goal) qualifying.add(date);
+	}
+
+	let streak = 0;
+	let cursor = today;
+	while (qualifying.has(cursor)) {
+		streak++;
+		cursor = previousDay(cursor);
+	}
+
+	cachedStreak = streak;
+	cachedStreakKey = key;
+	return streak;
+}
+
+function previousDay(date: string): string {
+	const d = new Date(date + "T00:00:00");
+	d.setDate(d.getDate() - 1);
+	return d.toISOString().slice(0, 10);
+}
+
 /**
  * Reset all cached data. Called on plugin unload and during tests.
  */
@@ -100,4 +165,7 @@ export function resetDailySummaryCache(): void {
 	cachedTodayEntries = null;
 	cachedTodayVersion = -1;
 	cachedTodayDate = null;
+	cachedMergedMap = null;
+	cachedStreak = 0;
+	cachedStreakKey = "";
 }

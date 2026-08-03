@@ -100,13 +100,11 @@ export interface PluginData {
 	migratedPreviousVersion?: boolean;
 	schema?: "0.2" | "0.3" | string;
 	stats?: {
-		daysWithCompletedGoal?: string[];
 		dailyActivity: DailyActivity[];
 	};
 }
 
 export const STARTING_STATS = {
-	daysWithCompletedGoal: [],
 	dailyActivity: [],
 };
 

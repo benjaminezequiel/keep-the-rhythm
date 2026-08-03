@@ -10,14 +10,13 @@ const JSON_DEBOUNCE_TIME = 1000;
  * — no intermediate staging buffer.
  */
 async function saveDataToJSON(plugin: Plugin) {
-	const { settings, daysWithCompletedGoal, dailyActivity } =
+	const { settings, dailyActivity } =
 		useStore.getState();
 
 	const data: PluginData = {
 		schema: "1.0",
 		settings,
 		stats: {
-			daysWithCompletedGoal,
 			dailyActivity,
 		},
 	};
@@ -30,13 +29,12 @@ async function saveDataToJSON(plugin: Plugin) {
  * Used for backup during unload.
  */
 export function buildSnapshotFromStore(): PluginData {
-	const { settings, daysWithCompletedGoal, dailyActivity } =
+	const { settings, dailyActivity } =
 		useStore.getState();
 	return {
 		schema: "1.0",
 		settings,
 		stats: {
-			daysWithCompletedGoal,
 			dailyActivity,
 		},
 	};

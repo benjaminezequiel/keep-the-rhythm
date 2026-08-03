@@ -5,6 +5,7 @@ import { useRef, useMemo, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount, selectTodayVersion, selectHistoricalVersion } from "@/core/dataQueries";
+import { getDailySummaryMap } from "@/utils/dailySummaryCache";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
@@ -41,7 +42,6 @@ export const Slot = ({
 	const today = useStore((s) => s.today);
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
-	const daysWithCompletedGoal = useStore((s) => s.daysWithCompletedGoal);
 	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
 	const mutateSettings = useStore((s) => s.mutateSettings);
 
@@ -51,7 +51,7 @@ export const Slot = ({
 	// avoids unnecessary recomputation when only unrelated entries change.
 	const value = useMemo(
 		() => getCurrentCount(optionType, calcMode),
-		[optionType, calcMode, today, todayVersion, historicalVersion, daysWithCompletedGoal],
+		[optionType, calcMode, today, todayVersion, historicalVersion],
 	);
 
 	const unitText = () => {
@@ -111,17 +111,11 @@ export const Slot = ({
 			? Math.min(((value ?? 0) / dailyWritingGoal) * 100, 100)
 			: 0;
 
-	// O(1) lookups for the 7 weekday dots.  Without this, the original
-	// .includes() would do up to 7 x N string comparisons on every render,
-	// which adds up as daysWithCompletedGoal grows.
-	const completedGoalSet = useMemo(
-		() => new Set(daysWithCompletedGoal ?? []),
-		[daysWithCompletedGoal],
-	);
-
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);
-		return completedGoalSet.has(date);
+		const { dailyActivity } = useStore.getState();
+		const map = getDailySummaryMap(dailyActivity, today, todayVersion, historicalVersion);
+		return (map[date] ?? 0) >= dailyWritingGoal;
 	}
 
 	return (

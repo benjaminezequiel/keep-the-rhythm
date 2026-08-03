@@ -10,7 +10,7 @@ import { SettingsTab } from "@/ui/settings/SettingsTab";
 
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
-import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
+import { activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
 import {
 	buildSnapshotFromStore,
@@ -40,10 +40,8 @@ export default class KeepTheRhythm extends Plugin {
 
 		// Sync Zustand store with loaded data before any React
 		// component mounts.  After this point, store.settings /
-		// store.daysWithCompletedGoal / store.today are all populated.
+		// store.today are all populated.
 		useStore.getState().hydrateFromData(loadedData);
-		
-		checkPreviousStreak();
 
 		/** Initialize SIDEBAR view */
 		this.registerView(VIEW_TYPE, (leaf) => {
@@ -128,14 +126,6 @@ export default class KeepTheRhythm extends Plugin {
 			name: "Add manual entry",
 			callback: () => {
 				new ManualEntryModal(this.app).open();
-			},
-		});
-
-		this.addCommand({
-			id: "check-ktr-streak",
-			name: "Check writing goal from previous days",
-			callback: () => {
-				checkPreviousStreak();
 			},
 		});
 	}

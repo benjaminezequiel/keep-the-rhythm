@@ -14,14 +14,12 @@ const keyOf = (r: { date: string; filePath: string }) =>
  *
  *   - dailyActivity:  same length, same key set, same wordCountStart +
  *                     wordsAdded per row.
- *   - daysWithCompletedGoal: same length, same set.
  *   - settings:       JSON equality (settings is small, the cost is
  *                     negligible compared to the dailyActivity sum).
  */
 function isNoop(
 	cur: ReturnType<typeof useStore.getState>,
 	newSettings: typeof cur.settings,
-	newDays: string[],
 	mergedDaily: DailyActivity[],
 ): boolean {
 	if (mergedDaily.length !== cur.dailyActivity.length) return false;
@@ -35,11 +33,6 @@ function isNoop(
 		if (c.wordsAdded !== r.wordsAdded) return false;
 	}
 
-	if (newDays.length !== cur.daysWithCompletedGoal.length) return false;
-	const newDaysSet = new Set(newDays);
-	for (const d of cur.daysWithCompletedGoal) {
-		if (!newDaysSet.has(d)) return false;
-	}
 
 	if (JSON.stringify(newSettings) !== JSON.stringify(cur.settings)) {
 		return false;
@@ -54,13 +47,12 @@ function isNoop(
  * Strategy:
  *   1. loadData() 把外部变更"冻结"在内存里 —— 之后任何写盘都不会丢它
  *   2. 行级合并 dailyActivity:同 key 比总字数,本地独有行直接丢弃
- *   3. settings / daysWithCompletedGoal 直接用外部版本覆盖
- *   4. 浅快查:合并结果与当前 store 一致则 no-op,跳过 version bump / persist
- *   5. 一次性 setState 替换三块数据;selectCurrentActivity 自动从新数组里
+ *   3. 浅快查:合并结果与当前 store 一致则 no-op,跳过 version bump / persist
+ *   4. 一次性 setState 替换两块数据;selectCurrentActivity 自动从新数组里
  *      找到(或找不到)对应行
- *   6. 如果当前打开文件的行在外部被删了,清掉 currentFilePath,让下次
+ *   5. 如果当前打开文件的行在外部被删了,清掉 currentFilePath,让下次
  *      ensureActivityExists 自然重建
- *   7. requestPersist
+ *   6. requestPersist
  */
 export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 	try {
@@ -73,10 +65,7 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 		// 2. settings: 外部覆盖,并上 defaults 兜底
 		const newSettings = { ...DEFAULT_SETTINGS, ...newData.settings };
 
-		// 3. daysWithCompletedGoal: 外部覆盖(尊重外部删除)
-		const newDays = newData.stats?.daysWithCompletedGoal ?? [];
-
-		// 4. dailyActivity: 行级合并
+		// 3. dailyActivity: 行级合并
 		//    同 key → 总字数大者赢
 		//    仅外部有 → 拿外部
 		//    仅本地有 → 直接丢弃(尊重外部删除)
@@ -100,23 +89,22 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 		}
 		// localByKey 中剩下的就是"本地独有"行,直接丢弃
 
-		// 5. 浅快查:合并结果跟当前 store 一致就直接返回
-		if (isNoop(cur, newSettings, newDays, mergedDaily)) {
+		// 4. 浅快查:合并结果跟当前 store 一致就直接返回
+		if (isNoop(cur, newSettings, mergedDaily)) {
 			return;
 		}
 
-		// 6. 一次性 setState —— selectCurrentActivity 会在下次读取时
+		// 5. 一次性 setState —— selectCurrentActivity 会在下次读取时
 		//    自动从 mergedDaily 找对应行(找不到就返回 null)
 		useStore.setState({
 			settings: newSettings,
-			daysWithCompletedGoal: newDays,
 			dailyActivity: mergedDaily,
 			today: cur.today,
 			todayVersion: cur.todayVersion + 1,
 			historicalVersion: cur.historicalVersion + 1,
 		});
 
-		// 7. 如果外部把当前打开文件的行删了,清掉 currentFilePath
+		// 6. 如果外部把当前打开文件的行删了,清掉 currentFilePath
 		//    —— 否则 ensureActivityExists 会因 file.path === currentFilePath
 		//    短路,不会重建今天的行
 		if (cur.currentFilePath) {
@@ -130,7 +118,7 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 			}
 		}
 
-		// 8. 写回磁盘
+		// 7. 写回磁盘
 		useStore.getState().requestPersist();
 	} catch (error) {
 		console.error("Error in handleExternalDataChange:", error);

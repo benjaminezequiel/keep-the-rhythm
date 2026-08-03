@@ -1,4 +1,3 @@
-import { getDateStreaks } from "@/utils/utils";
 import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
 import { useStore, KTRState } from "./store";
 import {
@@ -9,7 +8,7 @@ import {
 } from "@/utils/dateUtils";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getPlugin } from "@/core/pluginRegistry";
-import { getDailySummaryMap } from "@/utils/dailySummaryCache";
+import { getDailySummaryMap, getStreak } from "@/utils/dailySummaryCache";
 import { moment as _moment, TFile } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -145,16 +144,19 @@ export function getCurrentCount(
 ): number {
 	const {
 		today,
-		daysWithCompletedGoal,
+		settings,
 		dailyActivity,
 		todayVersion,
 		historicalVersion,
 	} = useStore.getState();
-
 	if (target === TargetCount.CURRENT_STREAK) {
-		return daysWithCompletedGoal?.length
-			? getDateStreaks(daysWithCompletedGoal).currentStreak
-			: 0;
+		return getStreak(
+			dailyActivity,
+			today,
+			todayVersion,
+			historicalVersion,
+			settings.dailyWritingGoal,
+		);
 	}
 	if (target === TargetCount.CURRENT_DAY) {
 		const map = getDailySummaryMap(

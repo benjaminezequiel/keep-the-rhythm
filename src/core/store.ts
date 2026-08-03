@@ -31,7 +31,6 @@ import { getToday } from "@/utils/dateUtils";
  *                         Mutate via updateSettings / mutateSettings which
  *                         trigger requestPersist(). The debounced save
  *                         serializes store → data.json.
- *   • daysWithCompletedGoal — streak data
  *   • persistVersion    — monotonic counter; dataPersistence.ts subscribes
  *                         to it (via subscribeWithSelector) to schedule
  *                         debounced JSON saves.
@@ -54,7 +53,6 @@ export interface KTRState {
 	today: string;
 	currentFilePath: string | null;
 	settings: Settings;
-	daysWithCompletedGoal: string[];
 	persistVersion: number;
 	dailyActivity: DailyActivity[];
 	todayVersion: number;
@@ -79,8 +77,6 @@ export interface KTRState {
 	updateSettings: (updater: (draft: Settings) => Settings) => Promise<void>;
 	/** Mutate settings draft in-place, request persist. */
 	mutateSettings: (updater: (draft: Settings) => void) => Promise<void>;
-	/** Update streak list, request persist. */
-	updateStreak: (increase: boolean) => Promise<void>;
 	/** Hydrate store from loaded data.json (used on boot and after external changes). */
 	hydrateFromData: (data: PluginData) => void;
 
@@ -125,7 +121,6 @@ export const useStore = create<KTRState>()(
 		today: getToday(),
 		currentFilePath: null,
 		settings: DEFAULT_SETTINGS,
-		daysWithCompletedGoal: [],
 		persistVersion: 0,
 		dailyActivity: [],
 		todayVersion: 0,
@@ -185,36 +180,10 @@ export const useStore = create<KTRState>()(
 			cur.requestPersist();
 		},
 
-		updateStreak: async (increase) => {
-			const cur = get();
-			const list = [...cur.daysWithCompletedGoal];
-			const today = cur.today;
-			let changed = false;
-			if (increase) {
-				if (!list.includes(today)) {
-					list.push(today);
-					changed = true;
-				}
-			} else {
-				if (list.includes(today)) {
-					const idx = list.indexOf(today);
-					list.splice(idx, 1);
-					changed = true;
-				}
-			}
-			if (changed) {
-				set({ daysWithCompletedGoal: list });
-				cur.requestPersist();
-			}
-		},
-
 		hydrateFromData: (data) => {
 			const cur = get();
 			set({
 				settings: { ...DEFAULT_SETTINGS, ...data.settings },
-				daysWithCompletedGoal: [
-					...(data.stats?.daysWithCompletedGoal || []),
-				],
 				dailyActivity: [...(data.stats?.dailyActivity || [])],
 				today: getToday(),
 				todayVersion: cur.todayVersion + 1,
