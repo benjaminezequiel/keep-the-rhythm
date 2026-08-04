@@ -121,7 +121,8 @@ export const getDateForCell = (
 
 	const monday = getMondayOfCurrentWeek();
 	const weekOffset = weekIndex - (totalAmountOfWeeks - 1);
-	monday.setDate(monday.getDate() + weekOffset * 7 + dayIndex);
-	return monday;
+	const result = new Date(monday);
+	result.setDate(result.getDate() + weekOffset * 7 + dayIndex);
+	return result;
 };
 
