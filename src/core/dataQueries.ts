@@ -2,9 +2,11 @@ import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
 import { useStore, KTRState } from "./store";
 import {
 	formatDate,
+	formatDateNative,
 	getStartOfMonth,
 	getStartOfWeek,
 	getStartOfYear,
+	parseDateNative,
 } from "@/utils/dateUtils";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getPlugin } from "@/core/pluginRegistry";
@@ -59,24 +61,6 @@ export function getTotalValueInDateRange(
 	return dailyActivity
 		.filter((a) => a.date >= startDate && a.date <= endDate)
 		.reduce((sum, a) => sum + (a.wordsAdded || 0), 0);
-}
-
-export function getActivitiesFromLast24Hours(
-	dailyActivity: DailyActivity[],
-	now: Date = new Date(),
-): DailyActivity[] {
-	const cutoff = moment(now).subtract(24, "hours").format("YYYY-MM-DD");
-	return dailyActivity.filter((a) => a.date >= cutoff);
-}
-
-export function getTotalValueFromLast24Hours(
-	dailyActivity: DailyActivity[],
-	now: Date = new Date(),
-): number {
-	return getActivitiesFromLast24Hours(dailyActivity, now).reduce(
-		(sum, a) => sum + (a.wordsAdded || 0),
-		0,
-	);
 }
 
 /**
@@ -175,7 +159,11 @@ export function getCurrentCount(
 
 /**
  * Sum word totals from a pre-aggregated date map over an inclusive date
- * range.  O(days) — at most 365 iterations for yearly targets.
+ * range.  O(rangeDays) — iterates only the requested period (7 / 30 / 365
+ * days) via map lookups, regardless of the total map size.
+ *
+ * Uses a single Date object in-place (no per-iteration allocation or
+ * string parsing), with numeric Date comparison for the loop condition.
  */
 function sumRangeFromMap(
 	map: Record<string, number>,
@@ -183,11 +171,12 @@ function sumRangeFromMap(
 	endDate: string,
 ): number {
 	let sum = 0;
-	const cursor = moment(startDate);
-	while (cursor.format("YYYY-MM-DD") <= endDate) {
-		const dateStr = cursor.format("YYYY-MM-DD");
-		sum += map[dateStr] || 0;
-		cursor.add(1, "days");
+	const start = parseDateNative(startDate);
+	const cursor = parseDateNative(endDate);
+
+	while (cursor >= start) {
+		sum += map[formatDateNative(cursor)] || 0;
+		cursor.setDate(cursor.getDate() - 1);
 	}
 	return sum;
 }

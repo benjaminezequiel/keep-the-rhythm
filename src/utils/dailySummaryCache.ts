@@ -1,5 +1,6 @@
 import { DailyActivity } from "@/defs/types";
 import { useStore } from "@/core/store";
+import { formatDateNative, parseDateNative } from "./dateUtils";
 
 // ─── Partitioned Cache ────────────────────────────────────────────
 // Two independent partitions so that typing (today data changes)
@@ -135,12 +136,12 @@ export function getStreak(): number {
 		// historicalVersion, today, or goal changes — not on every keystroke.
 		const map = getDailySummaryMap();
 		cachedHistoricalStreak = 0;
-		let cursor = previousDay(today);
+		const cursor = 	parseDateNative(today);
 		while (true) {
-			const words = map[cursor];
+			const words = map[formatDateNative(cursor)];
 			if (words === undefined || words < goal) break;
 			cachedHistoricalStreak++;
-			cursor = previousDay(cursor);
+			cursor.setDate(cursor.getDate() - 1);
 		}
 		cachedHistoricalStreakKey = histKey;
 	}
@@ -157,16 +158,6 @@ export function getStreak(): number {
 	cachedStreak = 1 + cachedHistoricalStreak;
 	cachedStreakKey = key;
 	return cachedStreak;
-}
-
-function previousDay(date: string): string {
-	const [y, m, d] = date.split("-").map(Number);
-	const dt = new Date(y, m - 1, d);
-	dt.setDate(dt.getDate() - 1);
-	const yy = dt.getFullYear();
-	const mm = String(dt.getMonth() + 1).padStart(2, "0");
-	const dd = String(dt.getDate()).padStart(2, "0");
-	return `${yy}-${mm}-${dd}`;
 }
 
 /**

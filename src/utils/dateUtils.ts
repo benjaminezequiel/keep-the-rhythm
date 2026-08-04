@@ -21,6 +21,26 @@ export const formatDate = (date: Date): string => {
   return moment(date).format("YYYY-MM-DD");
 };
 
+/**
+ * Fast YYYY-MM-DD formatter using native Date getters (local time).
+ * Avoids moment overhead for hot-loop date formatting.
+ */
+export function formatDateNative(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD string into a local-time Date (midnight).
+ * Uses native Date constructor — avoids moment overhead.
+ */
+export function parseDateNative(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 let _todayCache = { date: "", expiresAt: 0 };
 
 export function getToday(): string {
