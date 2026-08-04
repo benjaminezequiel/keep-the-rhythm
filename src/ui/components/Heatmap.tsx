@@ -130,6 +130,11 @@ export const Heatmap = ({
 
 	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;
 
+	const getIntensityLevel = useMemo(
+		() => buildIntensityResolver(heatmapConfig),
+		[heatmapConfig],
+	);
+
 	const monthLabels = useMemo(() => {
 		const labels: { month: string; week: number }[] = [];
 		let lastMonth = -1;
@@ -222,9 +227,8 @@ export const Heatmap = ({
 														squared={
 															!heatmapConfig.roundCells
 														}
-														intensity={getCellIntensityLevel(
+														intensity={getIntensityLevel(
 															count,
-															heatmapConfig,
 														)}
 														mode={
 															heatmapConfig.intensityMode
@@ -242,42 +246,50 @@ export const Heatmap = ({
 	);
 };
 
-const getCellIntensityLevel = (
-	count: number,
+const buildIntensityResolver = (
 	heatmapConfig: HeatmapConfig,
-): number => {
+): ((count: number) => number) => {
 	if (
 		!heatmapConfig ||
 		!heatmapConfig.intensityStops ||
 		!heatmapConfig.intensityMode
 	) {
-		return 0;
+		return () => 0;
 	}
 
 	const { low, medium, high } = heatmapConfig.intensityStops;
+	const mode = heatmapConfig.intensityMode;
 
-	switch (heatmapConfig.intensityMode) {
+	switch (mode) {
 		case HeatmapColorModes.GRADUAL:
-		case HeatmapColorModes.LIQUID:
-			if (count <= low) return 0;
-			if (count >= high) return 100;
-
-			return ((count - low) / (high - low)) * 100;
+		case HeatmapColorModes.LIQUID: {
+			if (high === low) {
+				return (count) => (count >= high ? 100 : 0);
+			}
+			const span = high - low;
+			return (count) => {
+				if (count <= low) return 0;
+				if (count >= high) return 100;
+				return ((count - low) / span) * 100;
+			};
+		}
 
 		case HeatmapColorModes.SOLID:
-			return count >= low ? 4 : 0;
+			return (count) => (count >= low ? 4 : 0);
 
-		case HeatmapColorModes.STOPS:
-			// Ensure thresholds are properly ordered
-			const sortedThresholds = [low, medium, high].sort((a, b) => a - b);
-			const [minThreshold, midThreshold, maxThreshold] = sortedThresholds;
+		case HeatmapColorModes.STOPS: {
+			const sorted = [low, medium, high].sort((a, b) => a - b);
+			const [minThreshold, midThreshold, maxThreshold] = sorted;
+			return (count) => {
+				if (count <= 0) return 0;
+				if (count < minThreshold) return 1;
+				if (count < midThreshold) return 2;
+				if (count < maxThreshold) return 3;
+				return 4;
+			};
+		}
 
-			if (count <= 0) return 0;
-			if (count < minThreshold) return 1;
-			if (count < midThreshold) return 2;
-			if (count < maxThreshold) return 3;
-			return 4;
 		default:
-			return 0;
+			return () => 0;
 	}
 };
