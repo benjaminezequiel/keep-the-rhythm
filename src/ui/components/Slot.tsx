@@ -12,6 +12,8 @@ import { getSlotLabel, weekdaysNames } from "../texts";
 import { TargetCount, SlotConfig } from "@/defs/types";
 import { useStore } from "@/core/store";
 
+const TARGET_COUNTS = Object.values(TargetCount);
+
 export const Slot = React.memo(function Slot({
 	index,
 	option,
@@ -32,8 +34,6 @@ export const Slot = React.memo(function Slot({
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 	const typeButtonRef = useRef<HTMLButtonElement>(null);
 	const calcButtonRef = useRef<HTMLButtonElement>(null);
-
-	const TargetCounts = Object.values(TargetCount);
 
 	// Reactive slices of the store the slot's value depends on.  Each
 	// selector re-renders the component only when that slice changes,
@@ -97,9 +97,9 @@ export const Slot = React.memo(function Slot({
 	};
 
 	const toggleSlotType = () => {
-		const currentIndex = TargetCounts.indexOf(optionType);
-		const nextIndex = (currentIndex + 1) % TargetCounts.length;
-		const newOption = TargetCounts[nextIndex];
+		const currentIndex = TARGET_COUNTS.indexOf(optionType);
+		const nextIndex = (currentIndex + 1) % TARGET_COUNTS.length;
+		const newOption = TARGET_COUNTS[nextIndex];
 
 		mutateSettings((draft) => {
 			draft.sidebarConfig.slots[index].option = newOption;
