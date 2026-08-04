@@ -21,17 +21,18 @@ import { handleExternalDataChange } from "@/core/externalSync";
 import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 
 export default class KeepTheRhythm extends Plugin {
-	private onFocusHandler: (() => void) | null = null;
-	private onVisibilityHandler: (() => void) | null = null;
-	private onPageHideHandler: (() => void) | null = null;
+	
+	private onFocusHandler: () => void = () => useStore.getState().checkDayChange();
+	private onPageHideHandler: () => void = () => void this.flushNow();
+	private onVisibilityHandler: () => void = () => {
+		if (document.hidden) void this.flushNow();
+	};
 
 	// Persistence scheduler with debounce state and unsubscribe handle
 	private persistenceScheduler: PersistenceScheduler | null = null;
 
 	async onload() {
 		setPlugin(this);
-		this.onFocusHandler = () => useStore.getState().checkDayChange();
-		window.addEventListener("focus", this.onFocusHandler);
 
 		// No DB to initialise — the in-memory store is empty until
 		// we hydrate it from data.json below.
@@ -63,18 +64,9 @@ export default class KeepTheRhythm extends Plugin {
 		// mutated before flushChangesToJSON.
 		this.persistenceScheduler = setupPersistenceScheduling(this);
 
-		// requestAnimationFrame is paused in background tabs, so the
-		// normal rAF-coalesced requestPersist() never fires while the
-		// user is in another app.  If the OS then hard-kills the
-		// renderer (or the user hard-reloads) the in-memory edits are
-		// lost.  Flush proactively whenever the tab goes hidden or the
-		// page is about to be discarded.
-		this.onVisibilityHandler = () => {
-			if (document.hidden) void this.flushNow();
-		};
-		document.addEventListener("visibilitychange", this.onVisibilityHandler);
-		this.onPageHideHandler = () => void this.flushNow();
+		window.addEventListener("focus", this.onFocusHandler);
 		window.addEventListener("pagehide", this.onPageHideHandler);
+		document.addEventListener("visibilitychange", this.onVisibilityHandler);
 	}
 
 	/**
@@ -174,15 +166,9 @@ export default class KeepTheRhythm extends Plugin {
 	// #region Unloading
 
 	async onunload() {
-		if (this.onFocusHandler !== null) {
-			window.removeEventListener("focus", this.onFocusHandler);
-		}
-		if (this.onVisibilityHandler !== null) {
-			document.removeEventListener("visibilitychange", this.onVisibilityHandler);
-		}
-		if (this.onPageHideHandler !== null) {
-			window.removeEventListener("pagehide", this.onPageHideHandler);
-		}
+		window.removeEventListener("focus", this.onFocusHandler);
+		window.removeEventListener("pagehide", this.onPageHideHandler);
+		document.removeEventListener("visibilitychange", this.onVisibilityHandler);
 
 		// Drain pending editor deltas and persist to data.json before
 		// tearing down the scheduler, so a coalesced debounced save
