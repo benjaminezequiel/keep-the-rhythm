@@ -12,7 +12,7 @@ import { getSlotLabel, weekdaysNames } from "../texts";
 import { TargetCount, SlotConfig } from "@/defs/types";
 import { useStore } from "@/core/store";
 
-export const Slot = ({
+export const Slot = React.memo(function Slot({
 	index,
 	option,
 	calc,
@@ -21,7 +21,7 @@ export const Slot = ({
 }: SlotConfig & {
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
-}) => {
+}) {
 	// No local mirror: read directly from props.  The previous useState
 	// mirror was redundant (every toggle already called setOptionType /
 	// setCalcType) and would silently drift out of sync if the store was
@@ -198,4 +198,4 @@ export const Slot = ({
 			)}
 		</div>
 	);
-};
+});
