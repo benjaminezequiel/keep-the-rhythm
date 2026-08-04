@@ -39,7 +39,6 @@ export const Slot = React.memo(function Slot({
 	// selector re-renders the component only when that slice changes,
 	// replacing the old SETTINGS_CHANGED / DAY_CHANGED / HISTORY_DATA_CHANGED
 	// event listeners.
-	const today = useStore((s) => s.today);
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
 	const dailyWritingGoal = useStore((s) => s.settings.dailyWritingGoal);
@@ -51,7 +50,7 @@ export const Slot = React.memo(function Slot({
 	// avoids unnecessary recomputation when only unrelated entries change.
 	const value = useMemo(
 		() => getCurrentCount(optionType, calcMode),
-		[optionType, calcMode, today, todayVersion, historicalVersion, dailyWritingGoal],
+		[optionType, calcMode, todayVersion, historicalVersion, dailyWritingGoal],
 	);
 
 	const unitText = () => {
@@ -120,7 +119,7 @@ export const Slot = React.memo(function Slot({
 		const map = getDailySummaryMap();
 		const weekDates = getCurrentWeekDates();
 		return weekDates.map((date) => (map[date] ?? 0) >= dailyWritingGoal);
-	}, [optionType, today, todayVersion, historicalVersion, dailyWritingGoal]);
+	}, [optionType, todayVersion, historicalVersion, dailyWritingGoal]);
 
 	return (
 		<div className="slot">

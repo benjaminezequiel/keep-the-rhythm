@@ -35,7 +35,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// unchanged today data, so unrelated re-renders stay free.
 	const todayEntries = useMemo(() => {
 		return getTodayEntries();
-	}, [today, todayVersion]);
+	}, [todayVersion]);
 
 	// Historical path: O(N) filter over dailyActivity, but only runs when
 	// historicalVersion moves.  Keystrokes that only touch today bump
@@ -43,7 +43,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	const historicalEntries = useMemo(() => {
 		const { dailyActivity } = useStore.getState();
 		return getActivityByDate(dailyActivity, date);
-	}, [date, today, historicalVersion]);
+	}, [date, historicalVersion]);
 
 	const rawEntries = isToday ? todayEntries : historicalEntries;
 
