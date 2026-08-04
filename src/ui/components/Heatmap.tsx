@@ -29,6 +29,7 @@ export const Heatmap = ({
 	const baseDate = heatmapConfig.startDate
 		? new Date(heatmapConfig.startDate)
 		: undefined;
+	const baseDateKey = heatmapConfig.startDate ?? null;
 
 	const today = useStore((s) => s.today);
 	const todayVersion = useStore(selectTodayVersion);
@@ -61,7 +62,7 @@ export const Heatmap = ({
 			}
 		}
 		return set;
-	}, [weeksToShow, baseDate]);
+	}, [weeksToShow, baseDateKey]);
 
 	// No-filter path: depends ONLY on version numbers + grid shape.  The
 	// underlying getDailySummaryMap cache is version-keyed, so a stable
@@ -152,7 +153,7 @@ export const Heatmap = ({
 		}
 
 		return labels;
-	}, [weeksToShow, baseDate]);
+	}, [weeksToShow, baseDateKey]);
 
 	const wrapperClasses = `
 		heatmap-wrapper 
