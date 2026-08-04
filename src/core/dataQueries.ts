@@ -1,18 +1,17 @@
 import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
 import { useStore, KTRState } from "./store";
 import {
+	dayDiff,
 	formatDate,
-	formatDateNative,
 	getStartOfMonth,
 	getStartOfWeek,
 	getStartOfYear,
-	parseDateNative,
+	parseDate,
 } from "@/utils/dateUtils";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getPlugin } from "@/core/pluginRegistry";
 import { getDailySummaryMap, getStreak } from "@/utils/dailySummaryCache";
-import { moment as _moment, TFile } from "obsidian";
-const moment = _moment as unknown as typeof _moment.default;
+import { TFile } from "obsidian";
 
 /** Version selectors for React components to subscribe to. */
 export const selectTodayVersion = (s: KTRState) => s.todayVersion;
@@ -63,58 +62,86 @@ export function getTotalValueInDateRange(
 		.reduce((sum, a) => sum + (a.wordsAdded || 0), 0);
 }
 
+type PeriodRange = { startDate: string; totalDays: number };
+
+let _rangeCache: {
+	today: string;
+	ranges: Partial<Record<TargetCount, PeriodRange>>;
+} = { today: "", ranges: {} };
+
 /**
  * Compute the inclusive date range [startDate, today] and elapsed days
- * for period-based targets.  Returns null for non-period targets.
+ * for period-based targets. Returns null for non-period targets.
+ *
+ * Results are cached per-day: once all 6 TargetCount variants are computed
+ * for a given today string, subsequent calls are O(1) map lookups.
+ * Cache is invalidated when today changes.
  */
 function getPeriodRange(
 	target: TargetCount,
-	today: string,
-): { startDate: string; totalDays: number } | null {
-	const now = new Date();
+): PeriodRange | null {
+	const today = useStore.getState().today;
+
+	if (_rangeCache.today !== today) {
+		_rangeCache.today = today;
+		_rangeCache.ranges = {};
+	}
+
+	const cached = _rangeCache.ranges[target];
+	if (cached !== undefined) return cached;
+
+	const todayDate = parseDate(today);
+	let result: PeriodRange;
 
 	switch (target) {
 		case TargetCount.CURRENT_WEEK: {
-			const startDate = formatDate(getStartOfWeek(now));
-			return {
-				startDate,
-				totalDays: moment(today).diff(startDate, "days") + 1,
+			const start = getStartOfWeek(todayDate);
+			result = {
+				startDate: formatDate(start),
+				totalDays: dayDiff(todayDate, start) + 1,
 			};
+			break;
 		}
 		case TargetCount.CURRENT_MONTH: {
-			const startDate = formatDate(getStartOfMonth(now));
-			return {
-				startDate,
-				totalDays: moment(today).diff(startDate, "days") + 1,
+			const start = getStartOfMonth(todayDate);
+			result = {
+				startDate: formatDate(start),
+				totalDays: dayDiff(todayDate, start) + 1,
 			};
+			break;
 		}
 		case TargetCount.CURRENT_YEAR: {
-			const startDate = formatDate(getStartOfYear(now));
-			return {
-				startDate,
-				totalDays: moment(today).diff(startDate, "days") + 1,
+			const start = getStartOfYear(todayDate);
+			result = {
+				startDate: formatDate(start),
+				totalDays: dayDiff(todayDate, start) + 1,
 			};
+			break;
 		}
-		case TargetCount.LAST_WEEK:
-			return {
-				startDate: moment(today).subtract(7, "days").format("YYYY-MM-DD"),
-				totalDays: 7,
-			};
-		case TargetCount.LAST_MONTH:
-			return {
-				startDate: moment(today).subtract(30, "days").format("YYYY-MM-DD"),
-				totalDays: 30,
-			};
-		case TargetCount.LAST_YEAR:
-			return {
-				startDate: moment(today)
-					.subtract(365, "days")
-					.format("YYYY-MM-DD"),
-				totalDays: 365,
-			};
+		case TargetCount.LAST_WEEK: {
+			const start = new Date(todayDate);
+			start.setDate(start.getDate() - 7);
+			result = { startDate: formatDate(start), totalDays: 7 };
+			break;
+		}
+		case TargetCount.LAST_MONTH: {
+			const start = new Date(todayDate);
+			start.setDate(start.getDate() - 30);
+			result = { startDate: formatDate(start), totalDays: 30 };
+			break;
+		}
+		case TargetCount.LAST_YEAR: {
+			const start = new Date(todayDate);
+			start.setDate(start.getDate() - 365);
+			result = { startDate: formatDate(start), totalDays: 365 };
+			break;
+		}
 		default:
 			return null;
 	}
+
+	_rangeCache.ranges[target] = result;
+	return result;
 }
 
 /**
@@ -135,16 +162,14 @@ export function getCurrentCount(
 		return map[today] || 0;
 	}
 	if (target === TargetCount.LAST_DAY) {
-		// Original implementation did `dailyActivity.filter(a => a.date >= cutoff)`
-		// which is O(N) on the full array.  The cutoff is "yesterday" because
-		// moment(now).subtract(24h).format("YYYY-MM-DD") always lands on the
-		// previous calendar day — so the answer is exactly yesterday + today.
 		const map = getDailySummaryMap();
-		const yesterday = moment(today).subtract(1, "day").format("YYYY-MM-DD");
+		const yesterdayDate = parseDate(today);
+		yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+		const yesterday = formatDate(yesterdayDate);
 		return (map[yesterday] || 0) + (map[today] || 0);
 	}
 
-	const range = getPeriodRange(target, today);
+	const range = getPeriodRange(target);
 	if (!range) {
 		console.error("Unsupported target type: " + target);
 		return 0;
@@ -171,11 +196,11 @@ function sumRangeFromMap(
 	endDate: string,
 ): number {
 	let sum = 0;
-	const start = parseDateNative(startDate);
-	const cursor = parseDateNative(endDate);
+	const start = parseDate(startDate);
+	const cursor = parseDate(endDate);
 
 	while (cursor >= start) {
-		sum += map[formatDateNative(cursor)] || 0;
+		sum += map[formatDate(cursor)] || 0;
 		cursor.setDate(cursor.getDate() - 1);
 	}
 	return sum;

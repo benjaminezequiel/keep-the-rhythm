@@ -18,28 +18,31 @@ export function getLastDay() {
 }
 
 export const formatDate = (date: Date): string => {
-  return moment(date).format("YYYY-MM-DD");
-};
-
-/**
- * Fast YYYY-MM-DD formatter using native Date getters (local time).
- * Avoids moment overhead for hot-loop date formatting.
- */
-export function formatDateNative(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
+};
 
 /**
  * Parse a YYYY-MM-DD string into a local-time Date (midnight).
  * Uses native Date constructor — avoids moment overhead.
  */
-export function parseDateNative(dateStr: string): Date {
+export function parseDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
+
+/**
+ * Compute day difference between two local-time Dates (midnight).
+ * Uses noon-based timestamps to avoid DST boundary off-by-one errors.
+ */
+export function dayDiff(a: Date, b: Date): number {
+	const d1 = new Date(a.getFullYear(), a.getMonth(), a.getDate(), 12);
+	const d2 = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 12);
+	return Math.round((d1.getTime() - d2.getTime()) / 86400000);
+}
+
 
 let _todayCache = { date: "", expiresAt: 0 };
 
