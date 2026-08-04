@@ -52,11 +52,12 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// against the same predicate.  The work is cheap (k < 10) but the
 	// reference identity matters for the children below.
 	const entries = useMemo(() => {
+		const hasFilters = filters && filters.length > 0;
 		return rawEntries
-			.filter((entry) => entry.wordsAdded != 0)
 			.filter((entry) => {
-				if (!filters || filters.length === 0) return true;
-				return filters.every((f) => {
+				if (entry.wordsAdded == 0) return false;
+				if (!hasFilters) return true;
+				return filters!.every((f) => {
 					if (f.type === "includes")
 						return entry.filePath?.includes(f.value);
 					if (f.type === "excludes")
@@ -64,9 +65,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 					return true;
 				});
 			})
-			.sort((a, b) => {
-				return b.wordsAdded - a.wordsAdded;
-			});
+			.sort((a, b) => b.wordsAdded - a.wordsAdded);
 	}, [rawEntries, filters]);
 
 	const addManualEntry = () => {
