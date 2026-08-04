@@ -1,4 +1,4 @@
-import { formatDate } from "@/utils/dateUtils";
+import { formatDateByMoment } from "@/utils/dateUtils";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
 import { debounce } from "@/utils/utils";
@@ -74,7 +74,7 @@ export class SettingsTab extends PluginSettingTab {
       case "date":
         setting.addText((text) => {
           text.inputEl.setAttribute("type", "date");
-          text.setValue(formatDate(currentValue)).onChange((value) => {
+          text.setValue(formatDateByMoment(currentValue)).onChange((value) => {
             const date = value ? new Date(value) : null;
             setByPath(this.settings, config.key, date);
             this.plugin.updateVisualSettingsOnly();
