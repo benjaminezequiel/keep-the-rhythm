@@ -31,7 +31,6 @@ export const Heatmap = ({
 		: undefined;
 	const baseDateKey = heatmapConfig.startDate ?? null;
 
-	const today = useStore((s) => s.today);
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
 	const dailyActivity = useStore((s) => s.dailyActivity);
@@ -52,17 +51,18 @@ export const Heatmap = ({
 				query?.operator === "STARTS_WITH")) ||
 		compiledEvaluator;
 
-	// Date set is shared by both branches; build once per weeksToShow/baseDate.
-	const requiredDates = useMemo(() => {
-		const set = new Set<string>();
+	const cellDates = useMemo(() => {
+		const dates: string[] = [];
 		for (let week = 0; week < weeksToShow; week++) {
 			for (let day = 0; day < 7; day++) {
 				const date = getDateForCell(week, day, weeksToShow, baseDate);
-				set.add(formatDate(date));
+				dates.push(formatDate(date));
 			}
 		}
-		return set;
+		return dates;
 	}, [weeksToShow, baseDateKey]);
+
+	const cellDatesSet = useMemo(() => new Set(cellDates), [cellDates]);
 
 	// No-filter path: depends ONLY on version numbers + grid shape.  The
 	// underlying getDailySummaryMap cache is version-keyed, so a stable
@@ -72,11 +72,11 @@ export const Heatmap = ({
 	const cachedHeatmapData = useMemo(() => {
 		const fullMap = getDailySummaryMap();
 		const filteredMap: Record<string, number> = {};
-		for (const date of requiredDates) {
+		for (const date of cellDates) {
 			filteredMap[date] = fullMap[date] || 0;
 		}
 		return filteredMap;
-	}, [today, todayVersion, historicalVersion, requiredDates]);
+	}, [todayVersion, historicalVersion, cellDates]);
 
 	// Filtered path: needs the full array because compiledEvaluator walks
 	// every entry.  This still runs on every keystroke, but only when the
@@ -96,22 +96,20 @@ export const Heatmap = ({
 				const prefix = value.startsWith("/")
 					? value.substring(1)
 					: value;
-				results = dailyActivity.filter(
-					(e) =>
-						requiredDates.has(e.date) &&
-						e.filePath.startsWith(prefix),
+				results = dailyActivity.filter((e) =>
+					cellDatesSet.has(e.date) &&
+					e.filePath.startsWith(prefix),
 				);
 			} else {
 				results = [];
 			}
 		} else if (compiledEvaluator) {
-			results = dailyActivity.filter(
-				(e) =>
-					requiredDates.has(e.date) && compiledEvaluator(e),
+			results = dailyActivity.filter((e) =>
+				cellDatesSet.has(e.date) && compiledEvaluator(e),
 			);
 		} else {
 			results = dailyActivity.filter((e) =>
-				requiredDates.has(e.date),
+				cellDatesSet.has(e.date),
 			);
 		}
 
@@ -126,7 +124,7 @@ export const Heatmap = ({
 		hasFilter,
 		query,
 		compiledEvaluator,
-		requiredDates,
+		cellDatesSet,
 	]);
 
 	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;
@@ -154,6 +152,24 @@ export const Heatmap = ({
 
 		return labels;
 	}, [weeksToShow, baseDateKey]);
+
+	
+	const cellData = useMemo(() => {
+		const data: {
+			date: string;
+			count: number;
+			intensity: number;
+		}[] = [];
+		for (const dateStr of cellDates) {
+			const count = heatmapData[dateStr] ?? 0;
+			data.push({
+				date: dateStr,
+				count,
+				intensity: getIntensityLevel(count),
+			});
+		}
+		return data;
+	}, [cellDates, heatmapData, getIntensityLevel]);
 
 	const wrapperClasses = `
 		heatmap-wrapper 
@@ -199,46 +215,33 @@ export const Heatmap = ({
 								))}
 							</div>
 						)}
-						<div className="heatmap-new-grid">
-							{Array(weeksToShow)
-								.fill(null)
-								.map((_, weekIndex) => (
-									<div
-										key={weekIndex}
-										className="heatmap-column"
-									>
-										{Array(7)
-											.fill(null)
-											.map((_, dayIndex) => {
-												const date = getDateForCell(
-													weekIndex,
-													dayIndex,
-													weeksToShow,
-													baseDate,
-												);
-												const dateStr =
-													formatDate(date);
-												const count =
-													heatmapData[dateStr] ?? 0;
-												return (
-													<HeatmapCell
-														key={dateStr}
-														count={count}
-														date={dateStr}
-														squared={
-															!heatmapConfig.roundCells
-														}
-														intensity={getIntensityLevel(
-															count,
-														)}
-														mode={
-															heatmapConfig.intensityMode
-														}
-													/>
-												);
-											})}
-									</div>
-								))}
+						<div
+							className="heatmap-new-grid"
+							style={{
+								gridTemplateColumns: `repeat(${weeksToShow}, 10px)`,
+								gridTemplateRows: `repeat(7, 10px)`,
+							}}
+						>
+							{cellData.map(
+								({
+									date,
+									count,
+									intensity,
+								}) => (
+									<HeatmapCell
+										key={date}
+										count={count}
+										date={date}
+										squared={
+											!heatmapConfig.roundCells
+										}
+										intensity={intensity}
+										mode={
+											heatmapConfig.intensityMode
+										}
+									/>
+								),
+							)}
 						</div>
 					</div>
 				</div>

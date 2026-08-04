@@ -154,7 +154,7 @@
   cursor: pointer !important;
 }
 
-.heatmap-column .heatmap-square:hover {
+.heatmap-new-grid .heatmap-square:hover {
   background-color: var(--interactive-accent);
   transition-duration: 25ms;
 }
@@ -296,15 +296,10 @@
 }
 
 .heatmap-new-grid {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
   padding-top: 18px;
-  flex-direction: row;
-  justify-content: flex-end;
   gap: 2px;
 }
 
-.heatmap-column {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+
