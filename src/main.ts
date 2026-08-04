@@ -23,6 +23,7 @@ import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
 export default class KeepTheRhythm extends Plugin {
 	private onFocusHandler: (() => void) | null = null;
 	private onVisibilityHandler: (() => void) | null = null;
+	private onPageHideHandler: (() => void) | null = null;
 
 	// Persistence scheduler with debounce state and unsubscribe handle
 	private persistenceScheduler: PersistenceScheduler | null = null;
@@ -72,7 +73,8 @@ export default class KeepTheRhythm extends Plugin {
 			if (document.hidden) void this.flushNow();
 		};
 		document.addEventListener("visibilitychange", this.onVisibilityHandler);
-		window.addEventListener("pagehide", () => void this.flushNow());
+		this.onPageHideHandler = () => void this.flushNow();
+		window.addEventListener("pagehide", this.onPageHideHandler);
 	}
 
 	/**
@@ -177,6 +179,9 @@ export default class KeepTheRhythm extends Plugin {
 		}
 		if (this.onVisibilityHandler !== null) {
 			document.removeEventListener("visibilitychange", this.onVisibilityHandler);
+		}
+		if (this.onPageHideHandler !== null) {
+			window.removeEventListener("pagehide", this.onPageHideHandler);
 		}
 
 		// Drain pending editor deltas and persist to data.json before
