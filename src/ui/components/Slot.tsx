@@ -1,4 +1,4 @@
-import { getDateBasedOnIndex } from "@/utils/dateUtils";
+import { getCurrentWeekDates } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
 import { useRef, useMemo, useEffect } from "react";
@@ -111,11 +111,16 @@ export const Slot = React.memo(function Slot({
 			? Math.min(((value ?? 0) / dailyWritingGoal) * 100, 100)
 			: 0;
 
-	function isDayCompleted(dayIndex: number) {
-		const date = getDateBasedOnIndex(dayIndex);
+	// Memoize the 7-day completion states for CURRENT_WEEK view.
+	// Computes getDailySummaryMap() once (not 7×) and caches the
+	// week's date lookups. Recomputes only when the date or relevant
+	// data versions change.
+	const weekDayCompletedStates = useMemo<boolean[]>(() => {
+		if (optionType !== TargetCount.CURRENT_WEEK) return [];
 		const map = getDailySummaryMap();
-		return (map[date] ?? 0) >= dailyWritingGoal;
-	}
+		const weekDates = getCurrentWeekDates();
+		return weekDates.map((date) => (map[date] ?? 0) >= dailyWritingGoal);
+	}, [optionType, today, todayVersion, historicalVersion, dailyWritingGoal]);
 
 	return (
 		<div className="slot">
@@ -190,7 +195,7 @@ export const Slot = React.memo(function Slot({
 							key={index}
 							className={
 								"KTR-dot " +
-								(isDayCompleted(index) ? "completed" : "")
+								(weekDayCompletedStates[index] ? "completed" : "")
 							}
 						></div>
 					))}

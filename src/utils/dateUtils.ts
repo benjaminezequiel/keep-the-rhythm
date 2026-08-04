@@ -1,11 +1,6 @@
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 
-export function getStartOfWeek(date: Date, weekStart: number = 1): Date {
-  const m = moment(date);
-  return m.isoWeekday(weekStart).startOf("day").toDate();
-}
-
 export function getStartOfMonth(date: Date) {
   return moment(date).startOf("month").toDate();
 }
@@ -13,20 +8,17 @@ export function getStartOfMonth(date: Date) {
 export function getStartOfYear(date: Date) {
   return moment(date).startOf("year").toDate();
 }
-export function getLastDay() {
-  return moment().subtract(1, "day");
-}
 
-export const formatDateByMoment = (date: moment.MomentInput): string => {
+export function formatDateByMoment(date: moment.MomentInput): string {
   return moment(date).format("YYYY-MM-DD");
 }
 
-export const formatDate = (date: Date): string => {
+export function formatDate(date: Date): string {
   if (!date) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 /**
@@ -63,10 +55,56 @@ export function getToday(): string {
   return _todayCache.date;
 }
 
-export function getDateBasedOnIndex(index: number) {
-  const today = moment();
-  const monday = today.clone().startOf("isoWeek"); // isoWeek starts on Monday
-  return monday.clone().add(index, "days").format("YYYY-MM-DD");
+// ─── Monday-of-current-week cache ────────────────────────────────
+// The Monday Date only changes when the day crosses a week boundary
+// (i.e., at midnight between Sunday and Monday).
+let _mondayCache: Date | null = null;
+let _mondayCacheToday = "";
+
+/**
+ * Return the Monday of the current week (ISO week, Monday-start).
+ * Cached per day — invalidated only when `getToday()` returns a new date.
+ */
+export function getMondayOfCurrentWeek(): Date {
+  const todayStr = getToday();
+  if (_mondayCacheToday === todayStr && _mondayCache) {
+    return _mondayCache;
+  }
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun..6=Sat
+  const offset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + offset);
+  _mondayCache = monday;
+  _mondayCacheToday = todayStr;
+  return monday;
+}
+
+// ─── Week Dates Cache ─────────────────────────────────────────────
+// The 7 dates of the current week (Mon..Sun), cached at module level.
+// Only recomputed when today's date changes (midnight boundary).
+let _weekDatesCache: string[] | null = null;
+let _weekDatesCacheToday = "";
+
+/**
+ * Return the 7 YYYY-MM-DD date strings for the current week, Monday → Sunday.
+ * Module-level cache invalidated only when `getToday()` returns a new date.
+ */
+export function getCurrentWeekDates(): string[] {
+  const todayStr = getToday();
+  if (_weekDatesCacheToday === todayStr && _weekDatesCache) {
+    return _weekDatesCache;
+  }
+  const monday = getMondayOfCurrentWeek();
+
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return formatDate(d);
+  });
+  _weekDatesCache = week;
+  _weekDatesCacheToday = todayStr;
+  return week;
 }
 
 export const getDateForCell = (
@@ -81,15 +119,9 @@ export const getDateForCell = (
 		return d;
 	}
 
-	const today = new Date();
-	const monday = new Date(today);
-	monday.setDate(monday.getDate() - getDayIndex(monday.getDay()));
-
+	const monday = getMondayOfCurrentWeek();
 	const weekOffset = weekIndex - (totalAmountOfWeeks - 1);
 	monday.setDate(monday.getDate() + weekOffset * 7 + dayIndex);
 	return monday;
 };
 
-const getDayIndex = (dayIndex: number): number => {
-	return dayIndex === 0 ? 6 : dayIndex - 1;
-};

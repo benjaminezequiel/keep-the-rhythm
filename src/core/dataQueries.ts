@@ -4,7 +4,7 @@ import {
 	dayDiff,
 	formatDate,
 	getStartOfMonth,
-	getStartOfWeek,
+	getMondayOfCurrentWeek,
 	getStartOfYear,
 	parseDate,
 } from "@/utils/dateUtils";
@@ -95,7 +95,7 @@ function getPeriodRange(
 
 	switch (target) {
 		case TargetCount.CURRENT_WEEK: {
-			const start = getStartOfWeek(todayDate);
+			const start = getMondayOfCurrentWeek();
 			result = {
 				startDate: formatDate(start),
 				totalDays: dayDiff(todayDate, start) + 1,
