@@ -137,6 +137,7 @@ export function getStreak(): number {
 		const map = getDailySummaryMap();
 		cachedHistoricalStreak = 0;
 		const cursor = 	parseDate(today);
+		cursor.setDate(cursor.getDate() - 1);
 		while (true) {
 			const words = map[formatDate(cursor)];
 			if (words === undefined || words < goal) break;
@@ -146,16 +147,9 @@ export function getStreak(): number {
 		cachedHistoricalStreakKey = histKey;
 	}
 
-	// Check today's total via getTodayEntries (cached, O(k) k < 10)
-	const todayEntries = getTodayEntries();
-	if (todayEntries.reduce((sum, a) => sum + a.wordsAdded, 0) < goal) {
-		// Today not yet completed — return historical streak only
-		cachedStreak = cachedHistoricalStreak;
-		cachedStreakKey = key;
-		return cachedStreak;
-	}
-
-	cachedStreak = 1 + cachedHistoricalStreak;
+	const isTodayStreak = getTodayEntries().reduce((sum, a) => sum + a.wordsAdded, 0) >= goal;
+	
+	cachedStreak = cachedHistoricalStreak + (isTodayStreak ? 1 : 0);
 	cachedStreakKey = key;
 	return cachedStreak;
 }

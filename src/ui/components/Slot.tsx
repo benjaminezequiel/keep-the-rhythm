@@ -51,7 +51,7 @@ export const Slot = ({
 	// avoids unnecessary recomputation when only unrelated entries change.
 	const value = useMemo(
 		() => getCurrentCount(optionType, calcMode),
-		[optionType, calcMode, today, todayVersion, historicalVersion],
+		[optionType, calcMode, today, todayVersion, historicalVersion, dailyWritingGoal],
 	);
 
 	const unitText = () => {
