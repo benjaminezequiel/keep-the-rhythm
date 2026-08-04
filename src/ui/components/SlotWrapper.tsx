@@ -4,7 +4,7 @@ import React from "react";
 import { CalculationType, SlotConfig, TargetCount } from "@/defs/types";
 import { Slot } from "./Slot";
 import { useStore } from "@/core/store";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 interface SlotWrapperProps {
@@ -13,8 +13,6 @@ interface SlotWrapperProps {
 }
 
 export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps) => {
-  // codeBlock mode uses the prop; sidebar mode reads from the store so
-  // mutations via mutateSettings are reflected automatically.
   const storeSlots = useStore((s) => s.settings.sidebarConfig.slots);
   const mutateSettings = useStore((s) => s.mutateSettings);
   const effectiveSlots = isCodeBlock ? slotsProp : storeSlots;
@@ -23,13 +21,10 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
     (SlotConfig & { uuid?: string })[] | undefined
   >(() => effectiveSlots?.map((slot) => ({ ...slot, uuid: uuidv4() })));
 
-  // Create refs for each slot to avoid findDOMNode warning
   const nodeRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>(
     {},
   );
 
-  // When the store-backed slots change (settings mutated elsewhere), sync
-  // local state while preserving uuid stability for transition animations.
   useEffect(() => {
     if (isCodeBlock) return;
     setSlotsState((prev) =>
@@ -40,26 +35,27 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
     );
   }, [effectiveSlots, isCodeBlock]);
 
-  const handleDeleteClick = (index: number) => {
-    mutateSettings((draft) => {
-      const newSlots = draft.sidebarConfig.slots.filter(
-        (_, i) => i !== index,
-      );
-      // Re-index so slots remain contiguous
-      newSlots.forEach((slot, i) => {
-        slot.index = i;
+  const handleDeleteClick = useCallback(
+    (index: number) => {
+      mutateSettings((draft) => {
+        const newSlots = draft.sidebarConfig.slots.filter(
+          (_, i) => i !== index,
+        );
+        newSlots.forEach((slot, i) => {
+          slot.index = i;
+        });
+        draft.sidebarConfig.slots = newSlots;
       });
-      draft.sidebarConfig.slots = newSlots;
-    });
-    // store update propagates to effectiveSlots → useEffect syncs slotsState
-    setSlotsState((prevSlots) => {
-      if (!prevSlots) return prevSlots;
-      const slotToDelete = prevSlots[index];
-      return prevSlots.filter((slot) => slot.uuid !== slotToDelete.uuid);
-    });
-  };
+      setSlotsState((prevSlots) => {
+        if (!prevSlots) return prevSlots;
+        const slotToDelete = prevSlots[index];
+        return prevSlots.filter((slot) => slot.uuid !== slotToDelete.uuid);
+      });
+    },
+    [mutateSettings],
+  );
 
-  const handleAddClick = () => {
+  const handleAddClick = useCallback(() => {
     if (slotsState && slotsState?.length >= 10) {
       new Notice("Maximum of 10 slots per view! (at least for now)");
       return;
@@ -74,17 +70,15 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
       draft.sidebarConfig.slots.push(newSlot);
     });
 
-    // Optimistic local update with uuid for the transition
     setSlotsState([...(slotsState || []), { ...newSlot, uuid: uuidv4() }]);
-  };
+  }, [mutateSettings, slotsState, effectiveSlots]);
 
-  // Create or get ref for each slot
-  const getNodeRef = (uuid: string) => {
+  const getNodeRef = useCallback((uuid: string) => {
     if (!nodeRefs.current[uuid]) {
       nodeRefs.current[uuid] = React.createRef<HTMLDivElement>();
     }
     return nodeRefs.current[uuid];
-  };
+  }, []);
 
   return (
     <div className="slot__section">
