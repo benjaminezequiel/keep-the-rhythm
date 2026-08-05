@@ -27,8 +27,9 @@ export function getDailySummaryMap(): Record<string, number> {
 		useStore.getState();
 
 	// Fast path: nothing changed since the last call.
+	// Version stamps alone determine cache validity — even an empty cached
+	// object (no entries) is valid if versions match (no historical data yet).
 	if (
-		cachedMergedMap.length > 0 &&
 		historicalVersion === cachedHistoricalVersion &&
 		todayVersion === cachedTodayVersion &&
 		today === cachedToday
@@ -40,7 +41,6 @@ export function getDailySummaryMap(): Record<string, number> {
 	// store.checkDayChange), so the version stamp covers day rollover; the
 	// `today !== cachedToday` check is a defensive guard.
 	const historicalChanged =
-		cachedMergedMap.length === 0 ||
 		historicalVersion !== cachedHistoricalVersion ||
 		today !== cachedToday;
 
