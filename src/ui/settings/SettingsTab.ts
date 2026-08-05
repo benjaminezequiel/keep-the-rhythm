@@ -181,30 +181,39 @@ export function setByPath(obj: any, path: string, value: any) {
   }
 }
 
+// Reverse map: for each setting key, which settings depend on it for visibility.
+// Computed once at module load so updateVisibility() only visits relevant settings.
+const VISIBILITY_DEPENDENTS = new Map<string, SettingItem[]>();
+for (const section of SETTINGS_SCHEMA.sections) {
+  for (const s of section.settings) {
+    if (!s.visibleWhen) continue;
+    for (const depKey of Object.keys(s.visibleWhen)) {
+      const list = VISIBILITY_DEPENDENTS.get(depKey);
+      if (list) list.push(s);
+      else VISIBILITY_DEPENDENTS.set(depKey, [s]);
+    }
+  }
+}
+
 export function updateVisibility(changedKey: string, newValue: any) {
-  SETTINGS_SCHEMA.sections.forEach((section) => {
-    section.settings.forEach((s: SettingItem) => {
-      if (!s.visibleWhen) return;
+  const dependents = VISIBILITY_DEPENDENTS.get(changedKey);
+  if (!dependents) return;
 
-      const visibleCondition = s.visibleWhen[changedKey];
-      // if (!allowed) return;
+  for (const s of dependents) {
+    const condition = s.visibleWhen![changedKey];
 
-      let shouldBeVisible;
+    const shouldBeVisible =
+      typeof condition === "boolean"
+        ? condition === newValue
+        : Array.isArray(condition)
+          ? condition.includes(newValue)
+          : true;
 
-      if (typeof visibleCondition == "boolean") {
-        shouldBeVisible = visibleCondition == newValue;
-      } else {
-        // newValue == visibleCondition.includes(newValue);
-        shouldBeVisible = true; // TODO: check later for cases, non existent right now
-      }
+    const el = document.querySelector(
+      `[data-setting-key="${s.key}"]`,
+    ) as HTMLElement | null;
+    if (!el) continue;
 
-      const el = document.querySelector(
-        `[data-setting-key="${s.key}"]`,
-      ) as HTMLElement;
-
-      if (!el) return;
-
-      el.style.display = shouldBeVisible ? "block" : "none";
-    });
-  });
+    el.style.display = shouldBeVisible ? "block" : "none";
+  }
 }
