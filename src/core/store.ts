@@ -131,6 +131,7 @@ export const useStore = create<KTRState>()(
 					todayVersion: cur.todayVersion + 1,
 					historicalVersion: cur.historicalVersion + 1,
 				});
+				get().requestPersist();
 			}
 		},
 
