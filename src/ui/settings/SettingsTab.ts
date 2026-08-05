@@ -162,23 +162,11 @@ export function getByPath(obj: any, path: string) {
 export function setByPath(obj: any, path: string, value: any) {
   const keys = path.split(".");
   const last = keys.pop()!;
-
-  // Walk and copy the object chain to maintain immutability
   let target = obj;
-  const parents: any[] = [];
-  keys.forEach((key) => {
-    parents.push(target);
-    target[key] = { ...target[key] }; // create shallow copy
+  for (const key of keys) {
     target = target[key];
-  });
-
-  target[last] = value;
-
-  // Re-assign references back up the chain
-  for (let i = keys.length - 1; i >= 0; i--) {
-    const parent = parents[i];
-    parent[keys[i]] = { ...parent[keys[i]] };
   }
+  target[last] = value;
 }
 
 // Reverse map: for each setting key, which settings depend on it for visibility.
