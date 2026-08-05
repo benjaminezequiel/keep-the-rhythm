@@ -17,49 +17,50 @@ import { TFile } from "obsidian";
 export const selectTodayVersion = (s: KTRState) => s.todayVersion;
 export const selectHistoricalVersion = (s: KTRState) => s.historicalVersion;
 
+/**
+ * React selector returning the merged, flattened activity set
+ * (historical then today).  Returns a fresh array on every evaluation, so
+ * this is intended for cold paths (e.g. the filtered heatmap) that already
+ * re-run on historicalVersion/todayVersion; do NOT use it in a component
+ * that must stay stable across unrelated re-renders.
+ */
+export const selectAllActivity = (s: KTRState) => [
+	...s.historicalActivity,
+	...s.todayActivity,
+];
+
 /* ─────────────────────────────────────────────────────────────────────────
  * Pure read helpers (array → value).
  *
- * Take the dailyActivity array explicitly so the same code is usable from
- * React (via `useStore(s => s.dailyActivity)` + useMemo) and from
- * non-React callers (via `useStore.getState().dailyActivity`).
  * ────────────────────────────────────────────────────────────────────── */
 
+/** Merge helper for non-React reads. */
+function getAllActivity(): DailyActivity[] {
+	const { historicalActivity, todayActivity } = useStore.getState();
+	return [...historicalActivity, ...todayActivity];
+}
+
 export function getActivityByDate(
-	dailyActivity: DailyActivity[],
 	date: string,
 ): DailyActivity[] {
-	return dailyActivity.filter((a) => a.date === date);
+	const { today, todayActivity } = useStore.getState();
+	if (date === today) return todayActivity;
+	return useStore.getState().historicalActivity.filter((a) => a.date === date);
 }
 
 export function getActivityByDateAndFile(
-	dailyActivity: DailyActivity[],
 	date: string,
 	filePath: string,
 ): DailyActivity | undefined {
-	return dailyActivity.find(
+	const { today, todayActivity } = useStore.getState();
+	if (date === today) {
+		return todayActivity.find(
+			(a) => a.date === date && a.filePath === filePath,
+		);
+	}
+	return useStore.getState().historicalActivity.find(
 		(a) => a.date === date && a.filePath === filePath,
 	);
-}
-
-export function getTotalValueByDate(
-	dailyActivity: DailyActivity[],
-	date: string,
-): number {
-	return getActivityByDate(dailyActivity, date).reduce(
-		(sum, a) => sum + (a.wordsAdded || 0),
-		0,
-	);
-}
-
-export function getTotalValueInDateRange(
-	dailyActivity: DailyActivity[],
-	startDate: string,
-	endDate: string,
-): number {
-	return dailyActivity
-		.filter((a) => a.date >= startDate && a.date <= endDate)
-		.reduce((sum, a) => sum + (a.wordsAdded || 0), 0);
 }
 
 type PeriodRange = { startDate: string; totalDays: number };
@@ -216,8 +217,7 @@ export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
 ): Promise<DailyActivity> {
-	const { dailyActivity } = useStore.getState();
-	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
+	let entry = getActivityByDateAndFile(date, file.path);
 	
 	if (!entry) {
 		entry = await createActivityObject(file, date);
@@ -245,9 +245,7 @@ async function createActivityObject(file: TFile, date: string) {
 }
 
 /**
- * Remove the activity row for (date, filePath).  If the deleted row is
- * today's row for the currently open file, selectCurrentActivity() will
- * naturally return null on the next read.
+ * Remove the activity row for (date, filePath).
  */
 export const deleteActivityFromDate = (
 	filePath: string,
@@ -265,8 +263,7 @@ export const addOrUpdateActivity = async (
 	date: string,
 	wordAdded: number,
 ): Promise<void> => {
-	const { dailyActivity } = useStore.getState();
-	let entry = getActivityByDateAndFile(dailyActivity, date, file.path);
+	let entry = getActivityByDateAndFile(date, file.path);
 	if (!entry) {
 		// 这里的 wordCountStart 并不准确，因为读的最新的文件，不知道历史日期的字数是多少
 		entry = await createActivityObject(file, date);

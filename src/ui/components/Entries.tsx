@@ -41,8 +41,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// historicalVersion moves.  Keystrokes that only touch today bump
 	// todayVersion - not historicalVersion - so this stays cached.
 	const historicalEntries = useMemo(() => {
-		const { dailyActivity } = useStore.getState();
-		return getActivityByDate(dailyActivity, date);
+		return getActivityByDate(date);
 	}, [date, historicalVersion]);
 
 	const rawEntries = isToday ? todayEntries : historicalEntries;

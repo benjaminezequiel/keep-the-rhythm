@@ -110,7 +110,7 @@ async function runPendingEditorChange(): Promise<void> {
 
 	// Look up today's row by filePath; we never mutate the store object
 	// directly — pass a fresh copy to upsertActivity.
-	const activity = cur.dailyActivity.find(
+	const activity = cur.todayActivity.find(
 		(r) => r.date === cur.today && r.filePath === cur.currentFilePath,
 	);
 	if (!activity) return;

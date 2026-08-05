@@ -6,6 +6,11 @@ import { Notice } from "obsidian";
 const keyOf = (r: { date: string; filePath: string }) =>
 	`${r.date}|${r.filePath}`;
 
+/** Flatten the store's two partitions back into a single array. */
+const flattenLocal = (
+	cur: ReturnType<typeof useStore.getState>,
+): DailyActivity[] => [...cur.historicalActivity, ...cur.todayActivity];
+
 /**
  * Quick shallow no-op check: compare merged result against current store
  * state.  Hits the common case (external write that didn't actually
@@ -22,9 +27,10 @@ function isNoop(
 	newSettings: typeof cur.settings,
 	mergedDaily: DailyActivity[],
 ): boolean {
-	if (mergedDaily.length !== cur.dailyActivity.length) return false;
+	const localDaily = flattenLocal(cur);
+	if (mergedDaily.length !== localDaily.length) return false;
 	const curByKey = new Map(
-		cur.dailyActivity.map((r) => [keyOf(r), r]),
+		localDaily.map((r) => [keyOf(r), r]),
 	);
 	for (const r of mergedDaily) {
 		const c = curByKey.get(keyOf(r));
@@ -48,8 +54,7 @@ function isNoop(
  *   1. loadData() 把外部变更"冻结"在内存里 —— 之后任何写盘都不会丢它
  *   2. 行级合并 dailyActivity:同 key 比总字数,本地独有行直接丢弃
  *   3. 浅快查:合并结果与当前 store 一致则 no-op,跳过 version bump / persist
- *   4. 一次性 setState 替换两块数据;selectCurrentActivity 自动从新数组里
- *      找到(或找不到)对应行
+ *   4. 一次性 setState 替换两块数据
  *   5. 如果当前打开文件的行在外部被删了,清掉 currentFilePath,让下次
  *      ensureActivityExists 自然重建
  *   6. requestPersist
@@ -70,7 +75,7 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 		//    仅外部有 → 拿外部
 		//    仅本地有 → 直接丢弃(尊重外部删除)
 		const externalDaily = newData.stats?.dailyActivity ?? [];
-		const localDaily = cur.dailyActivity;
+		const localDaily = flattenLocal(cur);
 
 		const localByKey = new Map(localDaily.map((r) => [keyOf(r), r]));
 
@@ -94,11 +99,11 @@ export async function handleExternalDataChange(plugin: KeepTheRhythm) {
 			return;
 		}
 
-		// 5. 一次性 setState —— selectCurrentActivity 会在下次读取时
-		//    自动从 mergedDaily 找对应行(找不到就返回 null)
+		// 5. 一次性 setState (分区回 today / historical)
 		useStore.setState({
 			settings: newSettings,
-			dailyActivity: mergedDaily,
+			todayActivity: mergedDaily.filter((r) => r.date === cur.today),
+			historicalActivity: mergedDaily.filter((r) => r.date < cur.today),
 			today: cur.today,
 			todayVersion: cur.todayVersion + 1,
 			historicalVersion: cur.historicalVersion + 1,

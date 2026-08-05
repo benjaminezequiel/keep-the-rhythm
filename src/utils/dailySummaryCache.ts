@@ -1,10 +1,12 @@
 import { DailyActivity } from "@/defs/types";
 import { useStore } from "@/core/store";
-import { formatDate, parseDate } from "./dateUtils";
+import { parseDate, formatDate } from "./dateUtils";
 
 // ─── Partitioned Cache ────────────────────────────────────────────
-// Two independent partitions so that typing (today data changes)
-// doesn't invalidate the historical aggregate map.
+// The store already keeps todayActivity and historicalActivity as two
+// separate arrays, so no filter() scan is required here at all: we read
+// each partition directly and only cache the derived aggregate maps.
+// Typing (today data changes) never has to rebuild the historical map.
 // ──────────────────────────────────────────────────────────────────
 
 // Historical partition: entries with date < today
@@ -24,17 +26,17 @@ let cachedMergedMap: Record<string, number> | null = null;
 /**
  * Get a date → total-words summary map built from partitioned caches.
  *
- * The historical partition (date < today) is rebuilt only when
- * `historicalVersion` changes or the `today` boundary shifts —
- * which rarely happens relative to the typing rate.
+ * The historical partition is rebuilt only when `historicalVersion`
+ * changes or the `today` boundary shifts — which rarely happens relative
+ * to the typing rate.
  *
- * The today partition (date === today) is rebuilt on every keystroke
- * but contains only a handful of entries (k < 10).
+ * The today partition is rebuilt on every keystroke but contains only a
+ * handful of entries (k < 10).
  *
  * Merging the two partitions is O(k).
  */
 export function getDailySummaryMap(): Record<string, number> {
-	const { dailyActivity, today, todayVersion, historicalVersion } =
+	const { todayActivity, historicalActivity, today, todayVersion, historicalVersion } =
 		useStore.getState();
 
 	let changed = false;
@@ -44,8 +46,7 @@ export function getDailySummaryMap(): Record<string, number> {
 		cachedHistoricalToday !== today
 	) {
 		changed = true;
-		const historical = dailyActivity.filter((a) => a.date < today);
-		cachedHistoricalMap = aggregateByDate(historical);
+		cachedHistoricalMap = aggregateByDate(historicalActivity);
 		cachedHistoricalVersion = historicalVersion;
 		cachedHistoricalToday = today;
 	}
@@ -53,7 +54,7 @@ export function getDailySummaryMap(): Record<string, number> {
 	// ── Rebuild today partition if needed ──
 	if (todayVersion !== cachedTodayVersion || cachedTodayDate !== today) {
 		changed = true;
-		cachedTodayEntries = dailyActivity.filter((a) => a.date === today);
+		cachedTodayEntries = todayActivity;
 		cachedTodayVersion = todayVersion;
 		cachedTodayDate = today;
 	}
@@ -78,9 +79,9 @@ export function getDailySummaryMap(): Record<string, number> {
  * or the date boundary shifts.
  */
 export function getTodayEntries(): DailyActivity[] {
-	const { dailyActivity, today, todayVersion } = useStore.getState();
+	const { todayActivity, today, todayVersion } = useStore.getState();
 	if (todayVersion !== cachedTodayVersion || cachedTodayDate !== today) {
-		cachedTodayEntries = dailyActivity.filter((a) => a.date === today);
+		cachedTodayEntries = todayActivity;
 		cachedTodayVersion = todayVersion;
 		cachedTodayDate = today;
 	}

@@ -10,8 +10,6 @@ import { getToday } from "@/utils/dateUtils";
  * What lives here:
  *   • today             — current date string, changes on day rollover
  *   • currentFilePath   — the path of the file Obsidian currently has open.
- *                         The "current activity" row is DERIVED from this
- *                         plus dailyActivity via selectCurrentActivity().
  *                         We never store the row itself: the date is always
  *                         `today`, and the numeric fields live in
  *                         dailyActivity, so a separate copy would just
@@ -22,15 +20,27 @@ import { getToday } from "@/utils/dateUtils";
  *                         (and the next ensureActivityExists() re-creates
  *                         it).  This is the only invariant callers need
  *                         to respect.
- *   • dailyActivity     — the full activity array (the in-memory mirror of
- *                         dailyActivity in data.json).
- *                         Components subscribe via selectors; mutations go
- *                         through `bulkSetDailyActivity` / `upsertActivity` /
- *                         `deleteActivity` / `renameFilePath`.
+ *   • todayActivity     — activity rows with date === today.  On a day
+ *                         rollover `checkDayChange` appends the whole slice
+ *                         to historicalActivity and clears it.
+ *   • historicalActivity — activity rows with date < today.
+ *
+ *                         The two live SEPARATELY in memory so the hot path
+ *                         (typing → upsertActivity on today) never touches
+ *                         the (potentially large) historical array.  They are
+ *                         merged back into a single flat `dailyActivity` only
+ *                         when persisted to data.json (dataPersistence.ts /
+ *                         buildSnapshotFromStore) or read by foreign consumers.
+ *
+ *                         Invariant: historicalActivity rows all have
+ *                         date < today; todayActivity rows all have
+ *                         date === today.
+ *
+ *                         Mutations go through `upsertActivity` / `deleteActivity` /
+ *                         `renameFilePath` which partition by today.
  *   • settings          — the single in-memory source of truth for settings.
- *                         Mutate via updateSettings / mutateSettings which
- *                         trigger requestPersist(). The debounced save
- *                         serializes store → data.json.
+ *                         Mutate via mutateSettings which trigger requestPersist().
+ *                         The debounced save serializes store → data.json.
  *   • persistVersion    — monotonic counter; dataPersistence.ts subscribes
  *                         to it (via subscribeWithSelector) to schedule
  *                         debounced JSON saves.
@@ -54,7 +64,8 @@ export interface KTRState {
 	currentFilePath: string | null;
 	settings: Settings;
 	persistVersion: number;
-	dailyActivity: DailyActivity[];
+	todayActivity: DailyActivity[];
+	historicalActivity: DailyActivity[];
 	todayVersion: number;
 	historicalVersion: number;
 
@@ -62,9 +73,6 @@ export interface KTRState {
 	requestPersist: () => void;
 
 	// ─── Generic actions ───
-	/** Force-refresh today to wall-clock date. Use on boot to guarantee
-	 *  listeners fire at least once even if date hasn't changed. */
-	setToday: () => void;
 	/** Idempotent: only updates if wall-clock date actually differs.
 	 *  Also clears `currentFilePath` so ensureActivityExists() rebuilds
 	 *  a fresh row for the new day. */
@@ -73,18 +81,12 @@ export interface KTRState {
 	 *  for ensuring the (today, filePath) row exists in dailyActivity
 	 *  (events.ts does this via getExistingOrCreateNewEntry first). */
 	setCurrentFilePath: (path: string | null) => void;
-	/** Apply updater to settings, request persist. */
-	updateSettings: (updater: (draft: Settings) => Settings) => Promise<void>;
 	/** Mutate settings draft in-place, request persist. */
 	mutateSettings: (updater: (draft: Settings) => void) => Promise<void>;
 	/** Hydrate store from loaded data.json (used on boot and after external changes). */
 	hydrateFromData: (data: PluginData) => void;
 
 	// ─── Data actions (replace Dexie writes) ───
-	/** Replace the whole dailyActivity array.  Used by initializeDataFromJSON
-	 *  and externalSync.  The current-activity selector recomputes against
-	 *  the new array automatically. */
-	bulkSetDailyActivity: (rows: DailyActivity[]) => void;
 	/** Insert or update by [date+filePath]. */
 	upsertActivity: (row: DailyActivity) => void;
 	/** Remove one row by [date+filePath]. */
@@ -92,22 +94,6 @@ export interface KTRState {
 	/** Update filePath on all matching rows. */
 	renameFilePath: (oldPath: string, newPath: string) => void;
 }
-
-/**
- * Derived selector: returns today's activity row for the currently-open
- * file, or null if no file is open / no row exists yet / today has
- * rolled over.  Re-runs whenever dailyActivity, currentFilePath, or
- * today changes — no manual pointer maintenance required.
- */
-export const selectCurrentActivity = (s: KTRState): DailyActivity | null => {
-	const fp = s.currentFilePath;
-	if (!fp) return null;
-	return (
-		s.dailyActivity.find(
-			(r) => r.date === s.today && r.filePath === fp,
-		) ?? null
-	);
-};
 
 // ─── requestPersist rAF coalescing ───
 // Same semantics as the old emit() which used requestAnimationFrame to
@@ -122,24 +108,26 @@ export const useStore = create<KTRState>()(
 		currentFilePath: null,
 		settings: DEFAULT_SETTINGS,
 		persistVersion: 0,
-		dailyActivity: [],
+		todayActivity: [],
+		historicalActivity: [],
 		todayVersion: 0,
 		historicalVersion: 0,
-
-		setToday: () => {
-			set({ today: getToday() });
-		},
 
 		checkDayChange: () => {
 			const today = getToday();
 			const cur = get();
 			if (today !== cur.today) {
-				// Clear currentFilePath: any cached "row for this file"
-				// now belongs to yesterday, so the selector must return
-				// null until events.ts rebuilds today's row.
+				// Migrate yesterday's today-slice into the historical array.
+				// The old todayActivity rows now all have date === cur.today <
+				// today, satisfying the date < today invariant.
 				set({
 					today,
 					currentFilePath: null,
+					todayActivity: [],
+					historicalActivity: [
+						...cur.historicalActivity,
+						...cur.todayActivity,
+					],
 					todayVersion: cur.todayVersion + 1,
 					historicalVersion: cur.historicalVersion + 1,
 				});
@@ -161,14 +149,6 @@ export const useStore = create<KTRState>()(
 					set((s) => ({ persistVersion: s.persistVersion + 1 }));
 				}
 			});
-		},
-
-		updateSettings: async (updater) => {
-			const cur = get();
-			const next = updater(cur.settings);
-			set({ settings: { ...next } });
-			cur.requestPersist();
-			cur.checkDayChange();
 		},
 
 		mutateSettings: async (updater) => {
@@ -194,43 +174,34 @@ export const useStore = create<KTRState>()(
 
 		hydrateFromData: (data) => {
 			const cur = get();
+			const today = getToday();
+			const flat = [...(data.stats?.dailyActivity || [])];
 			set({
 				settings: { ...DEFAULT_SETTINGS, ...data.settings },
-				dailyActivity: [...(data.stats?.dailyActivity || [])],
-				today: getToday(),
+				todayActivity: flat.filter((a) => a.date === today),
+				historicalActivity: flat.filter((a) => a.date < today),
+				today,
 				todayVersion: cur.todayVersion + 1,
 				historicalVersion: cur.historicalVersion + 1,
 			});
 		},
 
 		// ─── Data actions ───
-		// Note: none of these touch currentFilePath.  The "current
-		// activity" row is derived via selectCurrentActivity() from
-		// (currentFilePath, today, dailyActivity), so a mutation to
-		// dailyActivity automatically refreshes the view.
-
-		bulkSetDailyActivity: (rows) => {
-			const cur = get();
-			set({
-				dailyActivity: rows,
-				todayVersion: cur.todayVersion + 1,
-				historicalVersion: cur.historicalVersion + 1,
-			});
-			get().requestPersist();
-		},
 
 		upsertActivity: (row) => {
 			const cur = get();
-			const idx = cur.dailyActivity.findIndex(
+			const isToday = row.date === cur.today;
+			const arr = isToday ? cur.todayActivity : cur.historicalActivity;
+			const idx = arr.findIndex(
 				(r) => r.date === row.date && r.filePath === row.filePath,
 			);
 			const next =
 				idx === -1
-					? [...cur.dailyActivity, row]
-					: cur.dailyActivity.map((r, i) => (i === idx ? row : r));
-			const isToday = row.date === cur.today;
+					? [...arr, row]
+					: arr.map((r, i) => (i === idx ? row : r));
 			set({
-				dailyActivity: next,
+				todayActivity: isToday ? next : cur.todayActivity,
+				historicalActivity: isToday ? cur.historicalActivity : next,
 				todayVersion: isToday
 					? cur.todayVersion + 1
 					: cur.todayVersion,
@@ -243,34 +214,45 @@ export const useStore = create<KTRState>()(
 
 		deleteActivity: (date, filePath) => {
 			const cur = get();
-			const next = cur.dailyActivity.filter(
-				(r) => !(r.date === date && r.filePath === filePath),
-			);
 			const isToday = date === cur.today;
-			set({
-				dailyActivity: next,
-				todayVersion: isToday
-					? cur.todayVersion + 1
-					: cur.todayVersion,
-				historicalVersion: !isToday
-					? cur.historicalVersion + 1
-					: cur.historicalVersion,
-			});
+			if (isToday) {
+				set({
+					todayActivity: cur.todayActivity.filter(
+						(r) => !(r.date === date && r.filePath === filePath),
+					),
+					todayVersion: cur.todayVersion + 1,
+				});
+			} else {
+				set({
+					historicalActivity: cur.historicalActivity.filter(
+						(r) => !(r.date === date && r.filePath === filePath),
+					),
+					historicalVersion: cur.historicalVersion + 1,
+				});
+			}
 			get().requestPersist();
 		},
 
 		renameFilePath: (oldPath, newPath) => {
 			const cur = get();
-			const next = cur.dailyActivity.map((r) =>
-				r.filePath === oldPath ? { ...r, filePath: newPath } : r,
-			);
-			// If we were tracking the renamed file, follow it.
-			if (cur.currentFilePath === oldPath) {
-				set({ currentFilePath: newPath });
-			}
+			// Update any matching rows in both partitions (a file can have
+			// entries on today AND earlier days).
 			set({
-				dailyActivity: next,
-				historicalVersion: cur.historicalVersion + 1,
+				todayActivity: cur.todayActivity.map((r) =>
+					r.filePath === oldPath ? { ...r, filePath: newPath } : r,
+				),
+				historicalActivity: cur.historicalActivity.map((r) =>
+					r.filePath === oldPath ? { ...r, filePath: newPath } : r,
+				),
+				// If we were tracking the renamed file, follow it.
+				...(cur.currentFilePath === oldPath
+					? { currentFilePath: newPath }
+					: {}),
+				...(cur.historicalActivity.some(
+					(r) => r.filePath === oldPath,
+				)
+					? { historicalVersion: cur.historicalVersion + 1 }
+					: {}),
 			});
 			get().requestPersist();
 		},
