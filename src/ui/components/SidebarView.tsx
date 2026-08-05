@@ -1,4 +1,3 @@
-import { KeyProvider } from "@/utils/useModiferKey";
 import React from "react";
 import { Heatmap } from "./Heatmap";
 import { SlotWrapper } from "./SlotWrapper";
@@ -22,11 +21,9 @@ export const KTRView = () => {
 
   return (
     <div className="sideBarView">
-      <KeyProvider>
-        {showSlots && <SlotWrapper />}
-        {showHeatmap && <Heatmap heatmapConfig={heatmapConfig} />}
-        {showEntries && <Entries />}
-      </KeyProvider>
+      {showSlots && <SlotWrapper />}
+      {showHeatmap && <Heatmap heatmapConfig={heatmapConfig} />}
+      {showEntries && <Entries />}
     </div>
   );
 };
