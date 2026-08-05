@@ -7,6 +7,7 @@ import { setPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
+import { applyHeatmapColorStyles } from "@/ui/styles/applyColorStyles";
 
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
@@ -53,7 +54,7 @@ export default class KeepTheRhythm extends Plugin {
 		this.initializeCommands();
 		this.initializeEvents();
 		this.initializeCodeBlocks();
-		this.applyColorStyles();
+		applyHeatmapColorStyles(this.app.workspace.containerEl);
 		this.addSettingTab(new SettingsTab(this.app, this));
 
 		// The JSON save pipeline subscribes to the store's persistVersion
@@ -80,26 +81,6 @@ export default class KeepTheRhythm extends Plugin {
 	private async flushNow() {
 		await events.flushPendingEditorChange();
 		await this.persistenceScheduler?.flushNow();
-	}
-
-	public applyColorStyles() {
-		const { settings } = useStore.getState();
-		const containerStyle = this.app.workspace.containerEl.style;
-		let light = undefined;
-		let dark = undefined;
-
-		if (settings?.heatmapConfig?.colors) {
-			light = settings.heatmapConfig.colors?.light;
-			dark = settings.heatmapConfig.colors?.dark;
-		}
-
-		if (light && dark) {
-			for (let i = 0; i <= 4; i++) {
-				const key = i as keyof ColorConfig;
-				containerStyle.setProperty(`--light-${i}`, light[key]);
-				containerStyle.setProperty(`--dark-${i}`, dark[key]);
-			}
-		}
 	}
 
 	private initializeCommands() {

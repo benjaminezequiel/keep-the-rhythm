@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS } from "@/defs/types";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { getPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
+import { applyHeatmapColorStyles } from "@/ui/styles/applyColorStyles";
 
 // ------------------------
 // Color pickers for light/dark themes
@@ -43,7 +44,7 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
             };
           }
         });
-        getPlugin().applyColorStyles();
+        applyHeatmapColorStyles(getPlugin().app.workspace.containerEl);
         updateVisibility(`heatmapConfig.colors[${theme}]`, value);
       }),
     );
@@ -63,7 +64,7 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
               };
             }
           });
-          getPlugin().applyColorStyles();
+          applyHeatmapColorStyles(getPlugin().app.workspace.containerEl);
         },
       ).open();
     });
