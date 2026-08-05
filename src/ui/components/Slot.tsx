@@ -1,7 +1,7 @@
 import { getCurrentWeekDates } from "@/utils/dateUtils";
 import React from "react";
 import { setIcon } from "obsidian";
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useCallback } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount, selectTodayVersion, selectHistoricalVersion } from "@/core/dataQueries";
@@ -31,9 +31,9 @@ export const Slot = React.memo(function Slot({
 	const optionType = option;
 	const calcMode = calc;
 
-	const deleteButtonRef = useRef<HTMLButtonElement>(null);
-	const typeButtonRef = useRef<HTMLButtonElement>(null);
-	const calcButtonRef = useRef<HTMLButtonElement>(null);
+	const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
+	const typeButtonRef = useRef<HTMLButtonElement | null>(null);
+	const calcButtonRef = useRef<HTMLButtonElement | null>(null);
 
 	// Reactive slices of the store the slot's value depends on.  Each
 	// selector re-renders the component only when that slice changes,
@@ -66,21 +66,34 @@ export const Slot = React.memo(function Slot({
 		optionType !== TargetCount.LAST_DAY &&
 		optionType !== TargetCount.CURRENT_STREAK;
 
-	useEffect(() => {
-		if (calcButtonRef.current) {
-			const icon = calcMode === "TOTAL" ? "chart-spline" : "sigma";
-			setIcon(calcButtonRef.current, icon);
-		}
-	}, [calcMode, showCalcType]);
+	// Ref callbacks with dataset guard: setIcon only fires once per DOM
+	// node, not on every re-render or effect cycle (React 18 strict mode
+	// double-invokes effects, and refs that are JSX inline functions get
+	// torn down/re-attached on every render).  setIcon is a non-trivial
+	// DOM op (creates an <svg>), so the dedup matters.
+	const setCalcButtonIcon = useCallback(
+		(el: HTMLButtonElement | null) => {
+			if (!el || el.dataset.iconSet === calcMode) return;
+			setIcon(el, calcMode === "TOTAL" ? "chart-spline" : "sigma");
+			el.dataset.iconSet = calcMode;
+		},
+		[calcMode],
+	);
 
-	useEffect(() => {
-		if (typeButtonRef.current) {
-			setIcon(typeButtonRef.current, "list");
-		}
-		if (deleteButtonRef.current) {
-			setIcon(deleteButtonRef.current, "x");
-		}
+	const setTypeButtonIcon = useCallback((el: HTMLButtonElement | null) => {
+		if (!el || el.dataset.iconSet) return;
+		setIcon(el, "list");
+		el.dataset.iconSet = "1";
 	}, []);
+
+	const setDeleteButtonIcon = useCallback(
+		(el: HTMLButtonElement | null) => {
+			if (!el || el.dataset.iconSet) return;
+			setIcon(el, "x");
+			el.dataset.iconSet = "1";
+		},
+		[],
+	);
 
 	const toggleCalculation = () => {
 		const newCalc =
@@ -138,7 +151,10 @@ export const Slot = React.memo(function Slot({
 								>
 									<button
 										className="KTR-min-button"
-										ref={calcButtonRef}
+										ref={(el) => {
+											calcButtonRef.current = el;
+											setCalcButtonIcon(el);
+										}}
 										onClick={() => {
 											toggleCalculation();
 										}}
@@ -149,7 +165,10 @@ export const Slot = React.memo(function Slot({
 							<Tooltip content="Change Type">
 								<button
 									className="KTR-min-button"
-									ref={typeButtonRef}
+									ref={(el) => {
+										typeButtonRef.current = el;
+										setTypeButtonIcon(el);
+									}}
 									onClick={() => {
 										toggleSlotType();
 									}}
@@ -158,7 +177,10 @@ export const Slot = React.memo(function Slot({
 							<Tooltip content="Delete">
 								<button
 									className="KTR-min-button"
-									ref={deleteButtonRef}
+									ref={(el) => {
+										deleteButtonRef.current = el;
+										setDeleteButtonIcon(el);
+									}}
 									onClick={() => {
 										onDelete(index);
 									}}
