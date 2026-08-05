@@ -33,11 +33,7 @@ export const Heatmap = ({
 
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
-	// Subscribing to the two stable partition references (not a merged array)
-	// keeps the hot path from re-rendering on unrelated store changes.
-	const todayActivity = useStore((s) => s.todayActivity);
-	const historicalActivity = useStore((s) => s.historicalActivity);
-
+	
 	const compiledEvaluator = useMemo(() => {
 		if (!query) return null;
 		try {
@@ -82,13 +78,14 @@ export const Heatmap = ({
 	}, [todayVersion, historicalVersion, cellDates]);
 
 	// Filtered path: needs the full array because compiledEvaluator walks
-	// every entry.  This still runs on every keystroke, but only when the
-	// codeBlock actually has a filter — the sidebar is unaffected.
-	// The merge is done lazily inside the memo (cold path), never on the
-	// sidebar's hot path.
+	// every entry.  This still runs on every keystroke when a filter is
+	// set, but only then — the sidebar (no filter) is unaffected.  The
+	// arrays are read lazily via useStore.getState() so the component
+	// itself does not retain references to them.
 	const filteredHeatmapData = useMemo(() => {
 		if (!hasFilter) return null;
 
+		const { historicalActivity, todayActivity } = useStore.getState();
 		const dailyActivity = [...historicalActivity, ...todayActivity];
 		let results: DailyActivity[];
 
@@ -126,8 +123,8 @@ export const Heatmap = ({
 		}
 		return dateMap;
 	}, [
-		historicalActivity,
-		todayActivity,
+		todayVersion,
+		historicalVersion,
 		hasFilter,
 		query,
 		compiledEvaluator,
