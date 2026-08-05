@@ -21,7 +21,6 @@ interface EntriesProps {
 
 interface EntryRowProps {
 	entry: DailyActivity;
-	date: string;
 	onOpenFile: (filePath: string) => void;
 	onDelete: (filePath: string) => void;
 }
@@ -34,7 +33,6 @@ interface EntryRowProps {
  */
 const EntryRow = React.memo(function EntryRow({
 	entry,
-	date,
 	onOpenFile,
 	onDelete,
 }: EntryRowProps) {
@@ -87,32 +85,35 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// Historical path: O(N) filter over dailyActivity, but only runs when
 	// historicalVersion moves.  Keystrokes that only touch today bump
 	// todayVersion - not historicalVersion - so this stays cached.
-	const historicalEntries = useMemo(() => {
-		return getActivityByDate(date);
-	}, [date, historicalVersion]);
+	const historicalEntries = useMemo(() => getActivityByDate(date), [
+		date,
+		historicalVersion,
+	]);
 
 	const rawEntries = isToday ? todayEntries : historicalEntries;
+
+	const matchesFilters = (entry: DailyActivity): boolean => {
+		if (entry.wordsAdded === 0) return false;
+		// "date" type is resolved upstream into the `date` prop, so only
+		// includes/excludes reach this predicate.
+		return (filters ?? []).every((f) => {
+			if (f.type === "includes") return entry.filePath.includes(f.value);
+			if (f.type === "excludes") return !entry.filePath.includes(f.value);
+			return true;
+		});
+	};
 
 	// Filter + sort live in their own useMemo so a `filters` change does
 	// not re-fetch data, and a data change does not re-run the filter
 	// against the same predicate.  The work is cheap (k < 10) but the
 	// reference identity matters for the children below.
-	const entries = useMemo(() => {
-		const hasFilters = filters && filters.length > 0;
-		return rawEntries
-			.filter((entry) => {
-				if (entry.wordsAdded == 0) return false;
-				if (!hasFilters) return true;
-				return filters!.every((f) => {
-					if (f.type === "includes")
-						return entry.filePath?.includes(f.value);
-					if (f.type === "excludes")
-						return !entry.filePath?.includes(f.value);
-					return true;
-				});
-			})
-			.sort((a, b) => b.wordsAdded - a.wordsAdded);
-	}, [rawEntries, filters]);
+	const entries = useMemo(
+		() =>
+			rawEntries
+				.filter(matchesFilters)
+				.sort((a, b) => b.wordsAdded - a.wordsAdded),
+		[rawEntries, filters],
+	);
 
 	const addManualEntry = () => {
 		new ManualEntryModal(getPlugin().app).open();
@@ -174,7 +175,6 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 						<EntryRow
 							key={entry.filePath}
 							entry={entry}
-							date={date}
 							onOpenFile={handleOpenFile}
 							onDelete={handleDelete}
 						/>
