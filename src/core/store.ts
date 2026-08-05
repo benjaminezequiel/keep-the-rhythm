@@ -154,20 +154,11 @@ export const useStore = create<KTRState>()(
 
 		mutateSettings: (updater) => {
 			const cur = get();
-			// Clone deeply enough so that Zustand selectors (which use
-			// Object.is by default) detect changes to nested objects.
-			// Without this, mutating cur.settings in-place and then
-			// shallow-spreading leaves sidebarConfig / slots with the
-			// same references, and subscribers silently miss the update.
-			const newSettings: Settings = {
-				...cur.settings,
-				sidebarConfig: {
-					...cur.settings.sidebarConfig,
-					slots: cur.settings.sidebarConfig.slots.map((s) => ({
-						...s,
-					})),
-				},
-			};
+			// Deep-clone so Zustand's default Object.is change detection sees
+			// new references at every level (sidebarConfig, slots, …) when
+			// the updater mutates `newSettings` in place.  Settings is pure
+			// JSON-serializable data, so structuredClone is safe.
+			const newSettings: Settings = structuredClone(cur.settings);
 			updater(newSettings);
 			set({ settings: newSettings });
 			cur.requestPersist();
