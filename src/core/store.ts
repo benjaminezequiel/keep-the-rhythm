@@ -82,7 +82,7 @@ export interface KTRState {
 	 *  (events.ts does this via getExistingOrCreateNewEntry first). */
 	setCurrentFilePath: (path: string | null) => void;
 	/** Mutate settings draft in-place, request persist. */
-	mutateSettings: (updater: (draft: Settings) => void) => Promise<void>;
+	mutateSettings: (updater: (draft: Settings) => void) => void;
 	/** Hydrate store from loaded data.json (used on boot and after external changes). */
 	hydrateFromData: (data: PluginData) => void;
 
@@ -152,7 +152,7 @@ export const useStore = create<KTRState>()(
 			});
 		},
 
-		mutateSettings: async (updater) => {
+		mutateSettings: (updater) => {
 			const cur = get();
 			// Clone deeply enough so that Zustand selectors (which use
 			// Object.is by default) detect changes to nested objects.

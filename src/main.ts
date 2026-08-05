@@ -194,15 +194,4 @@ export default class KeepTheRhythm extends Plugin {
 		await handleExternalDataChange(this);
 	}
 
-	/**
-	 * Lightweight persist for visual/settings-only changes.
-	 * Re-snapshots the store's current settings (breaking the shared
-	 * reference so selectors detect the change) and schedules a
-	 * debounced JSON save.
-	 */
-	public updateVisualSettingsOnly() {
-		const cur = useStore.getState();
-		useStore.setState({ settings: { ...cur.settings } });
-		cur.requestPersist();
-	}
 }

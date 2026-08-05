@@ -1,7 +1,6 @@
 import { formatDateByMoment } from "@/utils/dateUtils";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { Settings } from "@/defs/types";
-import { debounce } from "@/utils/utils";
 import { useStore } from "@/core/store";
 
 import { SETTINGS_SCHEMA, SettingItem } from "./SettingSchema";
@@ -15,11 +14,9 @@ import {
 import { createTrackedFoldersSetting } from "./TrackedFoldersSetting";
 
 export class SettingsTab extends PluginSettingTab {
-  private plugin: any;
 
   constructor(app: App, plugin: any) {
     super(app, plugin);
-    this.plugin = plugin;
   }
 
   /** Always returns the current store settings reference. */
@@ -37,17 +34,8 @@ export class SettingsTab extends PluginSettingTab {
 
       section.settings.forEach((setting) => {
         this.renderSetting(containerEl, setting);
-        // const currentValue = getByPath(this.settings, setting.key);
-        // updateVisibility(setting.key, currentValue);
       });
     });
-
-    // Extra settings and elements not contemplated by settings setup
-    // // containerEl.createEl("button").setText("Saw or bug or have feedback?");
-    containerEl.createEl("hr");
-    containerEl.createEl("div").innerHTML = `
-			<a href="https://www.buymeacoffee.com/ezben"><img src="https://img.buymeacoffee.com/button-api/?text=Support this plugin!&emoji=&slug=ezben&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" /></a>
-		`;
   }
 
   private renderSetting(containerEl: HTMLElement, config: any) {
@@ -64,8 +52,9 @@ export class SettingsTab extends PluginSettingTab {
       case "toggle":
         setting.addToggle((toggle) =>
           toggle.setValue(!!currentValue).onChange((value) => {
-            setByPath(this.settings, config.key, value);
-            this.plugin.updateVisualSettingsOnly();
+            useStore.getState().mutateSettings((draft) => {
+              setByPath(draft, config.key, value);
+            });
             updateVisibility(config.key, value);
           }),
         );
@@ -76,8 +65,9 @@ export class SettingsTab extends PluginSettingTab {
           text.inputEl.setAttribute("type", "date");
           text.setValue(formatDateByMoment(currentValue)).onChange((value) => {
             const date = value ? new Date(value) : null;
-            setByPath(this.settings, config.key, date);
-            this.plugin.updateVisualSettingsOnly();
+            useStore.getState().mutateSettings((draft) => {
+              setByPath(draft, config.key, date);
+            });
             updateVisibility(config.key, date);
           });
         });
@@ -87,8 +77,9 @@ export class SettingsTab extends PluginSettingTab {
             .setTooltip("Clear date")
             .setDisabled(currentValue !== "")
             .onClick(() => {
-              setByPath(this.settings, config.key, undefined);
-              this.plugin.updateVisualSettingsOnly();
+              useStore.getState().mutateSettings((draft) => {
+                setByPath(draft, config.key, undefined);
+              });
 
               const inputEl = setting.controlEl.querySelector(
                 'input[type="date"]',
@@ -99,10 +90,6 @@ export class SettingsTab extends PluginSettingTab {
         break;
 
       case "number": {
-        const debouncedNumSave = debounce(() => {
-          this.plugin.updateVisualSettingsOnly();
-        }, 400);
-
         setting.addText((text) =>
           text
             .setPlaceholder(config.placeholder ?? "")
@@ -110,8 +97,9 @@ export class SettingsTab extends PluginSettingTab {
             .onChange((value) => {
               const num = parseInt(value);
               if (!isNaN(num)) {
-                setByPath(this.settings, config.key, num);
-                debouncedNumSave();
+                useStore.getState().mutateSettings((draft) => {
+                  setByPath(draft, config.key, num);
+                });
               }
               updateVisibility(config.key, num);
             }),
@@ -125,8 +113,9 @@ export class SettingsTab extends PluginSettingTab {
             .addOptions(config.options)
             .setValue(currentValue)
             .onChange((value) => {
-              setByPath(this.settings, config.key, value);
-              this.plugin.updateVisualSettingsOnly();
+              useStore.getState().mutateSettings((draft) => {
+                setByPath(draft, config.key, value);
+              });
               updateVisibility(config.key, value);
             });
         });

@@ -7,7 +7,6 @@ import { DEFAULT_SETTINGS } from "@/defs/types";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { getPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
-import { debounce } from "@/utils/utils";
 
 // ------------------------
 // Color pickers for light/dark themes
@@ -36,8 +35,14 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
   levelsToShow.forEach((level) => {
     setting.addColorPicker((color) =>
       color.setValue(colorValues[level]).onChange((value) => {
-        colorValues[level] = value;
-        getPlugin().updateVisualSettingsOnly();
+        useStore.getState().mutateSettings((draft) => {
+          if (draft.heatmapConfig.colors) {
+            draft.heatmapConfig.colors[theme] = {
+              ...draft.heatmapConfig.colors[theme],
+              [level]: value,
+            };
+          }
+        });
         getPlugin().applyColorStyles();
         updateVisibility(`heatmapConfig.colors[${theme}]`, value);
       }),
@@ -51,12 +56,13 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
         getPlugin().app,
         `Are you sure you want to reset the ${theme} theme colors to their default values?`,
         () => {
-          const storeSettings = useStore.getState().settings;
-          if (!storeSettings.heatmapConfig.colors) return;
-          storeSettings.heatmapConfig.colors[theme] = {
-            ...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
-          };
-          getPlugin().updateVisualSettingsOnly();
+          useStore.getState().mutateSettings((draft) => {
+            if (draft.heatmapConfig.colors) {
+              draft.heatmapConfig.colors[theme] = {
+                ...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
+              };
+            }
+          });
           getPlugin().applyColorStyles();
         },
       ).open();
@@ -96,9 +102,9 @@ export function createLanguageDropdown(setting: Setting) {
       const preset = LANGUAGE_PRESETS[value];
       if (!preset) return;
       const newScripts = [...preset.scripts];
-      const storeSettings = useStore.getState().settings;
-      storeSettings.enabledLanguages = newScripts;
-      getPlugin().updateVisualSettingsOnly();
+      useStore.getState().mutateSettings((draft) => {
+        draft.enabledLanguages = newScripts;
+      });
       updateVisibility("enabledLanguages", newScripts);
     });
   });
@@ -142,10 +148,6 @@ export function createThresholdSettings(setting: Setting) {
   thresholds.push({ key: "high", placeholder: "1000", label: "High" });
 
   thresholds.forEach(({ key, placeholder }) => {
-    const debouncedSave = debounce(() => {
-      getPlugin().updateVisualSettingsOnly();
-    }, 400);
-
     setting
       .addText((text) => {
         text
@@ -154,14 +156,13 @@ export function createThresholdSettings(setting: Setting) {
           .onChange((value) => {
             const num = parseInt(value);
             if (!isNaN(num)) {
-              const storeSettings = useStore.getState().settings;
-              const currentStops = storeSettings.heatmapConfig.intensityStops;
-              const newStops = { ...currentStops, [key]: num };
-              storeSettings.heatmapConfig = {
-                ...storeSettings.heatmapConfig,
-                intensityStops: newStops,
-              };
-              debouncedSave();
+              useStore.getState().mutateSettings((draft) => {
+                draft.heatmapConfig.intensityStops = {
+                  ...draft.heatmapConfig.intensityStops,
+                  [key]: num,
+                };
+              });
+              const newStops = useStore.getState().settings.heatmapConfig.intensityStops;
               updateVisibility("heatmapConfig.intensityStops", newStops);
             }
           }),
@@ -172,26 +173,23 @@ export function createThresholdSettings(setting: Setting) {
 }
 
 export function changeColorMode(value: string) {
-  const settings = useStore.getState().settings;
   const mode = value.toLowerCase() as HeatmapColorModes;
-
-  // Ensure intensityStops exist
-  const stops = settings.heatmapConfig.intensityStops || {};
+  const stops = useStore.getState().settings.heatmapConfig.intensityStops || {};
   const defaultStops = { low: 100, medium: 500, high: 1000 };
 
-  settings.heatmapConfig = {
-    ...settings.heatmapConfig,
-    intensityMode: mode,
-    intensityStops: {
-      low: stops.low ?? defaultStops.low,
-      medium: stops.medium ?? defaultStops.medium,
-      high: stops.high ?? defaultStops.high,
-    },
-  };
+  useStore.getState().mutateSettings((draft) => {
+    draft.heatmapConfig = {
+      ...draft.heatmapConfig,
+      intensityMode: mode,
+      intensityStops: {
+        low: stops.low ?? defaultStops.low,
+        medium: stops.medium ?? defaultStops.medium,
+        high: stops.high ?? defaultStops.high,
+      },
+    };
+  });
 
   updateThresholdVisibility();
-
-  getPlugin().updateVisualSettingsOnly();
 }
 
 export function updateThresholdVisibility() {
@@ -216,10 +214,6 @@ export function createBackupFolderPathSetting(
 ): void {
   const currentValue = getByPath(useStore.getState().settings, config.key);
 
-  const debouncedSave = debounce(() => {
-    getPlugin().updateVisualSettingsOnly();
-  }, 400);
-
   setting.addText((text) => {
     text
       .setPlaceholder(config.placeholder || "")
@@ -227,12 +221,13 @@ export function createBackupFolderPathSetting(
       .onChange((value) => {
         const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
 
-        setByPath(
-          useStore.getState().settings,
-          "backupConfig.folderPath",
-          cleanPath || ".keep-the-rhythm",
-        );
-        debouncedSave();
+        useStore.getState().mutateSettings((draft) => {
+          setByPath(
+            draft,
+            "backupConfig.folderPath",
+            cleanPath || ".keep-the-rhythm",
+          );
+        });
       });
   });
 }

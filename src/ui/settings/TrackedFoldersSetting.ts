@@ -88,16 +88,16 @@ export class TrackedFoldersModal extends Modal {
       const normalized = raw.trim().replace(/^\/+|\/+$/g, "");
       if (!normalized) return;
 
-      const settings = useStore.getState().settings;
-      const folders = settings.trackedFolders || [];
+      const folders = useStore.getState().settings.trackedFolders || [];
       if (folders.includes(normalized)) {
         new Notice("This folder is already in the tracking scope.");
         return;
       }
 
-      settings.trackedFolders = [...folders, normalized];
+      useStore.getState().mutateSettings((draft) => {
+        draft.trackedFolders = [...folders, normalized];
+      });
       textComponent.setValue("");
-      getPlugin().updateVisualSettingsOnly();
       this.onChanged();
       this.renderFolderList(contentEl);
     };
@@ -160,10 +160,9 @@ export class TrackedFoldersModal extends Modal {
 
       deleteBtn.addEventListener("click", () => {
         const currentFolders = useStore.getState().settings.trackedFolders || [];
-        useStore.getState().settings.trackedFolders = currentFolders.filter(
-          (f) => f !== folder,
-        );
-        getPlugin().updateVisualSettingsOnly();
+        useStore.getState().mutateSettings((draft) => {
+          draft.trackedFolders = currentFolders.filter((f) => f !== folder);
+        });
         this.onChanged();
         this.renderFolderList(contentEl);
       });
@@ -187,7 +186,6 @@ export function createTrackedFoldersSetting(
   setting.addButton((btn) => {
     btn.setButtonText("Manage").setTooltip("Manage tracked folders").onClick(() => {
       const modal = new TrackedFoldersModal(getPlugin().app, () => {
-        getPlugin().updateVisualSettingsOnly();
         renderList();
       });
       modal.open();
