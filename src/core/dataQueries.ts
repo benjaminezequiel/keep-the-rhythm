@@ -254,7 +254,10 @@ export async function getExistingOrCreateNewEntry(
 
 async function createActivityObject(file: TFile, date: string) {
 	const plugin = getPlugin();
-	const content = await plugin.app.vault.read(file);
+	let content = await plugin.app.vault.cachedRead(file);
+	if (content === null) {
+		content = await plugin.app.vault.read(file);
+	}
 	const currentWordCount = getLanguageBasedWordCount(
 		content,
 		useStore.getState().settings.enabledLanguages,
