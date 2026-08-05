@@ -1,6 +1,6 @@
 import { getLeafWithFile } from "../../utils/utils";
 import { getToday } from "@/utils/dateUtils";
-import React from "react";
+import React, { useMemo } from "react";
 import { HeatmapColorModes } from "../../defs/types";
 import * as obsidian from "obsidian";
 import { Tooltip } from "./Tooltip";
@@ -95,15 +95,18 @@ export const HeatmapCell = React.memo(function HeatmapCell({
 		"--intensity": `${intensity}%`,
 	} as React.CSSProperties & Record<string, string | number>;
 
+	const tooltipContent = useMemo(
+		() => (
+			<>
+				<strong>{date}</strong>
+				<div>{count.toLocaleString()} words</div>
+			</>
+		),
+		[date, count],
+	);
+
 	return (
-		<Tooltip
-			content={
-				<>
-					<strong>{date}</strong>
-					<div>{count.toLocaleString()} words</div>
-				</>
-			}
-		>
+		<Tooltip content={tooltipContent}>
 			<div onClick={handleClick} className={classes} style={style}></div>
 		</Tooltip>
 	);
