@@ -175,13 +175,17 @@ export const Heatmap = ({
 		return data;
 	}, [cellDates, heatmapData, getIntensityLevel]);
 
-	const wrapperClasses = `
-		heatmap-wrapper 
+	const wrapperClasses = useMemo(
+		() =>
+			`
+		heatmap-wrapper
 		${heatmapConfig.hideWeekdayLabels ? "hide-weekday-labels" : ""}
 		${heatmapConfig.hideMonthLabels ? "hide-month-labels" : ""}
 		${heatmapConfig.alignLeft ? "align-left" : ""}
 		${isCodeBlock ? "is-code-block-heatmap" : ""}
-	`;
+		`.trim(),
+		[heatmapConfig, isCodeBlock],
+	);
 
 	return (
 		<RadixTooltip.Provider
