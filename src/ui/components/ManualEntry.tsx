@@ -129,11 +129,16 @@ export class FileSuggest extends AbstractInputSuggest<TFile> {
 	}
 
 	getSuggestions(query: string): TFile[] {
+		const queryLower = query.toLowerCase();
 		return this.app.vault
 			.getMarkdownFiles()
-			.filter((file) =>
-				file.path.toLowerCase().includes(query.toLowerCase()),
-			);
+			.reduce<TFile[]>((acc, file) => {
+				if (acc.length >= 20) return acc;
+				if (file.path.toLowerCase().includes(queryLower)) {
+					acc.push(file);
+				}
+				return acc;
+			}, []);
 	}
 
 	renderSuggestion(file: TFile, el: HTMLElement) {
