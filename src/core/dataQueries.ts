@@ -74,9 +74,9 @@ let _rangeCache: {
  * Compute the inclusive date range [startDate, today] and elapsed days
  * for period-based targets. Returns null for non-period targets.
  *
- * Results are cached per-day: once all 6 TargetCount variants are computed
- * for a given today string, subsequent calls are O(1) map lookups.
- * Cache is invalidated when today changes.
+ * Pure date arithmetic — no data reads. Results are cached per day: once a
+ * target's dates are computed for a given today string, subsequent calls
+ * are O(1) map lookups. Invalidated when today changes.
  */
 function getPeriodRange(
 	target: TargetCount,
@@ -145,6 +145,54 @@ function getPeriodRange(
 	return result;
 }
 
+let _sumCache: {
+	today: string;
+	historicalVersion: number;
+	sums: Partial<Record<TargetCount, number>>;
+} = { today: "", historicalVersion: -1, sums: {} };
+
+/**
+ * Sum words over a period target's full range [startDate, today].
+ * Cached by (target, today, historicalVersion): the historical partition
+ * doesn't change on keystrokes, so the O(days) walk (7 / 30 / 365) runs
+ * only when today or historicalVersion changes; per keystroke the cached
+ * total already includes the stable historical part, re-summed cheaply
+ * with today's live overlay below.
+ */
+function getPeriodHistoricalSum(target: TargetCount): number {
+	const { today, historicalVersion } = useStore.getState();
+
+	if (
+		_sumCache.today !== today ||
+		_sumCache.historicalVersion !== historicalVersion
+	) {
+		_sumCache.today = today;
+		_sumCache.historicalVersion = historicalVersion;
+		_sumCache.sums = {};
+	}
+
+	const cached = _sumCache.sums[target];
+	if (cached !== undefined) return cached;
+
+	const range = getPeriodRange(target);
+	if (!range) return 0;
+
+	// Walk [startDate, today) across the historical partition once — today's
+	// live row is untouched so keystrokes never re-enter this loop.
+	const map = getDailySummaryMap();
+	let sum = 0;
+	const start = parseDate(range.startDate);
+	const cursor = new Date(parseDate(today));
+	cursor.setDate(cursor.getDate() - 1);
+	while (cursor >= start) {
+		sum += map[formatDate(cursor)] || 0;
+		cursor.setDate(cursor.getDate() - 1);
+	}
+
+	_sumCache.sums[target] = sum;
+	return sum;
+}
+
 /**
  * Resolve the count for the given target.  Reads everything it needs from
  * the store synchronously.  Uses the partitioned cache for O(1) lookups
@@ -176,35 +224,13 @@ export function getCurrentCount(
 		return 0;
 	}
 
+	// getPeriodSum is cached across keystrokes (historical part is stable);
+	// only today's live row is overlaid here, so typing stays O(1).
 	const map = getDailySummaryMap();
-	const value = sumRangeFromMap(map, range.startDate, today);
+	const value = getPeriodHistoricalSum(target) + (map[today] || 0);
 	return calc === CalculationType.AVG
 		? Math.round(value / range.totalDays)
 		: value;
-}
-
-/**
- * Sum word totals from a pre-aggregated date map over an inclusive date
- * range.  O(rangeDays) — iterates only the requested period (7 / 30 / 365
- * days) via map lookups, regardless of the total map size.
- *
- * Uses a single Date object in-place (no per-iteration allocation or
- * string parsing), with numeric Date comparison for the loop condition.
- */
-function sumRangeFromMap(
-	map: Record<string, number>,
-	startDate: string,
-	endDate: string,
-): number {
-	let sum = 0;
-	const start = parseDate(startDate);
-	const cursor = parseDate(endDate);
-
-	while (cursor >= start) {
-		sum += map[formatDate(cursor)] || 0;
-		cursor.setDate(cursor.getDate() - 1);
-	}
-	return sum;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
