@@ -1,7 +1,6 @@
 import {
 	deleteActivityFromDate,
 	selectHistoricalVersion,
-	selectTodayVersion,
 } from "@/core/dataQueries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
@@ -11,7 +10,6 @@ import { getActivityByDate } from "@/core/dataQueries";
 import { getFileNameWithoutExtension } from "@/utils/utils";
 import { useStore } from "@/core/store";
 import { getPlugin } from "@/core/pluginRegistry";
-import { getTodayEntries } from "@/utils/dailySummaryCache";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
@@ -26,16 +24,10 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	// the calendar rolls over.
 	const today = useStore((s) => s.today);
 	const date = dateProp ?? today;
-	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
 	const isToday = date === today;
 
-	// Today's path: O(1) from the partitioned cache, only refreshes when
-	// todayVersion moves.  The cache returns a stable reference for
-	// unchanged today data, so unrelated re-renders stay free.
-	const todayEntries = useMemo(() => {
-		return getTodayEntries();
-	}, [todayVersion]);
+	const todayEntries = useStore((s) => s.todayActivity);
 
 	// Historical path: O(N) filter over dailyActivity, but only runs when
 	// historicalVersion moves.  Keystrokes that only touch today bump
