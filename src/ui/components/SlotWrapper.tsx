@@ -4,7 +4,7 @@ import React from "react";
 import { CalculationType, SlotConfig, TargetCount } from "@/defs/types";
 import { Slot } from "./Slot";
 import { useStore } from "@/core/store";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef, useCallback, useMemo } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 interface SlotWrapperProps {
@@ -17,23 +17,33 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
   const mutateSettings = useStore((s) => s.mutateSettings);
   const effectiveSlots = isCodeBlock ? slotsProp : storeSlots;
 
-  const [slotsState, setSlotsState] = useState<
-    (SlotConfig & { uuid?: string })[] | undefined
-  >(() => effectiveSlots?.map((slot) => ({ ...slot, uuid: uuidv4() })));
-
+  const uuidMapRef = useRef<Map<number, string>>(new Map());
   const nodeRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>(
     {},
   );
 
-  useEffect(() => {
-    if (isCodeBlock) return;
-    setSlotsState((prev) =>
-      (effectiveSlots || []).map((slot) => ({
-        ...slot,
-        uuid: prev?.find((s) => s.index === slot.index)?.uuid || uuidv4(),
-      })),
-    );
-  }, [effectiveSlots, isCodeBlock]);
+  const slotsWithUuid = useMemo(() => {
+    const next = (effectiveSlots || []).map((slot) => {
+      let uuid = uuidMapRef.current.get(slot.index);
+      if (!uuid) {
+        uuid = uuidv4();
+        uuidMapRef.current.set(slot.index, uuid);
+      }
+      return { ...slot, uuid };
+    });
+    const liveUuids = new Set(next.map((s) => s.uuid));
+    for (const uuid of uuidMapRef.current.values()) {
+      if (!liveUuids.has(uuid)) {
+        delete nodeRefs.current[uuid];
+      }
+    }
+    for (const index of Array.from(uuidMapRef.current.keys())) {
+      if (index >= next.length) {
+        uuidMapRef.current.delete(index);
+      }
+    }
+    return next;
+  }, [effectiveSlots]);
 
   const handleDeleteClick = useCallback(
     (index: number) => {
@@ -46,17 +56,12 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
         });
         draft.sidebarConfig.slots = newSlots;
       });
-      setSlotsState((prevSlots) => {
-        if (!prevSlots) return prevSlots;
-        const slotToDelete = prevSlots[index];
-        return prevSlots.filter((slot) => slot.uuid !== slotToDelete.uuid);
-      });
     },
     [mutateSettings],
   );
 
   const handleAddClick = useCallback(() => {
-    if (slotsState && slotsState?.length >= 10) {
+    if (slotsWithUuid && slotsWithUuid.length >= 10) {
       new Notice("Maximum of 10 slots per view! (at least for now)");
       return;
     }
@@ -69,9 +74,7 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
     mutateSettings((draft) => {
       draft.sidebarConfig.slots.push(newSlot);
     });
-
-    setSlotsState([...(slotsState || []), { ...newSlot, uuid: uuidv4() }]);
-  }, [mutateSettings, slotsState, effectiveSlots]);
+  }, [mutateSettings, slotsWithUuid, effectiveSlots]);
 
   const getNodeRef = useCallback((uuid: string) => {
     if (!nodeRefs.current[uuid]) {
@@ -83,7 +86,7 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
   return (
     <div className="slot__section">
       <TransitionGroup className="slot__list">
-        {slotsState?.map((slot, i) => {
+        {slotsWithUuid?.map((slot, i) => {
           const nodeRef = getNodeRef(slot.uuid!);
           return (
             <CSSTransition
@@ -111,7 +114,7 @@ export const SlotWrapper = ({ slots: slotsProp, isCodeBlock }: SlotWrapperProps)
           className="KTR-add-slot-button"
           onClick={handleAddClick}
           disabled={
-            slotsState && slotsState?.length >= 10 ? true : false
+            slotsWithUuid && slotsWithUuid.length >= 10 ? true : false
           }
         >
           + ADD NEW SLOT
