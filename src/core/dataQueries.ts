@@ -17,48 +17,26 @@ import { TFile } from "obsidian";
 export const selectTodayVersion = (s: KTRState) => s.todayVersion;
 export const selectHistoricalVersion = (s: KTRState) => s.historicalVersion;
 
-/**
- * React selector returning the merged, flattened activity set
- * (historical then today).  Returns a fresh array on every evaluation, so
- * this is intended for cold paths (e.g. the filtered heatmap) that already
- * re-run on historicalVersion/todayVersion; do NOT use it in a component
- * that must stay stable across unrelated re-renders.
- */
-export const selectAllActivity = (s: KTRState) => [
-	...s.historicalActivity,
-	...s.todayActivity,
-];
-
 /* ─────────────────────────────────────────────────────────────────────────
  * Pure read helpers (array → value).
  *
  * ────────────────────────────────────────────────────────────────────── */
 
-/** Merge helper for non-React reads. */
-function getAllActivity(): DailyActivity[] {
-	const { historicalActivity, todayActivity } = useStore.getState();
-	return [...historicalActivity, ...todayActivity];
-}
-
 export function getActivityByDate(
 	date: string,
 ): DailyActivity[] {
-	const { today, todayActivity } = useStore.getState();
+	const { today, todayActivity, historicalActivity } = useStore.getState();
 	if (date === today) return todayActivity;
-	return useStore.getState().historicalActivity.filter((a) => a.date === date);
+	return historicalActivity.filter((a) => a.date === date);
 }
 
 export function getActivityByDateAndFile(
 	date: string,
 	filePath: string,
 ): DailyActivity | undefined {
-	const { today, todayActivity } = useStore.getState();
-	if (date === today) {
-		return todayActivity.find(
-			(a) => a.date === date && a.filePath === filePath,
-		);
-	}
-	return useStore.getState().historicalActivity.find(
+	const { today, todayActivity, historicalActivity } = useStore.getState();
+	const list = date === today ? todayActivity : historicalActivity;
+	return list.find(
 		(a) => a.date === date && a.filePath === filePath,
 	);
 }
