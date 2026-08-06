@@ -14,17 +14,13 @@ let _folderCache: {
 	prefixSlashes: string[];
 } | null = null;
 
-function buildFolderCache(folders: string[] | undefined) {
-	if (!folders || folders.length === 0) {
-		return null;
-	}
-	const exactSet = new Set<string>();
-	const prefixSlashes: string[] = [];
-	for (const prefix of folders) {
-		exactSet.add(prefix);
-		prefixSlashes.push(prefix + "/");
-	}
-	return { folders, exactSet, prefixSlashes };
+function buildFolderCache(folders: string[]): {
+	exactSet: Set<string>;
+	prefixSlashes: string[];
+} {
+	const exactSet = new Set<string>(folders);
+	const prefixSlashes = folders.map(p => p + "/");
+	return { exactSet, prefixSlashes };
 }
 
 /**
@@ -47,9 +43,10 @@ export function isPathTracked(filePath: string): boolean {
 
 	// Rebuild cache only when the trackedFolders reference changes.
 	if (!_folderCache || _folderCache.folders !== folders) {
-		_folderCache = buildFolderCache(folders);
+		_folderCache = { folders, ...buildFolderCache(folders) };
 	}
-	const { exactSet, prefixSlashes } = _folderCache!;
+
+	const { exactSet, prefixSlashes } = _folderCache;
 
 	if (exactSet.has(filePath)) return true;
 	for (let i = 0; i < prefixSlashes.length; i++) {
