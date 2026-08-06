@@ -1,5 +1,4 @@
 import { getLeafWithFile } from "../../utils/utils";
-import { getToday } from "@/utils/dateUtils";
 import React, { useMemo } from "react";
 import { HeatmapColorModes } from "../../defs/types";
 import * as obsidian from "obsidian";
@@ -16,6 +15,7 @@ interface HeatmapCellProps {
 	date: string;
 	mode: HeatmapColorModes;
 	squared?: boolean;
+	isToday: boolean;
 }
 
 /**
@@ -31,6 +31,7 @@ export const HeatmapCell = React.memo(function HeatmapCell({
 	date,
 	mode,
 	squared,
+	isToday,
 }: HeatmapCellProps) {
 	const handleClick = async (_event: React.MouseEvent<HTMLDivElement>) => {
 		const app = getPlugin().app;
@@ -84,8 +85,7 @@ export const HeatmapCell = React.memo(function HeatmapCell({
 	} else if (mode == HeatmapColorModes.LIQUID) {
 		intensityClass = "liquid-intensity";
 	}
-	const isTodayClass =
-		date == getToday() ? "heatmap-square-today" : "";
+	const isTodayClass = isToday ? "heatmap-square-today" : "";
 
 	const isSquaredClass = squared ? "cell-squared" : "cell-rounded";
 

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell } from "@/utils/dateUtils";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, getToday } from "@/utils/dateUtils";
 import { DailyActivity } from "@/defs/types";
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
@@ -157,12 +157,14 @@ export const Heatmap = ({
 		return labels;
 	}, [weeksToShow, baseDateKey]);
 
+	const today = getToday();
 	
 	const cellData = useMemo(() => {
 		const data: {
 			date: string;
 			count: number;
 			intensity: number;
+			isToday: boolean;
 		}[] = [];
 		for (const dateStr of cellDates) {
 			const count = heatmapData[dateStr] ?? 0;
@@ -170,10 +172,11 @@ export const Heatmap = ({
 				date: dateStr,
 				count,
 				intensity: getIntensityLevel(count),
+				isToday: dateStr === today,
 			});
 		}
 		return data;
-	}, [cellDates, heatmapData, getIntensityLevel]);
+	}, [cellDates, heatmapData, getIntensityLevel, today]);
 
 	const wrapperClasses = useMemo(
 		() =>
@@ -235,6 +238,7 @@ export const Heatmap = ({
 									date,
 									count,
 									intensity,
+									isToday,
 								}) => (
 									<HeatmapCell
 										key={date}
@@ -247,6 +251,7 @@ export const Heatmap = ({
 										mode={
 											heatmapConfig.intensityMode
 										}
+										isToday={isToday}
 									/>
 								),
 							)}
