@@ -32,8 +32,6 @@ const filterAstCache = new Map<string, any | null>();
 // Heatmap that depends on heatmapConfig (getIntensityLevel,
 // wrapperClasses, cellData, ...).  The cache key is the trimmed source
 // text; the value carries the parsed AST plus the built HeatmapConfig.
-// Configs are mutated in place (hideMonthLabels, intensityStops, etc.),
-// so we must snapshot immutably before caching.
 const MAX_QUERY_CACHE = 32;
 const queryResultCache = new Map<
 	string,
@@ -110,15 +108,11 @@ function getFilterAst(filterText: string): any | undefined | null {
  * immutable snapshot before caching.
  */
 function buildOptionsConfig(optionsText: string): HeatmapConfig {
-	if (!optionsText) return {} as HeatmapConfig;
-
 	const base = useStore.getState().settings.heatmapConfig;
-	const config: HeatmapConfig = {
-		...base,
-		intensityStops: { ...base.intensityStops },
-	};
+	const config = structuredClone(base);
 	config.hideMonthLabels = false;
 	config.hideWeekdayLabels = false;
+	if (!optionsText) return config;
 
 	const arrayOfLines = optionsText.match(/[^\r\n]+/g);
 	if (!arrayOfLines || arrayOfLines.length === 0) return config;
@@ -181,24 +175,30 @@ function buildOptionsConfig(optionsText: string): HeatmapConfig {
 }
 
 
+// Track the heatmapConfig reference so we can detect when settings change
+// and invalidate the query result cache.
+let cachedHeatmapConfigRef: HeatmapConfig | undefined = undefined;
+
 export function parseQueryToJSEP(query: string) {
+	const currentHeatmapConfig = useStore.getState().settings.heatmapConfig;
+	// Invalidate cache when settings.heatmapConfig changes.
+	if (currentHeatmapConfig !== cachedHeatmapConfigRef) {
+		queryResultCache.clear();
+		cachedHeatmapConfigRef = currentHeatmapConfig;
+	}
+
 	const trimmed = query.trim();
 	if (queryResultCache.has(trimmed)) {
-		return queryResultCache.get(trimmed);
+		return structuredClone(queryResultCache.get(trimmed));
 	}
 
 	const { filterText, optionsText } = splitFilterAndOptions(query);
 	const parsed = getFilterAst(filterText);
 	const options = buildOptionsConfig(optionsText);
 
-	// Snapshot immutably before caching so a future mutation of a later
-	// cache entry does not corrupt an earlier one.
 	const result = {
 		filter: parsed,
-		options: {
-			...options,
-			intensityStops: { ...options.intensityStops },
-		},
+		options: options,
 	};
 
 	if (queryResultCache.size >= MAX_QUERY_CACHE) {
@@ -230,43 +230,30 @@ export function compileEvaluator(node: any): (entry: DailyActivity) => boolean {
 	};
 }
 
+function stripTrailingComment(line: string): string {
+	const idx = line.indexOf("//");
+	return idx === -1 ? line : line.slice(0, idx).trimEnd();
+}
+
 function splitFilterAndOptions(input: string) {
-	const lines = input.split("\n");
+	const lines = input
+		.split("\n")
+		.map(line => stripTrailingComment(line));
 	const sectionHeaderPattern = /^[A-Z_]+(?:\s|$)/;
 
-	let filterLines: string[] = [];
-	let optionsLines: string[] = [];
-
-	let inOptions = false;
-
-	for (const line of lines) {
-		const trimmedLine = line.trim();
-
-		// Skip empty lines
-		if (!trimmedLine) {
-			if (inOptions) {
-				optionsLines.push(line);
-			} else {
-				filterLines.push(line);
-			}
-			continue;
-		}
-
-		// Check if this line starts a new section (all caps words)
-		if (!inOptions && sectionHeaderPattern.test(trimmedLine)) {
-			inOptions = true;
-		}
-
-		if (inOptions) {
-			optionsLines.push(line);
-		} else {
-			filterLines.push(line);
+	// Find the first section-header line; everything before it is filter,
+	// everything from it onward is options.
+	let splitIndex = lines.length;
+	for (let i = 0; i < lines.length; i++) {
+		if (sectionHeaderPattern.test(lines[i].trim())) {
+			splitIndex = i;
+			break;
 		}
 	}
 
 	return {
-		filterText: filterLines.join("\n").trim(),
-		optionsText: optionsLines.join("\n").trim(),
+		filterText: lines.slice(0, splitIndex).join("\n").trim(),
+		optionsText: lines.slice(splitIndex).join("\n").trim(),
 	};
 }
 
