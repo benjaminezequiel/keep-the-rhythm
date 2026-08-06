@@ -31,6 +31,10 @@ export const Heatmap = ({
 		: undefined;
 	const baseDateKey = heatmapConfig.startDate ?? null;
 
+	// Primitive key for the grid shape. When no startDate is given,
+	// getDateForCell reads the current week, so the key must also track today.
+	const gridKey = baseDateKey ? `${weeksToShow}:${baseDateKey}` : `${weeksToShow}:${getToday()}`;
+
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
 	
@@ -59,9 +63,9 @@ export const Heatmap = ({
 			}
 		}
 		return dates;
-	}, [weeksToShow, baseDateKey]);
+	}, [gridKey]);
 
-	const cellDatesSet = useMemo(() => new Set(cellDates), [cellDates]);
+	const cellDatesSet = useMemo(() => new Set(cellDates), [gridKey]);
 
 	// No-filter path: depends ONLY on version numbers + grid shape.  The
 	// underlying getDailySummaryMap cache is version-keyed, so a stable
@@ -75,7 +79,7 @@ export const Heatmap = ({
 			filteredMap[date] = fullMap[date] || 0;
 		}
 		return filteredMap;
-	}, [todayVersion, historicalVersion, cellDates]);
+	}, [todayVersion, historicalVersion, gridKey]);
 
 	// Filtered path: needs the full array because compiledEvaluator walks
 	// every entry.  This still runs on every keystroke when a filter is
@@ -128,7 +132,7 @@ export const Heatmap = ({
 		hasFilter,
 		query,
 		compiledEvaluator,
-		cellDatesSet,
+		gridKey,
 	]);
 
 	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;
@@ -176,7 +180,7 @@ export const Heatmap = ({
 			});
 		}
 		return data;
-	}, [cellDates, heatmapData, getIntensityLevel, today]);
+	}, [gridKey, heatmapData, getIntensityLevel, today]);
 
 	const wrapperClasses = useMemo(
 		() =>
