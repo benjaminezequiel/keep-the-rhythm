@@ -158,7 +158,7 @@ export function getByPath(obj: any, path: string) {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);
 }
 
-// This has to change the whole object cause mutating nested properties won't trigger rerenders for the relevant components
+// Directly mutates the nested property at the given dotted path.
 export function setByPath(obj: any, path: string, value: any) {
   const keys = path.split(".");
   const last = keys.pop()!;
