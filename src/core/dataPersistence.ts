@@ -2,7 +2,7 @@ import { PluginData } from "@/defs/types";
 import { useStore } from "./store";
 import { Plugin } from "obsidian";
 
-const JSON_DEBOUNCE_TIME = 1000;
+const JSON_DEBOUNCE_TIME = 2000;
 
 /**
  * Persist ALL in-memory state (settings, streak, dailyActivity) to
