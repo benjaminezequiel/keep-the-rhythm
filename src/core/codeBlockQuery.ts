@@ -23,8 +23,22 @@ jsep.addBinaryOp("CONTAINS", 6);
 // change would re-parse and yield a fresh AST reference, which then
 // invalidated Heatmap's compiledEvaluator useMemo on every keystroke.
 // 256 entries is plenty for any realistic vault.
-const MAX_AST_CACHE = 256;
+const MAX_AST_CACHE = 32;
 const filterAstCache = new Map<string, any | null>();
+
+// Result cache for the full { filter, options } pair returned by
+// parseQueryToJSEP.  Without this, every markdown re-render creates a
+// new config object reference, which invalidates every useMemo in
+// Heatmap that depends on heatmapConfig (getIntensityLevel,
+// wrapperClasses, cellData, ...).  The cache key is the trimmed source
+// text; the value carries the parsed AST plus the built HeatmapConfig.
+// Configs are mutated in place (hideMonthLabels, intensityStops, etc.),
+// so we must snapshot immutably before caching.
+const MAX_QUERY_CACHE = 32;
+const queryResultCache = new Map<
+	string,
+	{ filter: any; options: HeatmapConfig }
+>();
 
 export function parseSlotQuery(query: string): SlotConfig[] {
 	// returns a SlotConfig[]?
@@ -78,7 +92,6 @@ function getFilterAst(filterText: string): any | undefined | null {
 	} catch (error) {
 		console.error("Error parsing filter expression:", error);
 		console.error("Normalized query:", normalized);
-		// null = "valid but empty filter that matches everything"
 		ast = null;
 	}
 
@@ -91,15 +104,14 @@ function getFilterAst(filterText: string): any | undefined | null {
 	return ast;
 }
 
-export function parseQueryToJSEP(query: string) {
-	const { filterText, optionsText } = splitFilterAndOptions(query);
-	const parsed = getFilterAst(filterText);
+/**
+ * Parse an options block into a complete HeatmapConfig, overriding the
+ * base settings from store.  Caller is responsible for the final
+ * immutable snapshot before caching.
+ */
+function buildOptionsConfig(optionsText: string): HeatmapConfig {
+	if (!optionsText) return {} as HeatmapConfig;
 
-	// Build a mutable copy of the user's heatmap config.  The original
-	// was being deep-cloned via structuredClone on every call; we only
-	// mutate hideMonthLabels, hideWeekdayLabels, intensityStops fields,
-	// intensityMode, roundCells, startDate, and numberOfWeeks — so a
-	// shallow clone + one nested clone of intensityStops is sufficient.
 	const base = useStore.getState().settings.heatmapConfig;
 	const config: HeatmapConfig = {
 		...base,
@@ -108,84 +120,96 @@ export function parseQueryToJSEP(query: string) {
 	config.hideMonthLabels = false;
 	config.hideWeekdayLabels = false;
 
-	if (optionsText) {
-		const arrayOfLines = optionsText.match(/[^\r\n]+/g);
-		if (arrayOfLines && arrayOfLines.length >= 1) {
-			/** defaults to user settings to define heatmapconfig */
+	const arrayOfLines = optionsText.match(/[^\r\n]+/g);
+	if (!arrayOfLines || arrayOfLines.length === 0) return config;
 
-			for (let i = 0; i < arrayOfLines.length; i++) {
-				const line = arrayOfLines[i];
-				const firstSpace = line.indexOf(" ");
-				let keyword;
-				let details;
+	for (const line of arrayOfLines) {
+		const firstSpace = line.indexOf(" ");
+		const keyword = firstSpace !== -1 ? line.slice(0, firstSpace) : line;
+		const details = firstSpace !== -1 ? line.slice(firstSpace + 1) : "";
 
-				if (firstSpace !== -1) {
-					keyword = line.slice(0, firstSpace);
-					details = line.slice(firstSpace + 1);
-				} else {
-					keyword = line;
-					details = "";
+		switch (keyword) {
+			case "OPTIONS":
+				break;
+			case "HIDE": {
+				if (details) {
+					for (const item of details.replace(/ /g, "").split(",")) {
+						if (item === "month_labels") config.hideMonthLabels = true;
+						else if (item === "weekday_labels")
+							config.hideWeekdayLabels = true;
+					}
 				}
-
-				switch (keyword) {
-					case "OPTIONS":
-						break;
-					case "HIDE":
-						if (details) {
-							const items = details.replace(/ /g, "").split(",");
-							for (let j = 0; j < items.length; j++) {
-								switch (items[j]) {
-									case "month_labels":
-										config.hideMonthLabels = true;
-										break;
-									case "weekday_labels":
-										config.hideWeekdayLabels = true;
-										break;
-								}
-							}
-						}
-						break;
-					case "COLORING_MODE":
-						if (details && isValidColoringMode(details.trim())) {
-							config.intensityMode = details as HeatmapColorModes;
-						}
-						break;
-					case "STOPS":
-						if (details) {
-							const stops = details.replace(/ /g, "").split(",");
-							if (stops.length == 1) {
-								config.intensityStops.high = Number(stops[0]);
-							} else if (stops.length == 2) {
-								config.intensityStops.low = Number(stops[0]);
-								config.intensityStops.high = Number(stops[1]);
-							} else if (stops.length == 3) {
-								config.intensityStops.low = Number(stops[0]);
-								config.intensityStops.medium = Number(stops[1]);
-								config.intensityStops.high = Number(stops[2]);
-							}
-						}
-						break;
-					case "SQUARED_CELLS":
-						config.roundCells = false;
-						break;
-					case "START_DATE":
-						config.startDate = details;
-						break;
-					case "ROUNDED_CELLS":
-						config.roundCells = true;
-						break;
-					case "WEEKS":
-						config.numberOfWeeks = Number(details) || 20;
-				}
+				break;
 			}
+			case "COLORING_MODE": {
+				if (details && isValidColoringMode(details.trim())) {
+					config.intensityMode = details as HeatmapColorModes;
+				}
+				break;
+			}
+			case "STOPS": {
+				if (details) {
+					const stops = details.replace(/ /g, "").split(",");
+					if (stops.length === 1) {
+						config.intensityStops.high = Number(stops[0]);
+					} else if (stops.length === 2) {
+						config.intensityStops.low = Number(stops[0]);
+						config.intensityStops.high = Number(stops[1]);
+					} else if (stops.length === 3) {
+						config.intensityStops.low = Number(stops[0]);
+						config.intensityStops.medium = Number(stops[1]);
+						config.intensityStops.high = Number(stops[2]);
+					}
+				}
+				break;
+			}
+			case "SQUARED_CELLS":
+				config.roundCells = false;
+				break;
+			case "START_DATE":
+				config.startDate = details;
+				break;
+			case "ROUNDED_CELLS":
+				config.roundCells = true;
+				break;
+			case "WEEKS":
+				config.numberOfWeeks = Number(details) || 20;
 		}
 	}
 
-	return {
-		filter: parsed,
-		options: config,
-	};
+	return config;
 }
+
+
+export function parseQueryToJSEP(query: string) {
+	const trimmed = query.trim();
+	if (queryResultCache.has(trimmed)) {
+		return queryResultCache.get(trimmed);
+	}
+
+	const { filterText, optionsText } = splitFilterAndOptions(query);
+	const parsed = getFilterAst(filterText);
+	const options = buildOptionsConfig(optionsText);
+
+	// Snapshot immutably before caching so a future mutation of a later
+	// cache entry does not corrupt an earlier one.
+	const result = {
+		filter: parsed,
+		options: {
+			...options,
+			intensityStops: { ...options.intensityStops },
+		},
+	};
+
+	if (queryResultCache.size >= MAX_QUERY_CACHE) {
+		const firstKey = queryResultCache.keys().next().value;
+		if (firstKey !== undefined) queryResultCache.delete(firstKey);
+	}
+	queryResultCache.set(trimmed, result);
+	return result;
+}
+
+
 
 function normalizeLogicalOperators(input: string): string {
 	return input.replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||");
