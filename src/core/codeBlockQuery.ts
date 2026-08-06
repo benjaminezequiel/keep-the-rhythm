@@ -189,7 +189,7 @@ export function parseQueryToJSEP(query: string) {
 
 	const trimmed = query.trim();
 	if (queryResultCache.has(trimmed)) {
-		return structuredClone(queryResultCache.get(trimmed));
+		return queryResultCache.get(trimmed);
 	}
 
 	const { filterText, optionsText } = splitFilterAndOptions(query);
