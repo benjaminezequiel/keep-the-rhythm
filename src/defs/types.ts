@@ -62,6 +62,12 @@ export enum HeatmapColorModes {
 
 export interface Settings {
 	dailyWritingGoal: number; // created as setting, not used anywhere yet
+	/**
+	 * Debounce delay for sampling editor content on keystroke, in seconds.
+	 * After the user stops typing for this long, the current editor state
+	 * is read and word deltas are computed.
+	 */
+	editorChangeSampleDelay: number;
 	enabledLanguages: Language[]; // guides the definition of REGEXes for word counting
 	/**
 	 * Optional list of folder path prefixes. When non-empty, only files whose
@@ -129,6 +135,7 @@ export interface HeatmapConfig {
 export const DEFAULT_SETTINGS: Settings = {
 	enabledLanguages: ["LATIN"],
 	dailyWritingGoal: 500,
+	editorChangeSampleDelay: 2,
 	trackedFolders: [],
 	startOfTheWeek: "SUNDAY",
 	heatmapNavigation: true,

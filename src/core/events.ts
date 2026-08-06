@@ -19,7 +19,6 @@ let isUpdatingActivity = false;
  * sample until the next natural pause. Pending samples are flushed on
  * file switch and on unload so no deltas are lost.
  */
-const EDITOR_CHANGE_SAMPLE_DELAY = 2000; // ms
 
 let editorChangeTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingEditor: Editor | null = null;
@@ -27,6 +26,11 @@ let pendingInfo: any = null;
 
 // Convenience accessor — avoids importing useStore directly in every function.
 const store = () => useStore.getState();
+
+function getEditorChangeDelayMs(): number {
+	let delay = Math.max(store().settings.editorChangeSampleDelay ?? 2, 0.5);
+	return delay * 1000;
+}
 
 // This handles file switches and midnight rollovers.
 async function ensureActivityExists(file: TFile) {
@@ -74,10 +78,11 @@ export async function handleEditorChange(
 	pendingInfo = info;
 
 	if (editorChangeTimer) clearTimeout(editorChangeTimer);
+	const delayMs = getEditorChangeDelayMs();
 	editorChangeTimer = setTimeout(() => {
 		editorChangeTimer = null;
 		void runPendingEditorChange();
-	}, EDITOR_CHANGE_SAMPLE_DELAY);
+	}, delayMs);
 }
 
 /**
