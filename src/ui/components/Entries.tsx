@@ -115,9 +115,16 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 		[rawEntries, filters],
 	);
 
-	const addManualEntry = () => {
+	const addManualEntry = useCallback(() => {
 		new ManualEntryModal(getPlugin().app).open();
-	};
+	}, []);
+
+	const setManualEntryIcon = useCallback((el: HTMLButtonElement | null) => {
+		if (el && !el.dataset.iconSet) {
+			setIcon(el, "list-plus");
+			el.dataset.iconSet = "1";
+		}
+	}, []);
 
 	const handleOpenFile = useCallback(async (filePath: string) => {
 		const app = getPlugin().app;
@@ -160,12 +167,7 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 					<Tooltip content="Add or Update Entry">
 						<button
 							className="todayEntries__manual-entry"
-							ref={(el) => {
-								if (el && !el.dataset.iconSet) {
-									setIcon(el, "list-plus");
-									el.dataset.iconSet = "1";
-								}
-							}}
+							ref={setManualEntryIcon}
 							onMouseDown={addManualEntry}
 						/>
 					</Tooltip>
