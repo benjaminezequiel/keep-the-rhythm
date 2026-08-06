@@ -1,11 +1,12 @@
 import {
 	deleteActivityFromDate,
+	getActivityByDate,
 	selectHistoricalVersion,
+	selectTodayVersion,
 } from "@/core/dataQueries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { getActivityByDate } from "@/core/dataQueries";
 import { getFileNameWithoutExtension } from "@/utils/utils";
 import { useStore } from "@/core/store";
 import { getPlugin } from "@/core/pluginRegistry";
@@ -78,9 +79,16 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	const today = useStore((s) => s.today);
 	const date = dateProp ?? today;
 	const historicalVersion = useStore(selectHistoricalVersion);
+	const todayVersion = useStore(selectTodayVersion);
 	const isToday = date === today;
 
-	const todayEntries = useStore((s) => s.todayActivity);
+	// Subscribe to the version counter, not the array reference.  This way
+	// every keystroke that only touches todayActivity bumps todayVersion and
+	// forces a new memoized result — but Entries itself does NOT re-run its
+	// entire reconcile tree for each intermediate state.
+	const todayEntries = useMemo(() => useStore.getState().todayActivity, [
+		todayVersion,
+	]);
 
 	// Historical path: O(N) filter over dailyActivity, but only runs when
 	// historicalVersion moves.  Keystrokes that only touch today bump
