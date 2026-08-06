@@ -102,19 +102,20 @@ export function getStreak(): number {
 	const key = `${today}|${todayVersion}|${historicalVersion}|${goal}`;
 	if (cachedStreakKey === key) return cachedStreak;
 
+	// Reads getDailySummaryMap, whose historical partition is only
+	// rebuilt when historicalVersion, today, or goal changes — not on
+	// every keystroke.
+	const dailySummaryMap = getDailySummaryMap();
+
 	// Historical streak (from yesterday backwards) — cached separately
 	// by (today, historicalVersion, goal) so it persists across keystrokes.
 	const histKey = `${today}|${historicalVersion}|${goal}`;
 	if (cachedHistoricalStreakKey !== histKey) {
-		// Reads getDailySummaryMap, whose historical partition is only
-		// rebuilt when historicalVersion, today, or goal changes — not on
-		// every keystroke.
-		const map = getDailySummaryMap();
 		cachedHistoricalStreak = 0;
 		const cursor = 	parseDate(today);
 		cursor.setDate(cursor.getDate() - 1);
 		while (true) {
-			const words = map[formatDate(cursor)];
+			const words = dailySummaryMap[formatDate(cursor)];
 			if (words === undefined || words < goal) break;
 			cachedHistoricalStreak++;
 			cursor.setDate(cursor.getDate() - 1);
@@ -122,7 +123,7 @@ export function getStreak(): number {
 		cachedHistoricalStreakKey = histKey;
 	}
 
-	const isTodayStreak = countTodayWordsAdded() >= goal;
+	const isTodayStreak = dailySummaryMap[today] >= goal;
 	
 	cachedStreak = cachedHistoricalStreak + (isTodayStreak ? 1 : 0);
 	cachedStreakKey = key;
