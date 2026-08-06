@@ -191,16 +191,17 @@ export const useStore = create<KTRState>()(
 				idx === -1
 					? [...arr, row]
 					: arr.map((r, i) => (i === idx ? row : r));
-			set({
-				todayActivity: isToday ? next : cur.todayActivity,
-				historicalActivity: isToday ? cur.historicalActivity : next,
-				todayVersion: isToday
-					? cur.todayVersion + 1
-					: cur.todayVersion,
-				historicalVersion: !isToday
-					? cur.historicalVersion + 1
-					: cur.historicalVersion,
-			});
+			if (isToday) {
+				set({
+					todayActivity: next,
+					todayVersion: cur.todayVersion + 1,
+				});
+			} else {
+				set({
+					historicalActivity: next,
+					historicalVersion: cur.historicalVersion + 1,
+				});
+			}
 			get().requestPersist();
 		},
 
