@@ -1,8 +1,6 @@
 import { ManualEntryModal } from "./ui/components/ManualEntry";
 import { Plugin, TFile, TAbstractFile, moment as _moment } from "obsidian";
 
-import { ColorConfig } from "@/defs/types";
-
 import { setPlugin } from "@/core/pluginRegistry";
 import { useStore } from "@/core/store";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
@@ -14,7 +12,7 @@ import * as codeBlocks from "@/core/codeBlocks";
 import { activateSidebarView } from "@/core/commands";
 import { backupData } from "@/core/backup";
 import {
-	buildSnapshotFromStore,
+	preparePersistData,
 	setupPersistenceScheduling,
 	PersistenceScheduler,
 } from "@/core/dataPersistence";
@@ -162,7 +160,7 @@ export default class KeepTheRhythm extends Plugin {
 
 		// Back up.  No DB to clear — the in-memory store is
 		// garbage-collected with the plugin.
-		await backupData(buildSnapshotFromStore(), this.app);
+		await backupData(preparePersistData(), this.app);
 
 		// Reset the module-level partitioned cache so stale data doesn't
 		// leak into the next plugin load cycle.

@@ -4,7 +4,7 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell } from "@/utils/dateUtils";
 import { formatDate, getToday } from "@/utils/dateUtils";
-import { DailyActivity } from "@/defs/types";
+import { ActivityRecord, DayActivityMap } from "@/defs/types";
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
@@ -65,8 +65,6 @@ export const Heatmap = ({
 		return dates;
 	}, [gridKey]);
 
-	const cellDatesSet = useMemo(() => new Set(cellDates), [gridKey]);
-
 	// No-filter path: depends ONLY on version numbers + grid shape.  The
 	// underlying getDailySummaryMap cache is version-keyed, so a stable
 	// dailyActivity reference is irrelevant here.  This is the hot path
@@ -81,50 +79,49 @@ export const Heatmap = ({
 		return filteredMap;
 	}, [todayVersion, historicalVersion, gridKey]);
 
-	// Filtered path: needs the full array because compiledEvaluator walks
-	// every entry.  This still runs on every keystroke when a filter is
-	// set, but only then — the sidebar (no filter) is unaffected.  The
-	// arrays are read lazily via useStore.getState() so the component
-	// itself does not retain references to them.
+	// Filtered path: iterate ONLY the days inside the visible grid
+	// (cellDates), never the full history.  This still runs on every
+	// keystroke when a filter is set, but only those days are walked —
+	// the work is O(weeksToShow × files-per-day) instead of O(all rows).
 	const filteredHeatmapData = useMemo(() => {
 		if (!hasFilter) return null;
 
-		const { historicalActivity, todayActivity } = useStore.getState();
-		const dailyActivity = [...historicalActivity, ...todayActivity];
-		let results: DailyActivity[];
+		const { days } = useStore.getState();
+		const dateMap: Record<string, number> = {};
 
-		if (
+		const isStartsWith =
 			query?.type === "BinaryExpression" &&
 			(query?.operator === "starts_with" ||
-				query?.operator === "STARTS_WITH")
-		) {
-			const value = query.right.value;
-			if (typeof value === "string") {
-				const prefix = value.startsWith("/")
-					? value.substring(1)
-					: value;
-				results = dailyActivity.filter((e) =>
-					cellDatesSet.has(e.date) &&
-					e.filePath.startsWith(prefix),
-				);
-			} else {
-				results = [];
+				query?.operator === "STARTS_WITH");
+		const prefix =
+			isStartsWith && typeof query.right.value === "string"
+				? query.right.value.startsWith("/")
+					? query.right.value.substring(1)
+					: query.right.value
+				: null;
+
+		const visitDay = (date: string, day: DayActivityMap | undefined) => {
+			if (!day) return;
+			for (const [filePath, wordsAdded] of Object.entries(day)) {
+				let matches: boolean;
+				if (prefix !== null) {
+					matches = filePath.startsWith(prefix);
+				} else if (compiledEvaluator) {
+					const row: ActivityRecord = { date, filePath, wordsAdded };
+					matches = compiledEvaluator(row);
+				} else {
+					matches = true;
+				}
+				if (matches) {
+					dateMap[date] = (dateMap[date] || 0) + wordsAdded;
+				}
 			}
-		} else if (compiledEvaluator) {
-			results = dailyActivity.filter((e) =>
-				cellDatesSet.has(e.date) && compiledEvaluator(e),
-			);
-		} else {
-			results = dailyActivity.filter((e) =>
-				cellDatesSet.has(e.date),
-			);
+		};
+
+		for (const date of cellDates) {
+			visitDay(date, days[date]);
 		}
 
-		const dateMap: Record<string, number> = {};
-		for (const entry of results) {
-			dateMap[entry.date] =
-				(dateMap[entry.date] || 0) + entry.wordsAdded;
-		}
 		return dateMap;
 	}, [
 		todayVersion,
@@ -133,6 +130,7 @@ export const Heatmap = ({
 		query,
 		compiledEvaluator,
 		gridKey,
+		cellDates,
 	]);
 
 	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;

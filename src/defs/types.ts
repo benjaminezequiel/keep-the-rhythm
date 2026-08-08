@@ -1,4 +1,48 @@
-export interface DailyActivity {
+/**
+ * Virtual activity row: the "object-shaped" view of a (date, filePath)
+ * activity entry used by the UI and the codeblock query engine.  It is
+ * never stored as-is; the persisted form is numeric maps (see
+ * `DayActivityMap` / `PersistedBaselines` below) encoded by statsCodec.ts.
+ */
+export interface ActivityRecord {
+	date: string;
+	filePath: string;
+	wordsAdded: number;
+}
+
+/**
+ * One day's activity in memory/on disk: filePath -> words added that day.
+ */
+export type DayActivityMap = Record<string, number>;
+
+/**
+ * All activity days keyed by date (docs: today included).  The date's map
+ * is the same shape regardless of whether it is today or a past day —
+ * nothing distinguishes "live" rows at the storage level; the live anchor
+ * (starting word count) lives separately in `todayBaselines`.
+ */
+export type DaysMap = Record<string, DayActivityMap>;
+
+/**
+ * Persisted baselines for the CURRENT day only (`stats.todayBaselines`).
+ *
+ * The baseline of a file is its word count at the first moment it was
+ * touched today; live deltas are computed as `editorCount - baseline`.
+ * Once a day rolls over the baselines become dead weight and are
+ * discarded (`day` lets the loader detect a stale copy, e.g. when the
+ * app slept through midnight).
+ */
+export interface PersistedBaselines {
+	/** Date the baselines were recorded. */
+	day: string;
+	/** filePath -> initial word count of the file for that day. */
+	baselines: Record<string, number>;
+}
+
+/**
+ * Legacy v1.x row shape. Only read during migration to the `days` format.
+ */
+export interface LegacyActivityData {
 	date: string;
 	filePath: string;
 	wordCountStart: number;
@@ -106,12 +150,21 @@ export interface PluginData {
 	migratedPreviousVersion?: boolean;
 	schema?: "0.2" | "0.3" | string;
 	stats?: {
-		dailyActivity: DailyActivity[];
+		/**
+		 * date -> filePath -> words added that day. Includes the current
+		 * day; yesterday-and-older rows only carry the added count (the
+		 * per-file wordCountStart lives exclusively in `todayBaselines`).
+		 */
+		days?: Record<string, DayActivityMap>;
+		/** Baselines for today's live files (see PersistedBaselines). */
+		todayBaselines?: PersistedBaselines;
+		/** Legacy v1.x storage — migrated into `days` on load. */
+		dailyActivity?: LegacyActivityData[];
 	};
 }
 
 export const STARTING_STATS = {
-	dailyActivity: [],
+	days: {},
 };
 
 export interface HeatmapConfig {

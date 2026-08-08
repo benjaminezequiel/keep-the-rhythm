@@ -32,21 +32,27 @@ function getEditorChangeDelayMs(): number {
 	return delay * 1000;
 }
 
+// A file is "live" — already set up this session — iff today's row AND
+// its baseline exist.  Unlike a pointer to the "current file", this is
+// derived directly from the data, so the guard naturally re-fires after a
+// midnight rollover (new `today` key has no rows yet) or an external sync
+// that deleted the row / baseline. No separate pointer to invalidate.
+function isFileLive(file: TFile): boolean {
+	const cur = store();
+	const day = cur.days[cur.today];
+	if (!day || !(file.path in day)) return false;
+	return cur.todayBaselines[file.path] !== undefined;
+}
+
 // This handles file switches and midnight rollovers.
 async function ensureActivityExists(file: TFile) {
-  if (isUpdatingActivity) return;
-  // currentFilePath is the only "pointer" we maintain; today is implicit
-  // (the row we want is always today's row for this file).  If today has
-  // rolled over checkDayChange() will have cleared currentFilePath, so
-  // this comparison naturally re-fires after midnight.
-  if (file.path === store().currentFilePath) return;
+	if (isUpdatingActivity) return;
+	if (isFileLive(file)) return;
 
 	isUpdatingActivity = true;
 	try {
 		await flushPendingEditorChange();
-
-		const entry = await getExistingOrCreateNewEntry(file, store().today);
-		store().setCurrentFilePath(entry.filePath);
+		await getExistingOrCreateNewEntry(file, store().today);
 	} finally {
 		isUpdatingActivity = false;
 	}
@@ -111,24 +117,27 @@ async function runPendingEditorChange(): Promise<void> {
 	if (!editor || !info) return;
 
 	const cur = store();
-	if (!cur.currentFilePath) return;
 
-	// Look up today's row by filePath; we never mutate the store object
-	// directly — pass a fresh copy to upsertActivity.
-	const activity = cur.todayActivity.find(
-		(r) => r.date === cur.today && r.filePath === cur.currentFilePath,
-	);
-	if (!activity) return;
+	// The pending sample belongs to the file it was captured from
+	// (info.file), not to whatever is "current" now — this stays correct
+	// even if the user switched files since the debounce was armed.
+	const filePath = info.file?.path;
+	if (!filePath) return;
+
+	// Today's row for this file.  It lives in two maps:
+	// days[today] (running total) and todayBaselines (starting count the
+	// delta is measured against).
+	const day = cur.days[cur.today];
+	if (!day || !(filePath in day)) return;
+	const baseline = cur.todayBaselines[filePath];
+	if (baseline === undefined) return;
 
 	const newWordCount = getLanguageBasedWordCount(
 		editor.getValue(),
 		cur.settings?.enabledLanguages,
 	);
 
-	cur.upsertActivity({
-		...activity,
-		wordsAdded: newWordCount - activity.wordCountStart,
-	});
+	cur.upsertAdded(cur.today, filePath, newWordCount - baseline);
 }
 
 

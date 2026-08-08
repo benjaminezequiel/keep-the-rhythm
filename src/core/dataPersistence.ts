@@ -1,5 +1,6 @@
 import { PluginData } from "@/defs/types";
 import { useStore } from "./store";
+import { encodePersistedStats } from "./statsCodec";
 import { Plugin } from "obsidian";
 
 const JSON_DEBOUNCE_TIME = 2000;
@@ -9,17 +10,9 @@ const JSON_DEBOUNCE_TIME = 2000;
  * data.json.  Constructs the PluginData object directly from the store
  * — no intermediate staging buffer.
  */
-async function saveDataToJSON(plugin: Plugin) {
-	const { settings, todayActivity, historicalActivity } =
-		useStore.getState();
-
-	const data: PluginData = {
-		schema: "1.0",
-		settings,
-		stats: {
-			dailyActivity: [...historicalActivity, ...todayActivity],
-		},
-	};
+async function saveDataToDisk(plugin: Plugin) {
+	
+	const data = preparePersistData();
 
 	await plugin.saveData(data);
 }
@@ -28,15 +21,19 @@ async function saveDataToJSON(plugin: Plugin) {
  * Build a PluginData snapshot from the current in-memory store state.
  * Used for backup during unload.
  */
-export function buildSnapshotFromStore(): PluginData {
-	const { settings, todayActivity, historicalActivity } =
+export function preparePersistData(): PluginData {
+	const { settings, today, days, todayBaselines, todayBaselinesDay } =
 		useStore.getState();
+
 	return {
 		schema: "1.0",
 		settings,
-		stats: {
-			dailyActivity: [...historicalActivity, ...todayActivity],
-		},
+		stats: encodePersistedStats({
+			today,
+			days,
+			todayBaselines,
+			todayBaselinesDay,
+		}),
 	};
 }
 
@@ -74,7 +71,7 @@ export function setupPersistenceScheduling(
 		JsonDebounceTimeout = setTimeout(async () => {
 			if (gen !== _saveGen) return;
 			JsonDebounceTimeout = null;
-			await saveDataToJSON(plugin);
+			await saveDataToDisk(plugin);
 		}, JSON_DEBOUNCE_TIME);
 	};
 
@@ -89,7 +86,7 @@ export function setupPersistenceScheduling(
 			JsonDebounceTimeout = null;
 		}
 		_saveGen++; // invalidate any in-flight debounced save
-		await saveDataToJSON(plugin);
+		await saveDataToDisk(plugin);
 	};
 
 	return {

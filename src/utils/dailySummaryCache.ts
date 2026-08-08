@@ -23,12 +23,12 @@ let cachedToday = "";
  * partitions (historical date < today, today date === today).
  */
 export function getDailySummaryMap(): Record<string, number> {
-	const { historicalActivity, today, todayVersion, historicalVersion } =
+	const { days, today, todayVersion, historicalVersion } =
 		useStore.getState();
 
 	// Fast path: nothing changed since the last call.
 	// Version stamps alone determine cache validity — even an empty cached
-	// object (no entries) is valid if versions match (no historical data yet).
+	// object (no entries) is valid if versions match (no data yet).
 	if (
 		historicalVersion === cachedHistoricalVersion &&
 		todayVersion === cachedTodayVersion &&
@@ -46,18 +46,21 @@ export function getDailySummaryMap(): Record<string, number> {
 
 	if (historicalChanged) {
 		// Full rebuild — rare (historical edits, day rollover, external
-		// sync). The O(N) merge happens here, never on the hot path.
+		// sync). The O(days × files) merge happens here, never on the hot
+		// path.
 		const map: Record<string, number> = {};
-		for (const entry of historicalActivity) {
-			map[entry.date] = (map[entry.date] || 0) + entry.wordsAdded;
+		for (const [date, day] of Object.entries(days)) {
+			let sum = 0;
+			for (const added of Object.values(day)) sum += added;
+			map[date] = sum;
 		}
 		cachedMergedMap = map;
 	}
 
-	// Today overlay — hot path (typing): swap the today keys in the
-	// persistent merged map instead of copying the whole historical map.
-	// Every today entry shares date === today, so the stale contribution is
-	// a single key. O(k) — typically one key.
+	// Today overlay — hot path (typing): swap the today key in the
+	// persistent merged map instead of copying the whole map.  Every today
+	// entry shares date === today, so the stale contribution is a single
+	// key. O(k) — typically one key.
 	cachedMergedMap[today] = countTodayWordsAdded();
 
 	cachedHistoricalVersion = historicalVersion;
@@ -67,7 +70,10 @@ export function getDailySummaryMap(): Record<string, number> {
 }
 
 function countTodayWordsAdded(): number {
-	return useStore.getState().todayActivity.reduce((acc, cur) => acc + cur.wordsAdded, 0);
+	const { days, today } = useStore.getState();
+	let sum = 0;
+	for (const added of Object.values(days[today] ?? {})) sum += added;
+	return sum;
 }
 
 // ─── Streak Cache ────────────────────────────────────────────────

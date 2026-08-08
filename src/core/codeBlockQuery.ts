@@ -1,6 +1,6 @@
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import jsep from "jsep";
-import { DailyActivity } from "@/defs/types";
+import { ActivityRecord } from "@/defs/types";
 import {
 	isValidCalculationType,
 	isValidTargetCount,
@@ -215,12 +215,12 @@ function normalizeLogicalOperators(input: string): string {
 	return input.replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||");
 }
 
-export function compileEvaluator(node: any): (entry: DailyActivity) => boolean {
+export function compileEvaluator(node: any): (entry: ActivityRecord) => boolean {
 	if (!node) {
 		return () => true;
 	}
 
-	return (entry: DailyActivity) => {
+	return (entry: ActivityRecord) => {
 		try {
 			return interpretNode(node, entry);
 		} catch (error) {
@@ -257,7 +257,7 @@ function splitFilterAndOptions(input: string) {
 	};
 }
 
-function interpretNode(node: any, entry: DailyActivity): any {
+function interpretNode(node: any, entry: ActivityRecord): any {
 	if (!node) return true;
 
 	switch (node.type) {
@@ -270,8 +270,8 @@ function interpretNode(node: any, entry: DailyActivity): any {
 		}
 		case "Identifier": {
 			return entry &&
-				entry[node.name as keyof DailyActivity] !== undefined
-				? entry[node.name as keyof DailyActivity]
+				entry[node.name as keyof ActivityRecord] !== undefined
+				? entry[node.name as keyof ActivityRecord]
 				: "";
 		}
 		case "BinaryExpression": {

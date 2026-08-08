@@ -1,6 +1,6 @@
 import {
 	deleteActivityFromDate,
-	getActivityByDate,
+	getActivityRowsByDate,
 	selectHistoricalVersion,
 	selectTodayVersion,
 } from "@/core/dataQueries";
@@ -13,7 +13,7 @@ import { getPlugin } from "@/core/pluginRegistry";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
-import { DailyActivity } from "@/defs/types";
+import { ActivityRecord } from "@/defs/types";
 
 interface EntriesProps {
 	date?: string;
@@ -21,7 +21,7 @@ interface EntriesProps {
 }
 
 interface EntryRowProps {
-	entry: DailyActivity;
+	entry: ActivityRecord;
 	onOpenFile: (filePath: string) => void;
 	onDelete: (filePath: string) => void;
 }
@@ -80,27 +80,19 @@ export const Entries = ({ date: dateProp, filters }: EntriesProps) => {
 	const date = dateProp ?? today;
 	const historicalVersion = useStore(selectHistoricalVersion);
 	const todayVersion = useStore(selectTodayVersion);
-	const isToday = date === today;
 
-	// Subscribe to the version counter, not the array reference.  This way
-	// every keystroke that only touches todayActivity bumps todayVersion and
-	// forces a new memoized result — but Entries itself does NOT re-run its
-	// entire reconcile tree for each intermediate state.
-	const todayEntries = useMemo(() => useStore.getState().todayActivity, [
-		todayVersion,
-	]);
-
-	// Historical path: O(N) filter over dailyActivity, but only runs when
-	// historicalVersion moves.  Keystrokes that only touch today bump
-	// todayVersion - not historicalVersion - so this stays cached.
-	const historicalEntries = useMemo(() => getActivityByDate(date), [
+	// Subscribe to the version counter, not the map reference.  A single
+	// memo keyed on `date` + the version stamp that actually invalidates
+	// it: today's entries refresh on every keystroke (todayVersion),
+	// historical dates only when historical data changes — typing in
+	// another file while a past date is open stays cheap.
+	const version = date === today ? todayVersion : historicalVersion;
+	const rawEntries = useMemo(() => getActivityRowsByDate(date), [
 		date,
-		historicalVersion,
+		version,
 	]);
 
-	const rawEntries = isToday ? todayEntries : historicalEntries;
-
-	const matchesFilters = (entry: DailyActivity): boolean => {
+	const matchesFilters = (entry: ActivityRecord): boolean => {
 		if (entry.wordsAdded === 0) return false;
 		// "date" type is resolved upstream into the `date` prop, so only
 		// includes/excludes reach this predicate.

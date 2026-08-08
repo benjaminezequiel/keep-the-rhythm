@@ -1,4 +1,9 @@
-import { DailyActivity, TargetCount, CalculationType } from "@/defs/types";
+import {
+	ActivityRecord,
+	DayActivityMap,
+	TargetCount,
+	CalculationType,
+} from "@/defs/types";
 import { useStore, KTRState } from "./store";
 import {
 	dayDiff,
@@ -8,10 +13,23 @@ import {
 	getStartOfYear,
 	parseDate,
 } from "@/utils/dateUtils";
+import { getDailySummaryMap, getStreak } from "@/utils/dailySummaryCache";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getPlugin } from "@/core/pluginRegistry";
-import { getDailySummaryMap, getStreak } from "@/utils/dailySummaryCache";
 import { TFile } from "obsidian";
+
+/** Read the file's current word count (cachedRead with read fallback). */
+export async function getWordCountForFile(file: TFile): Promise<number> {
+	const plugin = getPlugin();
+	let content = await plugin.app.vault.cachedRead(file);
+	if (content === null) {
+		content = await plugin.app.vault.read(file);
+	}
+	return getLanguageBasedWordCount(
+		content,
+		useStore.getState().settings.enabledLanguages,
+	);
+}
 
 /** Version selectors for React components to subscribe to. */
 export const selectTodayVersion = (s: KTRState) => s.todayVersion;
@@ -22,23 +40,31 @@ export const selectHistoricalVersion = (s: KTRState) => s.historicalVersion;
  *
  * ────────────────────────────────────────────────────────────────────── */
 
-export function getActivityByDate(
-	date: string,
-): DailyActivity[] {
-	const { today, todayActivity, historicalActivity } = useStore.getState();
-	if (date === today) return todayActivity;
-	return historicalActivity.filter((a) => a.date === date);
+export function getActivityByDate(date: string): DayActivityMap {
+	// One map for all dates — today's slice is just `days[today]`.
+	return useStore.getState().days[date] ?? {};
+}
+
+/**
+ * Object-shaped rows for a date (used by Entries rendering and anything
+ * that needs the query-engine-facing ActivityRecord shape).
+ */
+export function getActivityRowsByDate(date: string): ActivityRecord[] {
+	const day = getActivityByDate(date);
+	return Object.entries(day).map(([filePath, wordsAdded]) => ({
+		date,
+		filePath,
+		wordsAdded,
+	}));
 }
 
 export function getActivityByDateAndFile(
 	date: string,
 	filePath: string,
-): DailyActivity | undefined {
-	const { today, todayActivity, historicalActivity } = useStore.getState();
-	const list = date === today ? todayActivity : historicalActivity;
-	return list.find(
-		(a) => a.date === date && a.filePath === filePath,
-	);
+): ActivityRecord | undefined {
+	const day = getActivityByDate(date);
+	if (day[filePath] === undefined) return undefined;
+	return { date, filePath, wordsAdded: day[filePath] };
 }
 
 type PeriodRange = { startDate: string; totalDays: number };
@@ -220,35 +246,26 @@ export function getCurrentCount(
 export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
-): Promise<DailyActivity> {
-	let entry = getActivityByDateAndFile(date, file.path);
-	
-	if (!entry) {
-		entry = await createActivityObject(file, date);
-		useStore.getState().upsertActivity(entry);
+): Promise<ActivityRecord> {
+	const cur = useStore.getState();
+	const entry = getActivityByDateAndFile(date, file.path);
+
+	if (entry) {
+		// Row exists but the live baseline was lost (e.g. stale external
+		// merge or a restart that slept through midnight) — re-capture it
+		// against the current file content so deltas stay accurate.
+		if (date === cur.today && cur.todayBaselines[file.path] === undefined) {
+			cur.setBaseline(file.path, await getWordCountForFile(file));
+		}
+		return entry;
 	}
-	return entry;
-}
 
-async function createActivityObject(file: TFile, date: string) {
-	const plugin = getPlugin();
-	let content = await plugin.app.vault.cachedRead(file);
-	if (content === null) {
-		content = await plugin.app.vault.read(file);
+	const currentWordCount = await getWordCountForFile(file);
+	if (date === cur.today) {
+		cur.setBaseline(file.path, currentWordCount);
 	}
-	const currentWordCount = getLanguageBasedWordCount(
-		content,
-		useStore.getState().settings.enabledLanguages,
-	);
-
-	const newActivity: DailyActivity = {
-		date: date,
-		filePath: file.path,
-		wordCountStart: currentWordCount,
-		wordsAdded: 0,
-	};
-
-	return newActivity;
+	cur.upsertAdded(date, file.path, 0);
+	return { date, filePath: file.path, wordsAdded: 0 };
 }
 
 /**
@@ -262,20 +279,23 @@ export const deleteActivityFromDate = (
 };
 
 /**
- * Add or update the activity row for (date, filePath).  If the row exists,
- * update the word count and words added.  If it doesn't exist, create a new row.
+ * Add or update the activity row for (date, filePath), storing `wordAdded`
+ * as the day's total for that file.  When no row exists yet for today the
+ * baseline is reconstructed (`count - added`) so live editor deltas keep
+ * working; historical dates need no baseline at all.
  */
 export const addOrUpdateActivity = async (
 	file: TFile,
 	date: string,
 	wordAdded: number,
 ): Promise<void> => {
-	let entry = getActivityByDateAndFile(date, file.path);
-	if (!entry) {
-		// 这里的 wordCountStart 并不准确，因为读的最新的文件，不知道历史日期的字数是多少
-		entry = await createActivityObject(file, date);
-		entry.wordCountStart -= wordAdded;
+	const cur = useStore.getState();
+	const entry = getActivityByDateAndFile(date, file.path);
+
+	if (!entry && date === cur.today) {
+		const currentWordCount = await getWordCountForFile(file);
+		cur.setBaseline(file.path, Math.max(0, currentWordCount - wordAdded));
 	}
-	entry.wordsAdded = wordAdded;
-	useStore.getState().upsertActivity(entry);
+
+	cur.upsertAdded(date, file.path, wordAdded);
 };

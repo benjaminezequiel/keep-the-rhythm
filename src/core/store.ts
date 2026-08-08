@@ -1,55 +1,58 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { DailyActivity, PluginData } from "@/defs/types";
+import { PluginData } from "@/defs/types";
 import { Settings, DEFAULT_SETTINGS } from "@/defs/types";
+import { DayActivityMap, DaysMap } from "@/defs/types";
 import { getToday } from "@/utils/dateUtils";
+import { decodeActivities } from "./statsCodec";
 
 /**
  * Zustand store — the single source of truth for all in-memory reactive state.
  *
  * What lives here:
- *   • today             — current date string, changes on day rollover
- *   • currentFilePath   — the path of the file Obsidian currently has open.
- *                         We never store the row itself: the date is always
- *                         `today`, and the numeric fields live in
- *                         dailyActivity, so a separate copy would just
- *                         drift.  When this is set, dailyActivity is
- *                         expected to contain a row with
- *                         (date === today, filePath === currentFilePath);
- *                         if that row is missing the selector returns null
- *                         (and the next ensureActivityExists() re-creates
- *                         it).  This is the only invariant callers need
- *                         to respect.
- *   • todayActivity     — activity rows with date === today.  On a day
- *                         rollover `checkDayChange` appends the whole slice
- *                         to historicalActivity and clears it.
- *   • historicalActivity — activity rows with date < today.
+ *   • today              — current date string, changes on day rollover.
+ *                          The currently open file is never tracked in the
+ *                          store: a file is "live" iff `days[today]` has a
+ *                          row for it AND `todayBaselines` has its baseline
+ *                          (events.ts derives this from the data).  Day
+ *                          rollover naturally ends that liveness because
+ *                          the new `today` key has no rows yet.
+ *   • days               — date → filePath → words added.  One map for ALL
+ *                          dates: today's slice is `days[today]`, no
+ *                          separate partition.  On a day rollover nothing
+ *                          moves — the old keys just stop being "today" —
+ *                          only the baseline table is discarded.
+ *   • todayBaselines     — filePath → word count at first touch today.
+ *                          Live deltas are `editorCount - baseline`; without
+ *                          the baseline a restart / sync merge could not
+ *                          keep computing deltas against the same anchor.
+ *                          Referenced (not persisted) outside the current
+ *                          day — `todayBaselinesDay` records which date they
+ *                          belong to so stale baselines are dropped.
  *
- *                         The two live SEPARATELY in memory so the hot path
- *                         (typing → upsertActivity on today) never touches
- *                         the (potentially large) historical array.  They are
- *                         merged back into a single flat `dailyActivity` only
- *                         when persisted to data.json (dataPersistence.ts /
- *                         buildSnapshotFromStore) or read by foreign consumers.
+ *                          The maps live together so the hot path
+ *                          (typing → upsertAdded on days[today]) is O(1)
+ *                          and never touches the (potentially large) other
+ *                          days.  Persisted as-is via statsCodec.ts.
  *
- *                         Invariant: historicalActivity rows all have
- *                         date < today; todayActivity rows all have
- *                         date === today.
+ *                          MUTATION CONTRACT: nothing in the app subscribes
+ *                          to these map references (React reacts to the
+ *                          version stamps below, persistence to
+ *                          persistVersion).  The data actions therefore
+ *                          mutate the maps IN PLACE and only `set()` the
+ *                          version counters — no reference copying.
  *
- *                         Mutations go through `upsertActivity` / `deleteActivity` /
- *                         `renameFilePath` which partition by today.
- *   • settings          — the single in-memory source of truth for settings.
- *                         Mutate via mutateSettings which trigger requestPersist().
- *                         The debounced save serializes store → data.json.
- *   • persistVersion    — monotonic counter; dataPersistence.ts subscribes
- *                         to it (via subscribeWithSelector) to schedule
- *                         debounced JSON saves.
- *   • todayVersion     — increments when today's data changes, used to
- *                         invalidate the module-level partitioned cache
- *   • historicalVersion — increments when historical (non-today) data changes
+ *   • settings           — the single in-memory source of truth for settings.
+ *                          Mutate via mutateSettings which trigger requestPersist().
+ *   • persistVersion     — monotonic counter; dataPersistence.ts subscribes
+ *                          to it (via subscribeWithSelector) to schedule
+ *                          debounced JSON saves.
+ *   • todayVersion       — increments when today's data changes, used to
+ *                          invalidate the module-level partitioned cache
+ *   • historicalVersion  — increments when non-today data changes
  *
  * Data flow:
- *   Boot:    data.json → hydrateFromData → store
+ *   Boot:    data.json → hydrateFromData → store (decoded via statsCodec)
  *   Runtime: mutations → store.requestPersist() → persistVersion++
  *            dataPersistence builds PluginData from store → saveData() → data.json
  *   External: onExternalSettingsChange → direct store update
@@ -61,11 +64,11 @@ import { getToday } from "@/utils/dateUtils";
 export interface KTRState {
 	// ─── Core state ───
 	today: string;
-	currentFilePath: string | null;
 	settings: Settings;
 	persistVersion: number;
-	todayActivity: DailyActivity[];
-	historicalActivity: DailyActivity[];
+	days: DaysMap;
+	todayBaselines: DayActivityMap;
+	todayBaselinesDay: string | null;
 	todayVersion: number;
 	historicalVersion: number;
 
@@ -74,22 +77,21 @@ export interface KTRState {
 
 	// ─── Generic actions ───
 	/** Idempotent: only updates if wall-clock date actually differs.
-	 *  Also clears `currentFilePath` so ensureActivityExists() rebuilds
-	 *  a fresh row for the new day. */
+	 *  Discards yesterday's baselines — liveness is derived from
+	 *  (row in days[today], baseline) so the next touch on any file
+	 *  re-establishes a fresh row + baseline for the new day. */
 	checkDayChange: () => void;
-	/** Mark this file as the currently-open one.  Caller is responsible
-	 *  for ensuring the (today, filePath) row exists in dailyActivity
-	 *  (events.ts does this via getExistingOrCreateNewEntry first). */
-	setCurrentFilePath: (path: string | null) => void;
 	/** Mutate settings draft in-place, request persist. */
 	mutateSettings: (updater: (draft: Settings) => void) => void;
 	/** Hydrate store from loaded data.json (used on boot and after external changes). */
 	hydrateFromData: (data: PluginData) => void;
 
-	// ─── Data actions (replace Dexie writes) ───
-	/** Insert or update by [date+filePath]. */
-	upsertActivity: (row: DailyActivity) => void;
-	/** Remove one row by [date+filePath]. */
+	// ─── Data actions ───
+	/** Write (or overwrite) the words-added counter for [date, filePath]. */
+	upsertAdded: (date: string, filePath: string, added: number) => void;
+	/** Record today's starting word count for a file (todayBaselines). */
+	setBaseline: (filePath: string, baseline: number) => void;
+	/** Remove one row by [date+filePath] (and its baseline when date is today). */
 	deleteActivity: (date: string, filePath: string) => void;
 	/** Update filePath on all matching rows. */
 	renameFilePath: (oldPath: string, newPath: string) => void;
@@ -105,11 +107,11 @@ let pendingPersist = false;
 export const useStore = create<KTRState>()(
 	subscribeWithSelector((set, get) => ({
 		today: getToday(),
-		currentFilePath: null,
 		settings: DEFAULT_SETTINGS,
 		persistVersion: 0,
-		todayActivity: [],
-		historicalActivity: [],
+		days: {},
+		todayBaselines: {},
+		todayBaselinesDay: null,
 		todayVersion: 0,
 		historicalVersion: 0,
 
@@ -117,26 +119,20 @@ export const useStore = create<KTRState>()(
 			const today = getToday();
 			const cur = get();
 			if (today !== cur.today) {
-				// Migrate yesterday's today-slice into the historical array.
-				// The old todayActivity rows now all have date === cur.today <
-				// today, satisfying the date < today invariant.
+				// Data needs no migration: yesterday's rows are already in
+				// `days` under their own date key — they simply stop being
+				// "today".  Only the day-scoped transient state is reset:
+				// baselines (dead weight); liveness is data-derived so the
+				// next touch on any file re-establishes a fresh baseline.
 				set({
 					today,
-					currentFilePath: null,
-					todayActivity: [],
-					historicalActivity: [
-						...cur.historicalActivity,
-						...cur.todayActivity,
-					],
+					todayBaselines: {},
+					todayBaselinesDay: null,
 					todayVersion: cur.todayVersion + 1,
 					historicalVersion: cur.historicalVersion + 1,
 				});
 				get().requestPersist();
 			}
-		},
-
-		setCurrentFilePath: (path) => {
-			set({ currentFilePath: path });
 		},
 
 		requestPersist: () => {
@@ -167,11 +163,12 @@ export const useStore = create<KTRState>()(
 		hydrateFromData: (data) => {
 			const cur = get();
 			const today = getToday();
-			const flat = [...(data.stats?.dailyActivity || [])];
+			const decoded = decodeActivities(data?.stats, today);
 			set({
-				settings: { ...DEFAULT_SETTINGS, ...data.settings },
-				todayActivity: flat.filter((a) => a.date === today),
-				historicalActivity: flat.filter((a) => a.date < today),
+				settings: { ...DEFAULT_SETTINGS, ...data?.settings },
+				days: decoded.days,
+				todayBaselines: decoded.todayBaselines,
+				todayBaselinesDay: decoded.todayBaselinesDay,
 				today,
 				todayVersion: cur.todayVersion + 1,
 				historicalVersion: cur.historicalVersion + 1,
@@ -180,70 +177,73 @@ export const useStore = create<KTRState>()(
 
 		// ─── Data actions ───
 
-		upsertActivity: (row) => {
+		upsertAdded: (date, filePath, added) => {
 			const cur = get();
-			const isToday = row.date === cur.today;
-			const arr = isToday ? cur.todayActivity : cur.historicalActivity;
-			const idx = arr.findIndex(
-				(r) => r.date === row.date && r.filePath === row.filePath,
+			// In-place mutation: nothing in the app subscribes to the map
+			// references themselves — React reacts to version stamps,
+			// persistence to persistVersion (requestPersist).
+			const day = (cur.days[date] ??= {});
+			day[filePath] = added;
+			set(
+				date === cur.today
+					? { todayVersion: cur.todayVersion + 1 }
+					: { historicalVersion: cur.historicalVersion + 1 },
 			);
-			const next =
-				idx === -1
-					? [...arr, row]
-					: arr.map((r, i) => (i === idx ? row : r));
-			if (isToday) {
-				set({
-					todayActivity: next,
-					todayVersion: cur.todayVersion + 1,
-				});
-			} else {
-				set({
-					historicalActivity: next,
-					historicalVersion: cur.historicalVersion + 1,
-				});
-			}
+			get().requestPersist();
+		},
+
+		setBaseline: (filePath, baseline) => {
+			const cur = get();
+			if (cur.todayBaselines[filePath] === baseline) return;
+			cur.todayBaselines[filePath] = baseline;
+			set({ todayBaselinesDay: cur.today });
 			get().requestPersist();
 		},
 
 		deleteActivity: (date, filePath) => {
 			const cur = get();
-			const isToday = date === cur.today;
-			if (isToday) {
-				set({
-					todayActivity: cur.todayActivity.filter(
-						(r) => !(r.date === date && r.filePath === filePath),
-					),
-					todayVersion: cur.todayVersion + 1,
-				});
+			const day = cur.days[date];
+			if (!day) return;
+			delete day[filePath];
+			if (Object.keys(day).length === 0) {
+				delete cur.days[date];
+			}
+			if (date === cur.today) {
+				delete cur.todayBaselines[filePath];
+				set({ todayVersion: cur.todayVersion + 1 });
 			} else {
-				set({
-					historicalActivity: cur.historicalActivity.filter(
-						(r) => !(r.date === date && r.filePath === filePath),
-					),
-					historicalVersion: cur.historicalVersion + 1,
-				});
+				set({ historicalVersion: cur.historicalVersion + 1 });
 			}
 			get().requestPersist();
 		},
 
 		renameFilePath: (oldPath, newPath) => {
 			const cur = get();
-			// Update any matching rows in both partitions (a file can have
-			// entries on today AND earlier days).
+			if (oldPath === newPath) return;
+
+			const renameInPlace = (m: DayActivityMap): boolean => {
+				if (!(oldPath in m)) return false;
+				m[newPath] = m[oldPath];
+				delete m[oldPath];
+				return true;
+			};
+
+			let todayChanged = false;
+			let historicalChanged = false;
+			for (const [date, day] of Object.entries(cur.days)) {
+				if (renameInPlace(day)) {
+					if (date === cur.today) todayChanged = true;
+					else historicalChanged = true;
+				}
+			}
+
+			renameInPlace(cur.todayBaselines); // only today has baselines
+
 			set({
-				todayActivity: cur.todayActivity.map((r) =>
-					r.filePath === oldPath ? { ...r, filePath: newPath } : r,
-				),
-				historicalActivity: cur.historicalActivity.map((r) =>
-					r.filePath === oldPath ? { ...r, filePath: newPath } : r,
-				),
-				// If we were tracking the renamed file, follow it.
-				...(cur.currentFilePath === oldPath
-					? { currentFilePath: newPath }
+				...(todayChanged
+					? { todayVersion: cur.todayVersion + 1 }
 					: {}),
-				...(cur.historicalActivity.some(
-					(r) => r.filePath === oldPath,
-				)
+				...(historicalChanged
 					? { historicalVersion: cur.historicalVersion + 1 }
 					: {}),
 			});
