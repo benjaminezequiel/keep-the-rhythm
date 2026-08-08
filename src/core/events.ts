@@ -39,15 +39,13 @@ function getEditorChangeDelayMs(): number {
 	return delay * 1000;
 }
 
-// A file is "live" — already set up this session — iff today's row AND
-// its baseline exist.  Unlike a pointer to the "current file", this is
+// A file is "live" — already set up this session — iff today's baseline
+// exists.  Unlike a pointer to the "current file", this is
 // derived directly from the data, so the guard naturally re-fires after a
 // midnight rollover (new `today` key has no rows yet) or an external sync
 // that deleted the row / baseline. No separate pointer to invalidate.
 function isFileLive(file: TFile): boolean {
 	const cur = store();
-	const day = cur.days[cur.today];
-	if (!day || !(file.path in day)) return false;
 	return cur.todayBaselines[file.path] !== undefined;
 }
 
@@ -69,9 +67,11 @@ async function ensureActivityExists(file: TFile, liveContent?: string) {
  * @function handleFileOpen
  * Fires on file-open / focus switch (active-leaf-change).  Captures today's
  * baseline from the *live editor content* — not the vault — so the first
- * keystrokes are anchored against a value that can't race a stale disk
- * cache.  Also creates today's 0-word row, so the first keystroke then
- * short-circuits via isFileLive and skips the disk read on the typing path.
+ * keystrokes are anchored against the value that can't race a stale disk
+ * cache.  It creates NO row: liveness is derived from the baseline alone
+ * (isFileLive), so the first keystroke then short-circuits and skips the
+ * disk read on the typing path. The row is written lazily by the first
+ * debounced sample with a non-zero delta.
  * Guarded by isFileLive → runs at most once per file per day.
  */
 export async function handleFileOpen(leaf: WorkspaceLeaf | null) {
@@ -168,11 +168,8 @@ async function runPendingEditorChange(): Promise<void> {
 		// The pending sample belongs to the file it was captured from
 		// (info.file), not to whatever is "current" now — this stays correct
 		// even if the user switched files since the debounce was armed.
-		// Today's row for this file.  It lives in two maps:
-		// days[today] (running total) and todayBaselines (starting count the
-		// delta is measured against).
-		const day = cur.days[cur.today];
-		if (!day || !(filePath in day)) return;
+		// Today's baseline anchors the delta; the row is written lazily —
+		// a fresh file open has no row until the first sampled keystroke.
 		const baseline = cur.todayBaselines[filePath];
 		if (baseline === undefined) return;
 

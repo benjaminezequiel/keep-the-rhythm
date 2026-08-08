@@ -267,10 +267,13 @@ export async function getExistingOrCreateNewEntry(
 		liveContent !== undefined
 			? getLanguageBasedWordCount(liveContent, cur.settings.enabledLanguages)
 			: await getWordCountForFile(file);
+	// Baseline is set eagerly (so isFileLive is true and the first
+	// keystroke short-circuits), but NO row is written: a bare file open
+	// must not litter the day with a 0-word entry.  The row only appears
+	// (lazily) when the first debounced sample computes a non-zero delta.
 	if (date === cur.today && cur.todayBaselines[file.path] === undefined) {
 		cur.setBaseline(file.path, currentWordCount);
 	}
-	cur.upsertAdded(date, file.path, 0);
 	return { date, filePath: file.path, wordsAdded: 0 };
 }
 

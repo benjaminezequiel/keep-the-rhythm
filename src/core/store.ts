@@ -11,12 +11,14 @@ import { decodeActivities } from "./statsCodec";
  *
  * What lives here:
  *   • today              — current date string, changes on day rollover.
- *                          The currently open file is never tracked in the
- *                          store: a file is "live" iff `days[today]` has a
- *                          row for it AND `todayBaselines` has its baseline
- *                          (events.ts derives this from the data).  Day
- *                          rollover naturally ends that liveness because
- *                          the new `today` key has no rows yet.
+ *                          Liveness is derived purely from the baseline:
+ *                          a file is "live" iff `todayBaselines` has an
+ *                          entry for it (events.ts derives this).  Rows in
+ *                          `days[today]` are written lazily — only when a
+ *                          file's first sampled delta is non-zero — so a
+ *                          bare file open never produces a 0-word entry.
+ *                          Day rollover naturally ends that liveness because
+ *                          `todayBaselines` is reset.
  *   • days               — date → filePath → words added.  One map for ALL
  *                          dates: today's slice is `days[today]`, no
  *                          separate partition.  On a day rollover nothing
@@ -203,10 +205,11 @@ export const useStore = create<KTRState>()(
 		deleteActivity: (date, filePath) => {
 			const cur = get();
 			const day = cur.days[date];
-			if (!day) return;
-			delete day[filePath];
-			if (Object.keys(day).length === 0) {
-				delete cur.days[date];
+			if (day) {
+				delete day[filePath];
+				if (Object.keys(day).length === 0) {
+					delete cur.days[date];
+				}
 			}
 			if (date === cur.today) {
 				delete cur.todayBaselines[filePath];

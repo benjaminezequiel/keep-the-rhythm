@@ -84,7 +84,12 @@ export function decodeActivities(
  * is only written when it is still valid (recorded for the current day)
  * and non-empty.
  */
-export function encodePersistedStats(parts: {
+export function encodePersistedStats({
+	today,
+	days: inputDays,
+	todayBaselines,
+	todayBaselinesDay,
+}: {
 	today: string;
 	days: DaysMap;
 	todayBaselines: DayActivityMap;
@@ -93,22 +98,38 @@ export function encodePersistedStats(parts: {
 	days: DaysMap;
 	todayBaselines?: PersistedBaselines;
 } {
+	// A `0` row means "file touched but nothing added" — it carries no
+	// information (sums look it up as 0 either way) yet would accumulate
+	// one entry per file *per day* forever. Drop them on the way out.
 	const days: DaysMap = {};
-	for (const [date, day] of Object.entries(parts.days)) {
-		if (Object.keys(day).length > 0) days[date] = day;
+	for (const [date, day] of Object.entries(inputDays)) {
+		const kept: DayActivityMap = {};
+		for (const [filePath, added] of Object.entries(day)) {
+			if (added > 0) kept[filePath] = added;
+		}
+		if (Object.keys(kept).length > 0) days[date] = kept;
 	}
 
 	const stats: { days: DaysMap; todayBaselines?: PersistedBaselines } = {
 		days,
 	};
 
+	// Baselines only matter for files that actually have added words today;
+	// a file that was merely opened but never written needs no persisted
+	// anchor (it will re-anchor on its next real touch).
+	const todayDay = days[today] ?? {};
+	const keptBaselines: DayActivityMap = {};
+	for (const [filePath, baseline] of Object.entries(todayBaselines)) {
+		if ((todayDay[filePath] ?? 0) > 0) keptBaselines[filePath] = baseline;
+	}
+
 	if (
-		parts.todayBaselinesDay === parts.today &&
-		Object.keys(parts.todayBaselines).length > 0
+		todayBaselinesDay === today &&
+		Object.keys(keptBaselines).length > 0
 	) {
 		stats.todayBaselines = {
-			day: parts.today,
-			baselines: parts.todayBaselines,
+			day: today,
+			baselines: keptBaselines,
 		};
 	}
 
