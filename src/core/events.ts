@@ -1,5 +1,11 @@
 import { useStore } from "./store";
-import { TFile, Editor } from "obsidian";
+import {
+	TFile,
+	Editor,
+	WorkspaceLeaf,
+	MarkdownView,
+	type MarkdownFileInfo,
+} from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getExistingOrCreateNewEntry } from "@/core/dataQueries";
 import { isPathTracked } from "./pathFilter";
@@ -22,7 +28,8 @@ let isUpdatingActivity = false;
 
 let editorChangeTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingEditor: Editor | null = null;
-let pendingInfo: any = null;
+type FileChangeInfo = MarkdownView | MarkdownFileInfo;
+let pendingInfo: FileChangeInfo | null = null;
 
 // Convenience accessor — avoids importing useStore directly in every function.
 const store = () => useStore.getState();
@@ -45,17 +52,53 @@ function isFileLive(file: TFile): boolean {
 }
 
 // This handles file switches and midnight rollovers.
-async function ensureActivityExists(file: TFile) {
+async function ensureActivityExists(file: TFile, liveContent?: string) {
 	if (isUpdatingActivity) return;
 	if (isFileLive(file)) return;
 
 	isUpdatingActivity = true;
 	try {
 		await flushPendingEditorChange();
-		await getExistingOrCreateNewEntry(file, store().today);
+		await getExistingOrCreateNewEntry(file, store().today, liveContent);
 	} finally {
 		isUpdatingActivity = false;
 	}
+}
+
+/**
+ * @function handleFileOpen
+ * Fires on file-open / focus switch (active-leaf-change).  Captures today's
+ * baseline from the *live editor content* — not the vault — so the first
+ * keystrokes are anchored against a value that can't race a stale disk
+ * cache.  Also creates today's 0-word row, so the first keystroke then
+ * short-circuits via isFileLive and skips the disk read on the typing path.
+ * Guarded by isFileLive → runs at most once per file per day.
+ */
+export async function handleFileOpen(leaf: WorkspaceLeaf | null) {
+	// Drain any debounced sample from the *previously* focused leaf before
+	// doing anything with the new one. A focus switch is the natural flush
+	// boundary (cheap O(1) when no sample is pending) — without it, the last
+	// characters typed in an already-live file would stay unsampled after
+	// switching to another live file, and if never re-touched they'd be
+	// permanently under-counted.
+	await flushPendingEditorChange();
+
+	if (!leaf || !(leaf.view instanceof MarkdownView)) return;
+	const file = leaf.view.file;
+	if (!file || file.extension !== "md") return;
+	if (!isPathTracked(file.path)) return;
+
+	// O(1) guards: files that are already live — and in-flight creations —
+	// skip the whole read, so plain focus switches on tracked files cost
+	// nothing (no `getValue()` document stringification).
+	if (isFileLive(file) || isUpdatingActivity) return;
+
+	// Freeze the content at the exact focus instant, before the first await.
+	// Reading it inside ensureActivityExists would happen after flushing the
+	// previous file's pending debounce, letting keystrokes made meanwhile
+	// leak into the baseline and silently swallow those first words.
+	const liveContent = leaf.view.editor?.getValue();
+	await ensureActivityExists(file, liveContent);
 }
 
 /**
@@ -65,7 +108,7 @@ async function ensureActivityExists(file: TFile) {
  */
 export async function handleEditorChange(
 	editor: Editor,
-	info: any,
+	info: FileChangeInfo,
 ) {
 	const file = info.file;
 	if (!file || file.extension !== "md") {
@@ -116,28 +159,37 @@ async function runPendingEditorChange(): Promise<void> {
 	pendingInfo = null;
 	if (!editor || !info) return;
 
-	const cur = store();
-
-	// The pending sample belongs to the file it was captured from
-	// (info.file), not to whatever is "current" now — this stays correct
-	// even if the user switched files since the debounce was armed.
 	const filePath = info.file?.path;
 	if (!filePath) return;
 
-	// Today's row for this file.  It lives in two maps:
-	// days[today] (running total) and todayBaselines (starting count the
-	// delta is measured against).
-	const day = cur.days[cur.today];
-	if (!day || !(filePath in day)) return;
-	const baseline = cur.todayBaselines[filePath];
-	if (baseline === undefined) return;
+	try {
+		const cur = store();
 
-	const newWordCount = getLanguageBasedWordCount(
-		editor.getValue(),
-		cur.settings?.enabledLanguages,
-	);
+		// The pending sample belongs to the file it was captured from
+		// (info.file), not to whatever is "current" now — this stays correct
+		// even if the user switched files since the debounce was armed.
+		// Today's row for this file.  It lives in two maps:
+		// days[today] (running total) and todayBaselines (starting count the
+		// delta is measured against).
+		const day = cur.days[cur.today];
+		if (!day || !(filePath in day)) return;
+		const baseline = cur.todayBaselines[filePath];
+		if (baseline === undefined) return;
 
-	cur.upsertAdded(cur.today, filePath, newWordCount - baseline);
+		const newWordCount = getLanguageBasedWordCount(
+			editor.getValue(),
+			cur.settings?.enabledLanguages,
+		);
+
+		// Clamp to ≥ 0: undo/shrink below the baseline means this session
+		// contributed nothing new, never a negative "added".
+		cur.upsertAdded(cur.today, filePath, Math.max(0, newWordCount - baseline));
+	} catch (error) {
+		// The user may have closed the tab (and disposed its editor) since
+		// this sample was armed; swallowing the failure keeps one dead
+		// editor from tearing down subsequent scheduling.
+		console.error(`KTR failed sampling ${filePath} | ${error}`);
+	}
 }
 
 

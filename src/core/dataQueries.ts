@@ -246,22 +246,28 @@ export function getCurrentCount(
 export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
+	liveContent?: string,
 ): Promise<ActivityRecord> {
 	const cur = useStore.getState();
 	const entry = getActivityByDateAndFile(date, file.path);
 
 	if (entry) {
 		// Row exists but the live baseline was lost (e.g. stale external
-		// merge or a restart that slept through midnight) — re-capture it
-		// against the current file content so deltas stay accurate.
+		// merge or a restart that slept through midnight) — re-capture it.
 		if (date === cur.today && cur.todayBaselines[file.path] === undefined) {
 			cur.setBaseline(file.path, await getWordCountForFile(file));
 		}
 		return entry;
 	}
 
-	const currentWordCount = await getWordCountForFile(file);
-	if (date === cur.today) {
+	// Prefer the live editor content captured at file-open — the disk read
+	// would race the editor on the first keystroke (the change event has
+	// already fired), producing a permanent offset in the day's delta.
+	const currentWordCount =
+		liveContent !== undefined
+			? getLanguageBasedWordCount(liveContent, cur.settings.enabledLanguages)
+			: await getWordCountForFile(file);
+	if (date === cur.today && cur.todayBaselines[file.path] === undefined) {
 		cur.setBaseline(file.path, currentWordCount);
 	}
 	cur.upsertAdded(date, file.path, 0);

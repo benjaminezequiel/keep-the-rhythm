@@ -105,6 +105,11 @@ export default class KeepTheRhythm extends Plugin {
 
 	private initializeEvents() {
 		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				void events.handleFileOpen(leaf);
+			}),
+		);
+		this.registerEvent(
 			this.app.workspace.on("editor-change", (editor, info) => {
 				events.handleEditorChange(editor, info);
 			}),
