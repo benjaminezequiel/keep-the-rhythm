@@ -50,9 +50,7 @@ export function getDailySummaryMap(): Record<string, number> {
 		// path.
 		const map: Record<string, number> = {};
 		for (const [date, day] of Object.entries(days)) {
-			let sum = 0;
-			for (const added of Object.values(day)) sum += added;
-			map[date] = sum;
+			map[date] = countWordsAdded(day);
 		}
 		cachedMergedMap = map;
 	}
@@ -61,7 +59,7 @@ export function getDailySummaryMap(): Record<string, number> {
 	// persistent merged map instead of copying the whole map.  Every today
 	// entry shares date === today, so the stale contribution is a single
 	// key. O(k) — typically one key.
-	cachedMergedMap[today] = countTodayWordsAdded();
+	cachedMergedMap[today] = countWordsAdded(days[today] ?? {});
 
 	cachedHistoricalVersion = historicalVersion;
 	cachedTodayVersion = todayVersion;
@@ -69,10 +67,9 @@ export function getDailySummaryMap(): Record<string, number> {
 	return cachedMergedMap;
 }
 
-function countTodayWordsAdded(): number {
-	const { days, today } = useStore.getState();
+function countWordsAdded(day: Record<string, number>): number {
 	let sum = 0;
-	for (const added of Object.values(days[today] ?? {})) sum += added;
+	for (const added of Object.values(day)) sum += added;
 	return sum;
 }
 
