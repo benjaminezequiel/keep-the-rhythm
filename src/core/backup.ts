@@ -37,7 +37,7 @@ async function backupDataToVaultFolder(
 		return;
 	}
 
-	const folderPath = backupConfig.folderPath || ".keep-the-rhythm";
+	const folderPath = backupConfig.folderPath || ".keep-the-rhythm2";
 	const fileName = `backup-${formatDate(new Date())}-${data.schema}.json`;
 	const backupPath = `${folderPath}/${fileName}`;
 	const jsonData = JSON.stringify(data, null, 2);

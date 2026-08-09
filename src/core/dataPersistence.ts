@@ -3,6 +3,7 @@ import { useStore } from "./store";
 import { encodePersistedStats } from "./statsCodec";
 import { Plugin } from "obsidian";
 
+const JSON_SCHEMA = "0.5";
 const JSON_DEBOUNCE_TIME = 2000;
 
 /**
@@ -32,7 +33,7 @@ export function preparePersistData(): PluginData {
 	} = useStore.getState();
 
 	return {
-		schema: "1.0",
+		schema: JSON_SCHEMA,
 		settings,
 		stats: encodePersistedStats({
 			today,

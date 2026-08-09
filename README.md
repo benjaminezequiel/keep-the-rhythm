@@ -22,16 +22,12 @@ Keep the Rhythm is an Obsidian plugin that helps you maintain a consistent writi
 
 ## Installation
 
-#### RECOMMENDED!
-
-Install through the Community Plugins section in Obsidian's settings
-
 #### MANUAL INSTALLATION
 
 Download the latest release files from this repository's Releases section
-Create a folder at /.obsidian/plugins/ named keep-the-rhythm
+Create a folder at /.obsidian/plugins/ named keep-the-rhythm2
 Reload Obsidian
-Go to Settings > Community Plugins and enable "Keep the Rhythm"
+Go to Settings > Community Plugins and enable "Keep the Rhythm2"
 
 ---
 

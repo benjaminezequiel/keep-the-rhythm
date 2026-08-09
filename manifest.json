@@ -1,10 +1,9 @@
 {
-	"id": "keep-the-rhythm",
-	"name": "Keep the Rhythm",
-	"version": "0.2.12",
+	"id": "keep-the-rhythm2",
+	"name": "Keep the Rhythm2",
+	"version": "0.5.0",
 	"minAppVersion": "1.0.0",
 	"description": "Visualize and track your writing habit!",
-	"author": "Ezben",
-	"authorUrl": "https://www.benjaminezequiel.com/",
+	"author": "aisahpA",
 	"isDesktopOnly": false
 }

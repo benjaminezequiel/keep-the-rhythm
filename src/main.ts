@@ -88,7 +88,7 @@ export default class KeepTheRhythm extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-keep-the-rhythm",
+			id: "open-keep-the-rhythm2",
 			name: "Open sidebar view",
 			callback: () => {
 				activateSidebarView();

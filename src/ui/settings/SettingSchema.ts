@@ -166,7 +166,7 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
           title: "Backup Folder Path",
           description:
             "Location where backup files will be stored (relative to vault root).",
-          placeholder: ".keep-the-rhythm",
+          placeholder: ".keep-the-rhythm2",
           visibleWhen: { "backupConfig.enabled": true },
         },
         {

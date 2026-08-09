@@ -4,7 +4,7 @@ import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
 import { KTRView } from "../components/SidebarView";
 
-export const VIEW_TYPE = "keep-the-rhythm";
+export const VIEW_TYPE = "keep-the-rhythm2";
 
 export class PluginView extends ItemView {
 	plugin: KeepTheRhythm;

@@ -226,7 +226,7 @@ export function createBackupFolderPathSetting(
           setByPath(
             draft,
             "backupConfig.folderPath",
-            cleanPath || ".keep-the-rhythm",
+            cleanPath || ".keep-the-rhythm2",
           );
         });
       });
