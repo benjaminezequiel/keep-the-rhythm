@@ -26,6 +26,10 @@ export interface DecodedActivities {
 	days: DaysMap;
 	todayBaselines: DayActivityMap;
 	todayBaselinesDay: string | null;
+	/** All file paths that ever appeared in days (loaded + runtime).
+	 *  Used as a fast rejection filter for rename events so we can skip
+	 *  the full O(D) scan when a file was never tracked. */
+	activeFiles: Set<string>;
 }
 
 function legacyRowsToDays(
@@ -36,6 +40,18 @@ function legacyRowsToDays(
 		(days[r.date] ??= {})[r.filePath] = r.wordsAdded;
 	}
 	return days;
+}
+
+/**
+ * Collect every filePath that appears in any day map.
+ * Used to seed the activeFiles set at load time.
+ */
+function collectActiveFiles(days: DaysMap): Set<string> {
+	const set = new Set<string>();
+	for (const day of Object.values(days)) {
+		for (const path of Object.keys(day)) set.add(path);
+	}
+	return set;
 }
 
 /**
@@ -75,7 +91,7 @@ export function decodeActivities(
 		}
 	}
 
-	return { days, todayBaselines, todayBaselinesDay };
+	return { days, todayBaselines, todayBaselinesDay, activeFiles: collectActiveFiles(days) };
 }
 
 /**

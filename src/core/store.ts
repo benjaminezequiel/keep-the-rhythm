@@ -73,6 +73,11 @@ export interface KTRState {
 	todayBaselinesDay: string | null;
 	todayVersion: number;
 	historicalVersion: number;
+	/** Fast set of all file paths ever tracked — used to short-circuit
+	 *  rename events for files that never appeared in days.  Allowed to
+	 *  have stale entries (false positives are harmless); must never
+	 *  miss a tracked file (false negatives would skip real renames). */
+	activeFiles: Set<string>;
 
 	// ─── Persist signal (replaces DATA_PERSIST_NEEDED event) ───
 	requestPersist: () => void;
@@ -116,6 +121,7 @@ export const useStore = create<KTRState>()(
 		todayBaselinesDay: null,
 		todayVersion: 0,
 		historicalVersion: 0,
+		activeFiles: new Set<string>(),
 
 		checkDayChange: () => {
 			const today = getToday();
@@ -174,6 +180,7 @@ export const useStore = create<KTRState>()(
 				today,
 				todayVersion: cur.todayVersion + 1,
 				historicalVersion: cur.historicalVersion + 1,
+				activeFiles: decoded.activeFiles,
 			});
 		},
 
@@ -186,6 +193,7 @@ export const useStore = create<KTRState>()(
 			// persistence to persistVersion (requestPersist).
 			const day = (cur.days[date] ??= {});
 			day[filePath] = added;
+			cur.activeFiles.add(filePath);
 			set(
 				date === cur.today
 					? { todayVersion: cur.todayVersion + 1 }
@@ -223,6 +231,9 @@ export const useStore = create<KTRState>()(
 		renameFilePath: (oldPath, newPath) => {
 			const cur = get();
 			if (oldPath === newPath) return;
+			if (!cur.activeFiles.has(oldPath)) return;
+
+			cur.activeFiles.add(newPath);
 
 			const renameInPlace = (m: DayActivityMap): boolean => {
 				if (!(oldPath in m)) return false;
