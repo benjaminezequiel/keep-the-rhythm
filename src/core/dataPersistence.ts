@@ -22,8 +22,14 @@ async function saveDataToDisk(plugin: Plugin) {
  * Used for backup during unload.
  */
 export function preparePersistData(): PluginData {
-	const { settings, today, days, todayBaselines, todayBaselinesDay } =
-		useStore.getState();
+	const {
+		settings,
+		today,
+		days,
+		todayBaselines,
+		todayBaselinesDay,
+		historicalVersion,
+	} = useStore.getState();
 
 	return {
 		schema: "1.0",
@@ -33,6 +39,7 @@ export function preparePersistData(): PluginData {
 			days,
 			todayBaselines,
 			todayBaselinesDay,
+			historicalVersion,
 		}),
 	};
 }

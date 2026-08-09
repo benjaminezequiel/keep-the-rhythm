@@ -24,6 +24,25 @@ export type DayActivityMap = Record<string, number>;
 export type DaysMap = Record<string, DayActivityMap>;
 
 /**
+ * Dictionary-encoded variant of DayActivityMap used on disk only.
+ * Keys are numeric string IDs (JSON object keys are always strings)
+ * mapped to real file paths via PersistedFileDict.
+ *
+ *   persisted:  { "0": 500, "1": 300, ... }
+ *   runtime:    { "Notes/a.md": 500, "Notes/b.md": 300, ... }
+ */
+export type PersistedDayActivityMap = Record<string, number>;
+
+/** Dictionary-encoded variant of DaysMap used on disk only. */
+export type PersistedDaysMap = Record<string, PersistedDayActivityMap>;
+
+/**
+ * On-disk file path → numeric ID mapping.  Object form so path→ID is
+ * O(1) at encode time and merge-by-path during external sync is trivial.
+ */
+export type PersistedFileDict = Record<string, number>;
+
+/**
  * Persisted baselines for the CURRENT day only (`stats.todayBaselines`).
  *
  * The baseline of a file is its word count at the first moment it was
@@ -151,12 +170,25 @@ export interface PluginData {
 	schema?: "0.2" | "0.3" | string;
 	stats?: {
 		/**
-		 * date -> filePath -> words added that day. Includes the current
+		 * Path → numeric ID dictionary for the dictionary-encoded `days`
+		 * format.  Present (and valid) only when `days` uses numeric
+		 * keys; absent in the legacy plain-path format.
+		 */
+		fileDict?: PersistedFileDict;
+		/**
+		 * date → filePath → words added that day. Includes the current
 		 * day; yesterday-and-older rows only carry the added count (the
 		 * per-file wordCountStart lives exclusively in `todayBaselines`).
+		 *
+		 * On disk this may be dictionary-encoded (keys are numeric IDs,
+		 * with `fileDict` providing the path mapping).  At runtime it is
+		 * always expanded to full paths — the decode step in statsCodec
+		 * handles both shapes transparently.
 		 */
-		days?: Record<string, DayActivityMap>;
-		/** Baselines for today's live files (see PersistedBaselines). */
+		days?: Record<string, DayActivityMap> | PersistedDaysMap;
+		/** Baselines for today's live files (see PersistedBaselines).
+		 *  Same dictionary-encoding rule as `days`: keys are numeric IDs
+		 *  when `fileDict` is present, file paths otherwise. */
 		todayBaselines?: PersistedBaselines;
 		/** Legacy v1.x storage — migrated into `days` on load. */
 		dailyActivity?: LegacyActivityData[];

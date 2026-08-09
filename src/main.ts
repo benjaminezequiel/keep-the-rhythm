@@ -18,6 +18,7 @@ import {
 } from "@/core/dataPersistence";
 import { handleExternalDataChange } from "@/core/externalSync";
 import { resetDailySummaryCache } from "@/utils/dailySummaryCache";
+import { resetStatsCodecCache } from "@/core/statsCodec";
 
 export default class KeepTheRhythm extends Plugin {
 	
@@ -170,6 +171,7 @@ export default class KeepTheRhythm extends Plugin {
 		// Reset the module-level partitioned cache so stale data doesn't
 		// leak into the next plugin load cycle.
 		resetDailySummaryCache();
+		resetStatsCodecCache();
 	}
 
 	// #endregion
