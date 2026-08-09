@@ -40,7 +40,7 @@ export interface PersistedBaselines {
 }
 
 /**
- * Legacy v1.x row shape. Only read during migration to the `days` format.
+ * Legacy row shape. Only read during migration to the `days` format.
  */
 export interface LegacyActivityData {
 	date: string;
@@ -86,7 +86,7 @@ export interface ThemeColors {
 }
 
 export enum TargetCount {
-	CURRENT_STREAK = "CURRENT_STREAK", // not done yet
+	CURRENT_STREAK = "CURRENT_STREAK",
 	CURRENT_DAY = "CURRENT_DAY", // Add progress bar towards daily goal
 	CURRENT_WEEK = "CURRENT_WEEK",
 	CURRENT_MONTH = "CURRENT_MONTH",
@@ -105,7 +105,7 @@ export enum HeatmapColorModes {
 }
 
 export interface Settings {
-	dailyWritingGoal: number; // created as setting, not used anywhere yet
+	dailyWritingGoal: number;
 	/**
 	 * Debounce delay for sampling editor content on keystroke, in seconds.
 	 * After the user stops typing for this long, the current editor state
@@ -163,9 +163,6 @@ export interface PluginData {
 	};
 }
 
-export const STARTING_STATS = {
-	days: {},
-};
 
 export interface HeatmapConfig {
 	numberOfWeeks?: number;
