@@ -78,7 +78,7 @@ const ALL_LANGUAGES: Language[] = ["LATIN", "CJK", "JAPANESE", "KOREAN", "CYRILL
 
 const LANGUAGE_PRESETS: Record<string, { label: string; scripts: Language[] }> = {
   basic:   { label: "Basic (Latin only)", scripts: ["LATIN"] },
-  chinese: { label: "Chinese (中文)",     scripts: ["LATIN", "CJK"] },
+  chinese: { label: "Chinese",     scripts: ["LATIN", "CJK"] },
   cjk:     { label: "CJK Support",       scripts: ["LATIN", "CJK", "JAPANESE", "KOREAN"] },
   full:    { label: "Full Unicode",      scripts: ALL_LANGUAGES },
 };
