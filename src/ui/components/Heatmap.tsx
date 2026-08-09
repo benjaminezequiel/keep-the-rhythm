@@ -35,6 +35,8 @@ export const Heatmap = ({
 	// getDateForCell reads the current week, so the key must also track today.
 	const gridKey = baseDateKey ? `${weeksToShow}:${baseDateKey}` : `${weeksToShow}:${getToday()}`;
 
+	const today = getToday();
+
 	const todayVersion = useStore(selectTodayVersion);
 	const historicalVersion = useStore(selectHistoricalVersion);
 	
@@ -53,6 +55,17 @@ export const Heatmap = ({
 			(query?.operator === "starts_with" ||
 				query?.operator === "STARTS_WITH")) ||
 		compiledEvaluator;
+
+	const isStartsWith =
+		query?.type === "BinaryExpression" &&
+		(query?.operator === "starts_with" ||
+			query?.operator === "STARTS_WITH");
+	const prefix =
+		isStartsWith && typeof query?.right?.value === "string"
+			? query.right.value.startsWith("/")
+				? query.right.value.substring(1)
+				: query.right.value
+			: null;
 
 	const cellDates = useMemo(() => {
 		const dates: string[] = [];
@@ -80,58 +93,39 @@ export const Heatmap = ({
 	}, [todayVersion, historicalVersion, gridKey]);
 
 	// Filtered path: iterate ONLY the days inside the visible grid
-	// (cellDates), never the full history.  This still runs on every
-	// keystroke when a filter is set, but only those days are walked —
-	// the work is O(weeksToShow × files-per-day) instead of O(all rows).
-	const filteredHeatmapData = useMemo(() => {
+	// (cellDates), never the full history.  Split into two tiers so that
+	// keystrokes (todayVersion changes) only re-scan today's row:
+	//   • filteredHistorical — every non-today cell; cached by
+	//     (historicalVersion, grid, query) — NOT todayVersion, so typing
+	//     today never re-walks historical rows.
+	//   • filteredToday — today's cell only; re-scanned each keystroke.
+	const filteredHistorical = useMemo(() => {
 		if (!hasFilter) return null;
-
 		const { days } = useStore.getState();
 		const dateMap: Record<string, number> = {};
-
-		const isStartsWith =
-			query?.type === "BinaryExpression" &&
-			(query?.operator === "starts_with" ||
-				query?.operator === "STARTS_WITH");
-		const prefix =
-			isStartsWith && typeof query.right.value === "string"
-				? query.right.value.startsWith("/")
-					? query.right.value.substring(1)
-					: query.right.value
-				: null;
-
-		const visitDay = (date: string, day: DayActivityMap | undefined) => {
-			if (!day) return;
-			for (const [filePath, wordsAdded] of Object.entries(day)) {
-				let matches: boolean;
-				if (prefix !== null) {
-					matches = filePath.startsWith(prefix);
-				} else if (compiledEvaluator) {
-					const row: ActivityRecord = { date, filePath, wordsAdded };
-					matches = compiledEvaluator(row);
-				} else {
-					matches = true;
-				}
-				if (matches) {
-					dateMap[date] = (dateMap[date] || 0) + wordsAdded;
-				}
-			}
-		};
-
 		for (const date of cellDates) {
-			visitDay(date, days[date]);
+			if (date === today) continue;
+			const day = days[date];
+			if (day) filterDayInto(date, day, prefix, compiledEvaluator, dateMap);
 		}
-
 		return dateMap;
-	}, [
-		todayVersion,
-		historicalVersion,
-		hasFilter,
-		query,
-		compiledEvaluator,
-		gridKey,
+	}, [hasFilter, today, historicalVersion, prefix, compiledEvaluator,
 		cellDates,
 	]);
+
+	const filteredToday = useMemo(() => {
+		if (!hasFilter) return null;
+		const { days } = useStore.getState();
+		const dateMap: Record<string, number> = {};
+		const day = days[today];
+		if (day) filterDayInto(today, day, prefix, compiledEvaluator, dateMap);
+		return dateMap;
+	}, [hasFilter, today, todayVersion, prefix, compiledEvaluator]);
+
+	const filteredHeatmapData = useMemo(() => {
+		if (!hasFilter) return null;
+		return { ...filteredHistorical, ...filteredToday };
+	}, [hasFilter, filteredHistorical, filteredToday]);
 
 	const heatmapData = filteredHeatmapData ?? cachedHeatmapData;
 
@@ -159,7 +153,6 @@ export const Heatmap = ({
 		return labels;
 	}, [weeksToShow, baseDateKey]);
 
-	const today = getToday();
 	
 	const cellData = useMemo(() => {
 		const data: {
@@ -312,3 +305,29 @@ const buildIntensityResolver = (
 			return () => 0;
 	}
 };
+
+/**
+ * Accumulate matching rows from a single day into `dateMap` using the
+ * resolved filter (a starts_with prefix or a compiled evaluator).
+ */
+function filterDayInto(
+	date: string,
+	day: DayActivityMap,
+	prefix: string | null,
+	evaluator: ((row: ActivityRecord) => boolean) | null,
+	dateMap: Record<string, number>,
+): void {
+	for (const [filePath, wordsAdded] of Object.entries(day)) {
+		let matches: boolean;
+		if (prefix !== null) {
+			matches = filePath.startsWith(prefix);
+		} else if (evaluator) {
+			matches = evaluator({ date, filePath, wordsAdded });
+		} else {
+			matches = true;
+		}
+		if (matches) {
+			dateMap[date] = (dateMap[date] || 0) + wordsAdded;
+		}
+	}
+}
