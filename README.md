@@ -2,7 +2,7 @@
 
 Keep the Rhythm2 is an Obsidian plugin that helps you maintain a consistent writing habit by tracking your daily word count, setting writing goals and visualizing data through a heatmap and customizable code blocks.
 
-> This branch is a major internal rework of the upstream plugin. It is distributed under the new id `keep-the-rhythm2` (v0.5.0). See [What Changed vs. master](#what-changed-vs-master) for a summary of the differences.
+> This branch is a major internal rework compared to upstream `keep-the-rhythm` **v0.2.12** (commit `440c357`). It is distributed under the new id `keep-the-rhythm2` (v0.5.0). See [What Changed vs. v0.2.12](#what-changed-vs-v0212) for a summary of the differences.
 
 ![image](https://github.com/user-attachments/assets/8acd047d-68da-42d0-835d-6c7ab55b6f65)
 
@@ -195,33 +195,35 @@ Data is stored **locally** in `data.json` inside the plugin's data folder — no
 
 Since this branch, historical activity is stored as a **dictionary-encoded** map: file paths are replaced by small integer IDs in `days`, and a separate `fileDict` maps IDs back to paths. `today` activity is kept in a separate partition (`todayBaselines`). This reduces the size of multi-month histories by roughly 60–65%.
 
-Old-format data (the `dailyActivity` array of rows produced by master) is **migrated automatically** on load — you don't need to do anything manually.
+Old-format data (from the Dexie-based v0.2.12 / `440c357`) is **migrated automatically** on load — you don't need to do anything manually.
 
-## What Changed vs. master
+## What Changed vs. v0.2.12
 
-This branch (`featur_优化数据结构`) is a large internal rework of the upstream `keep-the-rhythm` (master, v0.3.0). The plugin is now published as **Keep the Rhythm2** (`keep-the-rhythm2`, v0.5.0). Highlights:
+This branch is a large internal rework of the upstream `keep-the-rhythm` (commit `440c357`, v0.2.12). The plugin is now published as **Keep the Rhythm2** (`keep-the-rhythm2`, v0.5.0). Highlights:
 
 **Architecture & storage**
+- Removed the **Dexie** database (`src/db/`) in favor of a single JSON file (`data.json`) with dictionary-encoded, cache-friendly structures.
 - Replaced the manual event/refresh system with a **Zustand store** (`src/core/store.ts`) for centralized, reactive state.
-- Removed the **Dexie** dependency; data now lives in a single JSON file with dictionary-encoded, cache-friendly structures.
-- Split activity into **today** and **historical** partitions with separate caches, and removed the redundant `dailyActivity` rows.
+- Split activity into **today** and **historical** partitions with separate caches, and removed the redundant per-day rows in favor of a `wordsAdded`/`charsAdded` shape.
 - Added a dedicated **stats codec** (`src/core/statsCodec.ts`) that owns the persisted ↔ runtime shape and transparently migrates legacy data.
+- Added new modules for persistence (`dataPersistence.ts`), queries (`dataQueries.ts`), and external multi-device sync (`externalSync.ts`).
 - Dropped the `moment` dependency in favor of native date utilities.
 
 **Removed features**
 - `CURRENT_FILE` and `WHOLE_VAULT` slots.
-- Character (`CHARS`) counting and unit selection — only **word counts** are tracked now.
-- Whole-repository/`CURRENT_FILE` stats and repository-scoped code (removed `pluginState`, `stats.ts`, `activityLog.ts`).
+- Character (`CHARS`) counting and the unit selector — only **word counts** are tracked now.
+- Repository-scoped code (`pluginState.ts`, `devUtils.ts`, `migrateData.ts`).
 
 **Added / improved**
-- **Tracked Folders** popup manager in settings (previously a plain list) and path-filtering cache.
-- **Editor Change Sample Delay** setting and adjustable JSON persistence debounce (2000 ms).
-- `Chinese` option in Enabled Languages (LATIN + CJK).
+- **Tracked Folders** setting with a popup manager (`TrackedFoldersSetting.ts`) and path-filtering cache, to restrict tracking to a subset of the vault.
+- **Editor Change Sample Delay** setting (seconds to wait after typing stops before sampling content) with adjustable JSON persistence debounce (2000 ms).
+- **Chinese** option in Enabled Languages (LATIN + CJK scripts).
+- Automatic **backups** (`backup.ts`).
 - Caching & `React.memo` throughout heatmap, entries, tooltip and slots to reduce re-renders.
 - Heatmap option to align cells left; `LAST_DAY` now reports the last **2 days** instead of 24 hours.
-- Active-file tracking with `activeFiles` set for efficient rename handling.
+- Active-file tracking with an `activeFiles` set for efficient rename handling.
 
-> Note: the two branches are **not interchangeable** data-wise for storage format, but legacy data is migrated automatically on first load. If you previously used master, your history will be preserved.
+> Note: this branch is **not interchangeable** data-wise with v0.2.12 for the storage format, but legacy Dexie data is migrated automatically on first load. If you previously used v0.2.12, your history will be preserved.
 
 ## Data and Privacy
 
