@@ -5,10 +5,14 @@ import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { formatDate } from "../../utils/dateUtils";
 import { getActivityByDate } from "../../db/queries";
-import { sumTimeEntries, getFileNameWithoutExtension } from "../../utils/utils";
+import {
+  sumTimeEntries,
+  getFileNameWithoutExtension,
+  filterActivitiesByDirectory,
+} from "../../utils/utils";
 import { state, EVENTS } from "../../core/pluginState";
 import { DailyActivity } from "../../db/types";
-import { Unit } from "../../defs/types";
+import { DirectoryFilter, Unit } from "../../defs/types";
 import { FileView, Notice, setIcon } from "obsidian";
 import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
@@ -16,11 +20,13 @@ import { EntryFilter } from "@/core/codeBlocks";
 interface EntriesProps {
   date?: string;
   filters?: EntryFilter[];
+  directoryFilter?: DirectoryFilter;
 }
 
 export const Entries = ({
   date = formatDate(new Date()),
   filters,
+  directoryFilter,
 }: EntriesProps) => {
   const [unit, setUnit] = useState<Unit>(Unit.WORD);
   const [entries, setEntries] = useState<DailyActivity[]>([]);
@@ -49,7 +55,11 @@ export const Entries = ({
     }
 
     setEntries(
-      fetchedActivities
+      filterActivitiesByDirectory(
+        fetchedActivities,
+        directoryFilter?.include ?? [],
+        directoryFilter?.exclude ?? [],
+      )
         .filter((entry) => sumTimeEntries(entry, Unit.WORD, true) != 0)
         .filter((entry) => {
           if (!filters || filters.length === 0) return true;
@@ -83,7 +93,7 @@ export const Entries = ({
     return () => {
       state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
     };
-  }, []);
+  }, [directoryFilter]);
 
   return (
     <div className="todayEntries__section">

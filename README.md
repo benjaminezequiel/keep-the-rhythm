@@ -92,6 +92,9 @@ Embed customizable heatmaps with filtering and display options:
 ```js
 filePath starts_with "journal"
 
+INCLUDE journal, projects                  // optional, same syntax as Directory Filtering below
+EXCLUDE journal/drafts                     // optional, takes priority over INCLUDE
+
 OPTIONS                                    // must always start with the OPTIONS header
 HIDE month_labels, weekday_labels          // allows to hide the labels
 COLORING_MODE liquid                       // toggles the coloring mode (liquid, stops, solid or gradual)
@@ -113,6 +116,13 @@ Available Options:
 - `STOPS`: Define threshold values (e.g., `100, 500, 1000`)
 - `SQUARED_CELLS` or `ROUNDED_CELLS`: Control cell appearance
 
+**Directory Filtering**:
+
+- `INCLUDE folder_a, folder_b`: only count files under these directories
+- `EXCLUDE folder_a, folder_b`: never count files under these directories (takes priority over `INCLUDE`)
+- Both are optional and comma-separated, and combine with the `filePath` query above rather than replacing it. Use `*` as a wildcard within a folder name, e.g. `*journal` matches both `journal/` and `myjournal/`. Matching is **case-sensitive** — `journal` will not match a folder named `Journal`. See [Directory Filtering](#directory-filtering) below for the full matching rules.
+- This filter is independent from the sidebar's Include/Exclude Directories setting — it does not inherit it, and only applies within this code block.
+
 #### Data Slots (`ktr-slots`)
 
 Display inline statistics with customizable metrics:
@@ -124,6 +134,9 @@ CURRENT_STREAK
 WHOLE_VAULT
 CURRENT_MONTH, WORDS, AVG
 CURRENT_YEAR
+
+INCLUDE journal, projects
+EXCLUDE journal/drafts
 ```
 
 Available Slots:
@@ -145,6 +158,14 @@ Available Slots:
 - Specify WORDS or CHARS for the count unit
 - Add AVG for average calculations where applicable
 
+**Directory Filtering**:
+
+- `INCLUDE folder_a, folder_b`: only count files under these directories
+- `EXCLUDE folder_a, folder_b`: never count files under these directories (takes priority over `INCLUDE`)
+- Both are optional and comma-separated. Use `*` as a wildcard within a folder name, e.g. `*journal` matches both `journal/` and `myjournal/`. Matching is **case-sensitive** — `journal` will not match a folder named `Journal`. See [Directory Filtering](#directory-filtering) below for the full matching rules.
+- `CURRENT_FILE`, `CURRENT_STREAK`, and `WHOLE_VAULT` always ignore this filter, since they're not scoped to a date range of file activity.
+- This filter is independent from the sidebar's Include/Exclude Directories setting — it does not inherit it, and only applies within this code block.
+
 #### Daily Entries (`ktr-entries`)
 
 Display writing activity for specific dates:
@@ -162,6 +183,29 @@ Access comprehensive customization options through the plugin settings:
 - Set daily writing goals and track streaks
 - Configure heatmap appearance (coloring, cell shapes, labels)
 - Toggle visibility of different plugin components
+- Scope the sidebar to specific directories with Include/Exclude Directories (see below)
+
+### Directory Filtering
+
+The Sidebar settings section has two optional fields:
+
+- **Include Directories**: comma-separated list of directories to scope the sidebar's heatmap, slots, and entries to (e.g. `journal, projects`)
+- **Exclude Directories**: comma-separated list of directories to exclude, same syntax, takes priority over Include Directories
+
+Both are optional — leaving them empty keeps the current behavior of tracking your entire vault. A pattern matches a folder name segment by segment from the root of your vault, and `*` can be used as a wildcard within a segment:
+
+| Pattern       | Matches                          | Doesn't match                    |
+| ------------- | --------------------------------- | --------------------------------- |
+| `journal`     | `journal/note.md`                 | `myjournal/note.md`, `journal2/note.md` |
+| `*journal`    | `journal/note.md`, `myjournal/note.md` | `journal2/note.md`           |
+| `journal*`    | `journal/note.md`, `journal2/note.md` | `myjournal/note.md`           |
+| `proj*/2024`  | `proj-alpha/2024/note.md`         | `proj-alpha/2023/note.md`         |
+
+Matching is **case-sensitive**: `journal` will not match a folder named `Journal`. If your vault mixes casing for the same folder, list every variant you want covered (e.g. `journal, Journal`).
+
+This setting only affects the plugin's **sidebar panel**. Code blocks embedded in notes (`ktr-heatmap`, `ktr-slots`, `ktr-entries`) are unaffected by it and keep using their own filter syntax — `ktr-heatmap` and `ktr-slots` both support the same Include/Exclude directory syntax via `INCLUDE`/`EXCLUDE` lines (see above), while `ktr-entries` uses the `filePath` query syntax described in its section.
+
+`WHOLE_VAULT` and `CURRENT_STREAK` always reflect the entire vault regardless of this filter, and `CURRENT_FILE` always reflects whichever file is currently open.
 
 ## Data and Privacy
 

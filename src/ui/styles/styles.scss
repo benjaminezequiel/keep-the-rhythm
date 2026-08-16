@@ -4,6 +4,7 @@
 @use "./slot" as *;
 @use "./entries" as *;
 @use "./settings" as *;
+@use "./directoryFilterInfo" as *;
 
 .sidebar-view {
 	container-type: inline-size;

@@ -1,6 +1,6 @@
 export interface SettingItem {
   key: string;
-  type: "toggle" | "number" | "dropdown" | "date" | "custom";
+  type: "toggle" | "number" | "text" | "dropdown" | "date" | "custom";
   title: string;
   description?: string;
   placeholder?: string;
@@ -131,6 +131,22 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
           type: "toggle",
           title: "Show heatmap",
           description: "Displays a heatmap with historic writing data.",
+        },
+        {
+          key: "sidebarConfig.directoryFilters.include",
+          type: "text",
+          title: "Include Directories",
+          description:
+            'Comma-separated list of directories to scope the sidebar\'s heatmap, slots, and entries to (e.g. "journal, projects"). Use "*" as a wildcard within a folder name (e.g. "*journal" matches "journal" and "myjournal"). Leave empty to include everything. Does not affect ktr-heatmap/ktr-slots/ktr-entries code blocks embedded in notes.',
+          placeholder: "journal, projects",
+        },
+        {
+          key: "sidebarConfig.directoryFilters.exclude",
+          type: "text",
+          title: "Exclude Directories",
+          description:
+            "Comma-separated list of directories to exclude from the sidebar (same syntax as Include Directories). Takes priority over Include Directories.",
+          placeholder: "journal/drafts, archive",
         },
       ],
     },

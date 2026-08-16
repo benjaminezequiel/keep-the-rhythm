@@ -1,7 +1,13 @@
 import { Notice } from "obsidian";
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
-import { CalculationType, SlotConfig, TargetCount, Unit } from "@/defs/types";
+import {
+	CalculationType,
+	DirectoryFilter,
+	SlotConfig,
+	TargetCount,
+	Unit,
+} from "@/defs/types";
 import { Slot } from "./Slot";
 import { state } from "@/core/pluginState";
 import { useEffect, useState, useRef } from "react";
@@ -10,9 +16,14 @@ import { TransitionGroup, CSSTransition } from "react-transition-group";
 interface SlotWrapperProps {
 	slots: SlotConfig[] | undefined;
 	isCodeBlock?: boolean;
+	directoryFilter?: DirectoryFilter;
 }
 
-export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
+export const SlotWrapper = ({
+	slots,
+	isCodeBlock,
+	directoryFilter,
+}: SlotWrapperProps) => {
 	const [slotsState, setSlotsState] = useState<
 		(SlotConfig & { uuid?: string })[] | undefined
 	>(() => slots?.map((slot) => ({ ...slot, uuid: uuidv4() })));
@@ -122,6 +133,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 									calc={slot.calc}
 									onDelete={handleDeleteClick}
 									isCodeBlock={isCodeBlock}
+									directoryFilter={directoryFilter}
 								/>
 							</div>
 						</CSSTransition>

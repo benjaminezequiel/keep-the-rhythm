@@ -63,6 +63,16 @@ export enum HeatmapColorModes {
 	LIQUID = "liquid",
 }
 
+export interface DirectoryFilterSettings {
+	include: string;
+	exclude: string;
+}
+
+export interface DirectoryFilter {
+	include: string[];
+	exclude: string[];
+}
+
 export interface Settings {
 	dailyWritingGoal: number; // created as setting, not used anywhere yet
 	enabledLanguages: Language[]; // guides the definition of REGEXes for word counting
@@ -84,6 +94,7 @@ export interface Settings {
 			showEntries: boolean;
 		};
 		slots: SlotConfig[];
+		directoryFilters: DirectoryFilterSettings;
 	};
 }
 
@@ -176,6 +187,10 @@ export const DEFAULT_SETTINGS: Settings = {
 			showSlots: true,
 			showEntries: true,
 			showHeatmap: true,
+		},
+		directoryFilters: {
+			include: "",
+			exclude: "",
 		},
 		slots: [
 			{

@@ -8,6 +8,38 @@ import { createRoot } from "react-dom/client";
 import React from "react";
 import { Heatmap } from "@/ui/components/Heatmap";
 import { MarkdownRenderChild } from "obsidian";
+import { parseDirectoryList } from "@/utils/utils";
+import { DirectoryFilter } from "@/defs/types";
+
+function extractDirectoryDirectives(source: string): {
+	remainingLines: string;
+	directoryFilter: DirectoryFilter;
+} {
+	const lines = source.split("\n");
+	const remainingLines: string[] = [];
+	let include: string[] = [];
+	let exclude: string[] = [];
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+
+		const includeMatch = line.match(/^INCLUDE\s+(.+)$/);
+		const excludeMatch = line.match(/^EXCLUDE\s+(.+)$/);
+
+		if (includeMatch) {
+			include = parseDirectoryList(includeMatch[1]);
+		} else if (excludeMatch) {
+			exclude = parseDirectoryList(excludeMatch[1]);
+		} else {
+			remainingLines.push(rawLine);
+		}
+	}
+
+	return {
+		remainingLines: remainingLines.join("\n"),
+		directoryFilter: { include, exclude },
+	};
+}
 
 ///////////// HEATMAP
 // Previously returned a new function for each code block, now directly processes the block through a unique function
@@ -21,7 +53,9 @@ export function createHeatmapCodeBlock(
 	}
 
 	const trimmedSource = source.trim();
-	const query = parseQueryToJSEP(trimmedSource);
+	const { remainingLines, directoryFilter } =
+		extractDirectoryDirectives(trimmedSource);
+	const query = parseQueryToJSEP(remainingLines);
 
 	if (!query?.options) return; // add log / error
 
@@ -33,6 +67,7 @@ export function createHeatmapCodeBlock(
 			heatmapConfig: query?.options,
 			query: query?.filter,
 			isCodeBlock: true,
+			directoryFilter,
 		}),
 	);
 
@@ -59,7 +94,9 @@ export function createSlotsCodeBlock(
 	if (!state.plugin.data || !state.plugin.data.settings) {
 		return; // add log / error
 	}
-	const config = parseSlotQuery(source);
+	const { remainingLines, directoryFilter } =
+		extractDirectoryDirectives(source);
+	const config = parseSlotQuery(remainingLines);
 	if (config.length === 0) return; // add log / error
 
 	const container = el.createDiv("slots-codeblock");
@@ -69,6 +106,7 @@ export function createSlotsCodeBlock(
 		React.createElement(SlotWrapper, {
 			slots: config,
 			isCodeBlock: true,
+			directoryFilter,
 		}),
 	);
 
