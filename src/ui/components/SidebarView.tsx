@@ -1,11 +1,13 @@
 import { KeyProvider } from "@/utils/useModiferKey";
 import React, { useEffect, useState } from "react";
-import type { PluginData } from "@/defs/types";
+import type { DirectoryFilter, PluginData } from "@/defs/types";
 import KeepTheRhythm from "@/main";
 import { Heatmap } from "./Heatmap";
 import { SlotWrapper } from "./SlotWrapper";
 import { EVENTS, state } from "@/core/pluginState";
 import { Entries } from "./Entries";
+import { getSidebarDirectoryFilter } from "@/utils/utils";
+import { DirectoryFilterInfo } from "./DirectoryFilterInfo";
 
 interface KTRView {
   data?: PluginData;
@@ -30,6 +32,9 @@ export const KTRView = ({ plugin }: KTRView) => {
   const [showSlots, setShowSlots] = useState(
     plugin.data.settings.sidebarConfig.visibility.showSlots,
   );
+  const [directoryFilter, setDirectoryFilter] = useState<DirectoryFilter>(
+    () => getSidebarDirectoryFilter(),
+  );
 
   const updateData = () => {
     setHeatmapConfigState(plugin.data.settings.heatmapConfig);
@@ -39,6 +44,7 @@ export const KTRView = ({ plugin }: KTRView) => {
     setShowHeatmap(plugin.data.settings.sidebarConfig.visibility.showHeatmap);
     setShowEntries(plugin.data.settings.sidebarConfig.visibility.showEntries);
     setShowSlots(plugin.data.settings.sidebarConfig.visibility.showSlots);
+    setDirectoryFilter(getSidebarDirectoryFilter());
   };
 
   useEffect(() => {
@@ -58,11 +64,18 @@ export const KTRView = ({ plugin }: KTRView) => {
 			`}
     >
       <KeyProvider>
-        {showSlots && <SlotWrapper slots={slots} />}
-        {showHeatmap && (
-          <Heatmap heatmapConfig={heatmapConfigState} query={""} />
+        <DirectoryFilterInfo directoryFilter={directoryFilter} />
+        {showSlots && (
+          <SlotWrapper slots={slots} directoryFilter={directoryFilter} />
         )}
-        {showEntries && <Entries />}
+        {showHeatmap && (
+          <Heatmap
+            heatmapConfig={heatmapConfigState}
+            query={""}
+            directoryFilter={directoryFilter}
+          />
+        )}
+        {showEntries && <Entries directoryFilter={directoryFilter} />}
       </KeyProvider>
     </div>
   );

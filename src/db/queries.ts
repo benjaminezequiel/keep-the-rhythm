@@ -10,10 +10,13 @@ import {
 	getStartOfWeek,
 	getStartOfYear,
 } from "@/utils/dateUtils";
-import { sumTimeEntries } from "@/utils/utils";
+import { sumTimeEntries, filterActivitiesByDirectory } from "@/utils/utils";
 import { DailyActivity } from "./types";
 import { moment as _moment, debounce, Notice, Vault } from "obsidian";
 import { getFileWordAndCharCount } from "@/utils/utils";
+import { DirectoryFilter } from "../defs/types";
+
+const NO_DIRECTORY_FILTER: DirectoryFilter = { include: [], exclude: [] };
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -33,11 +36,13 @@ export async function getActivtityForFile(date: string, filePath: string) {
 export async function getTotalValueByDate(
 	date: string,
 	unit: Unit,
+	directoryFilter: DirectoryFilter = NO_DIRECTORY_FILTER,
 ): Promise<number> {
-	const activities = await getDB()
-		.dailyActivity.where("date")
-		.equals(date)
-		.toArray();
+	const activities = filterActivitiesByDirectory(
+		await getDB().dailyActivity.where("date").equals(date).toArray(),
+		directoryFilter.include,
+		directoryFilter.exclude,
+	);
 
 	let value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
@@ -50,11 +55,16 @@ export async function getTotalValueInDateRange(
 	startDate: string,
 	endDate: string,
 	unit: Unit,
+	directoryFilter: DirectoryFilter = NO_DIRECTORY_FILTER,
 ) {
-	const activities = await getDB()
-		.dailyActivity.where("date")
-		.between(startDate, endDate, true, true)
-		.toArray();
+	const activities = filterActivitiesByDirectory(
+		await getDB()
+			.dailyActivity.where("date")
+			.between(startDate, endDate, true, true)
+			.toArray(),
+		directoryFilter.include,
+		directoryFilter.exclude,
+	);
 
 	let value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
@@ -165,8 +175,13 @@ export async function getActivitiesFromLast24Hours(): Promise<DailyActivity[]> {
 
 export async function getTotalValueFromLast24Hours(
 	unit: Unit,
+	directoryFilter: DirectoryFilter = NO_DIRECTORY_FILTER,
 ): Promise<number> {
-	const activities = await getActivitiesFromLast24Hours();
+	const activities = filterActivitiesByDirectory(
+		await getActivitiesFromLast24Hours(),
+		directoryFilter.include,
+		directoryFilter.exclude,
+	);
 	return sumLast24Hours(activities, unit);
 }
 
@@ -237,6 +252,7 @@ export async function getCurrentCount(
 	unit: Unit,
 	target: TargetCount,
 	calc?: CalculationType,
+	directoryFilter: DirectoryFilter = NO_DIRECTORY_FILTER,
 ): Promise<number> {
 	if (target === TargetCount.CURRENT_FILE) {
 		if (state.currentActivity) {
@@ -273,7 +289,7 @@ export async function getCurrentCount(
 			}
 
 		case TargetCount.CURRENT_DAY:
-			return await getTotalValueByDate(state.today, unit);
+			return await getTotalValueByDate(state.today, unit, directoryFilter);
 
 		case TargetCount.CURRENT_WEEK:
 			startDate = formatDate(getStartOfWeek(new Date()));
@@ -296,7 +312,7 @@ export async function getCurrentCount(
 			break;
 
 		case TargetCount.LAST_DAY:
-			return getTotalValueFromLast24Hours(unit);
+			return getTotalValueFromLast24Hours(unit, directoryFilter);
 			break;
 
 		case TargetCount.LAST_WEEK:
@@ -332,7 +348,12 @@ export async function getCurrentCount(
 			throw new Error("Unsupported target type");
 	}
 
-	const value = await getTotalValueInDateRange(startDate, state.today, unit);
+	const value = await getTotalValueInDateRange(
+		startDate,
+		state.today,
+		unit,
+		directoryFilter,
+	);
 	return calc === CalculationType.AVG ? Math.round(value / totalDays) : value;
 }
 

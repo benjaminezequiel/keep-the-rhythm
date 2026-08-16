@@ -1,0 +1,37 @@
+.directoryFilterInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+
+	width: 100%;
+	max-width: 100%;
+	padding: var(--size-4-2);
+	border-radius: var(--radius-m);
+
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+
+	margin-bottom: 8px;
+}
+
+.directoryFilterInfo__header {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.directoryFilterInfo__row {
+	display: flex;
+	gap: 4px;
+	align-items: baseline;
+	font-size: var(--font-smaller);
+}
+
+.directoryFilterInfo__label {
+	flex-shrink: 0;
+	color: var(--text-faint);
+}
+
+.directoryFilterInfo__value {
+	color: var(--text-muted);
+	word-break: break-word;
+}

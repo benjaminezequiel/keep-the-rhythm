@@ -110,6 +110,19 @@ export class SettingsTab extends PluginSettingTab {
         );
         break;
 
+      case "text":
+        setting.addText((text) =>
+          text
+            .setPlaceholder(config.placeholder ?? "")
+            .setValue(String(currentValue ?? ""))
+            .onChange(async (value) => {
+              setByPath(this.settings, config.key, value);
+              await this.plugin.updateAndSaveEverything();
+              updateVisibility(config.key, value);
+            }),
+        );
+        break;
+
       case "dropdown":
         setting.addDropdown((dropdown) => {
           dropdown

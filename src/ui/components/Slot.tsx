@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 import { getCurrentCount } from "@/db/queries";
-import { CalculationType } from "@/defs/types";
+import { CalculationType, DirectoryFilter } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
 import { TargetCount, SlotConfig, Unit } from "@/defs/types";
@@ -18,9 +18,11 @@ export const Slot = ({
 	calc,
 	onDelete,
 	isCodeBlock,
+	directoryFilter,
 }: SlotConfig & {
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
+	directoryFilter?: DirectoryFilter;
 }) => {
 	// TODO: should probably make something that stores data that's not from today so its only udpated on refresh everything!
 
@@ -121,7 +123,12 @@ export const Slot = ({
 		)
 			setIsLoading(true);
 		try {
-			const v = await getCurrentCount(unitType, optionType, calcMode);
+			const v = await getCurrentCount(
+				unitType,
+				optionType,
+				calcMode,
+				directoryFilter,
+			);
 			if (optionType === TargetCount.CURRENT_DAY) {
 				const newProgress =
 					(v / state.plugin.data.settings.dailyWritingGoal) * 100;
@@ -145,7 +152,7 @@ export const Slot = ({
 		return () => {
 			state.off(EVENTS.REFRESH_EVERYTHING, updateData);
 		};
-	}, [unitType, optionType, calcMode]);
+	}, [unitType, optionType, calcMode, directoryFilter]);
 
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);

@@ -1,6 +1,7 @@
 import { state } from "@/core/pluginState";
 import { HeatmapColorModes } from "../defs/types";
 import { CalculationType, TargetCount } from "../defs/types";
+import { DirectoryFilter } from "../defs/types";
 import { DailyActivity } from "@/db/types";
 import { App } from "obsidian";
 import { Language } from "../defs/types";
@@ -204,6 +205,75 @@ export function parseToggles(query: string) {
 	if (hideEntries) toggles.showEntries = false;
 
 	return toggles;
+}
+
+export function parseDirectoryList(raw?: string): string[] {
+	if (!raw) return [];
+	return raw
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean);
+}
+
+function escapeRegexExceptStar(segment: string): string {
+	return segment.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function compileDirectoryPattern(pattern: string): RegExp[] {
+	return pattern
+		.split("/")
+		.filter(Boolean)
+		.map(
+			(segment) =>
+				new RegExp(
+					`^${escapeRegexExceptStar(segment).replace(/\*/g, ".*")}$`,
+				),
+		);
+}
+
+export function matchesCompiledPattern(
+	pathSegments: string[],
+	patternRegexes: RegExp[],
+): boolean {
+	if (patternRegexes.length === 0) return false;
+	if (patternRegexes.length > pathSegments.length) return false;
+	return patternRegexes.every((regex, i) => regex.test(pathSegments[i]));
+}
+
+export function filterActivitiesByDirectory<T extends { filePath: string }>(
+	activities: T[],
+	include: string[],
+	exclude: string[],
+): T[] {
+	if (include.length === 0 && exclude.length === 0) return activities;
+
+	const includePatterns = include.map(compileDirectoryPattern);
+	const excludePatterns = exclude.map(compileDirectoryPattern);
+
+	return activities.filter((activity) => {
+		const segments = activity.filePath.split("/");
+
+		if (excludePatterns.some((p) => matchesCompiledPattern(segments, p))) {
+			return false;
+		}
+		if (
+			includePatterns.length > 0 &&
+			!includePatterns.some((p) => matchesCompiledPattern(segments, p))
+		) {
+			return false;
+		}
+		return true;
+	});
+}
+
+export function getSidebarDirectoryFilter(): DirectoryFilter {
+	const directoryFilters =
+		state.plugin.data.settings.sidebarConfig?.directoryFilters;
+
+	return {
+		include: parseDirectoryList(directoryFilters?.include),
+		exclude: parseDirectoryList(directoryFilters?.exclude),
+	};
 }
 
 export async function getFileWordAndCharCount(

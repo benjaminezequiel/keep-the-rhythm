@@ -3,10 +3,19 @@ import { useLiveQuery } from "dexie-react-hooks";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { moment as _moment } from "obsidian";
 import { weekdaysNames, monthNames } from "../texts";
-import { getDateForCell, sumTimeEntries } from "@/utils/utils";
+import {
+	getDateForCell,
+	sumTimeEntries,
+	filterActivitiesByDirectory,
+} from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/db/types";
-import { Unit, HeatmapColorModes, HeatmapConfig } from "@/defs/types";
+import {
+	Unit,
+	HeatmapColorModes,
+	HeatmapConfig,
+	DirectoryFilter,
+} from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { compileEvaluator } from "@/core/codeBlockQuery";
 import { getDB } from "@/db/db";
@@ -15,12 +24,14 @@ interface HeatmapProps {
 	heatmapConfig: HeatmapConfig;
 	query?: any;
 	isCodeBlock?: boolean;
+	directoryFilter?: DirectoryFilter;
 }
 
 export const Heatmap = ({
 	heatmapConfig,
 	query,
 	isCodeBlock,
+	directoryFilter,
 }: HeatmapProps) => {
 	let startDate: Date | null = null;
 	let endDate: Date | null = null;
@@ -87,6 +98,12 @@ export const Heatmap = ({
 				.toArray();
 		}
 
+		results = filterActivitiesByDirectory(
+			results,
+			directoryFilter?.include ?? [],
+			directoryFilter?.exclude ?? [],
+		);
+
 		const dateMap: Record<string, number> = {};
 
 		for (const entry of results) {
@@ -96,7 +113,13 @@ export const Heatmap = ({
 		}
 
 		return dateMap;
-	});
+	}, [
+		weeksToShow,
+		baseDate?.getTime(),
+		JSON.stringify(query),
+		(directoryFilter?.include ?? []).join(","),
+		(directoryFilter?.exclude ?? []).join(","),
+	]);
 
 	if (!heatmapData) {
 		return <div className="heatmap-loading">Loading heatmap...</div>; // Replace with spinner or skeleton
