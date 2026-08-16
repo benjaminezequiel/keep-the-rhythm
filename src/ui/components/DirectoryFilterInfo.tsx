@@ -5,7 +5,7 @@ interface DirectoryFilterInfoProps {
   directoryFilter: DirectoryFilter;
 }
 
-const MAX_VALUE_LENGTH = 500;
+const MAX_VALUE_LENGTH = 100;
 
 const formatDirectoryList = (directories: string[]): string => {
   const joined = directories.join(", ");
@@ -24,9 +24,12 @@ export const DirectoryFilterInfo = ({
 
   return (
     <div className="directoryFilterInfo">
+      {include.length > 0 || exclude.length > 0 ? (
+        <div className="directoryFilterInfo__header">Directory Filter</div>
+      ) : null}
       {include.length > 0 && (
         <div className="directoryFilterInfo__row">
-          <span className="directoryFilterInfo__label">Include</span>
+          <span className="directoryFilterInfo__label">Include:</span>
           <span className="directoryFilterInfo__value">
             {formatDirectoryList(include)}
           </span>
@@ -34,7 +37,7 @@ export const DirectoryFilterInfo = ({
       )}
       {exclude.length > 0 && (
         <div className="directoryFilterInfo__row">
-          <span className="directoryFilterInfo__label">Exclude</span>
+          <span className="directoryFilterInfo__label">Exclude:</span>
           <span className="directoryFilterInfo__value">
             {formatDirectoryList(exclude)}
           </span>
