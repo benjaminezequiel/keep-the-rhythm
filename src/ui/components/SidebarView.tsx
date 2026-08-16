@@ -6,6 +6,7 @@ import { Heatmap } from "./Heatmap";
 import { SlotWrapper } from "./SlotWrapper";
 import { EVENTS, state } from "@/core/pluginState";
 import { Entries } from "./Entries";
+import { GoalWidget } from "./GoalWidget";
 
 interface KTRView {
   data?: PluginData;
@@ -30,6 +31,10 @@ export const KTRView = ({ plugin }: KTRView) => {
   const [showSlots, setShowSlots] = useState(
     plugin.data.settings.sidebarConfig.visibility.showSlots,
   );
+  // Falls back to visible for configs saved before this setting existed.
+  const [showGoalWidget, setShowGoalWidget] = useState(
+    plugin.data.settings.sidebarConfig.visibility.showGoalWidget !== false,
+  );
 
   const updateData = () => {
     setHeatmapConfigState(plugin.data.settings.heatmapConfig);
@@ -39,6 +44,9 @@ export const KTRView = ({ plugin }: KTRView) => {
     setShowHeatmap(plugin.data.settings.sidebarConfig.visibility.showHeatmap);
     setShowEntries(plugin.data.settings.sidebarConfig.visibility.showEntries);
     setShowSlots(plugin.data.settings.sidebarConfig.visibility.showSlots);
+    setShowGoalWidget(
+      plugin.data.settings.sidebarConfig.visibility.showGoalWidget !== false,
+    );
   };
 
   useEffect(() => {
@@ -58,6 +66,7 @@ export const KTRView = ({ plugin }: KTRView) => {
 			`}
     >
       <KeyProvider>
+        {showGoalWidget && <GoalWidget />}
         {showSlots && <SlotWrapper slots={slots} />}
         {showHeatmap && (
           <Heatmap heatmapConfig={heatmapConfigState} query={""} />

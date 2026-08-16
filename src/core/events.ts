@@ -2,7 +2,7 @@ import { Unit } from "@/defs/types";
 import { TargetCount } from "@/defs/types";
 import { getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
-import { TFile, Editor } from "obsidian";
+import { TFile, Editor, Notice } from "obsidian";
 import { getDB } from "../db/db";
 import { DailyActivity, TimeEntry } from "@/db/types";
 import KeepTheRhythm from "../main";
@@ -12,6 +12,7 @@ import { floorMomentToFive } from "@/utils/dateUtils";
 import { moment as _moment } from "obsidian";
 import { emit } from "process";
 import { getExistingOrCreateNewEntry, sumBothTimeEntries } from "@/utils/utils";
+import { launchGlobalConfetti } from "@/ui/confetti";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -219,11 +220,22 @@ async function checkStreak() {
   );
 
   const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
+  const goalReached = writtenToday >= goal;
 
-  if (writtenToday >= goal) {
-    state.plugin.updateCurrentStreak(true);
-  } else {
-    state.plugin.updateCurrentStreak(false);
+  const justReachedGoal =
+    await state.plugin.updateCurrentStreak(goalReached);
+
+  state.setReachedGoalToday(goalReached);
+
+  if (justReachedGoal) {
+    new Notice(
+      `🎉 Daily writing goal reached! You've written ${writtenToday.toLocaleString()} words today.`,
+    );
+    // Fired at the window level (not tied to the sidebar's React tree) so it
+    // shows up exactly like the Notice above, whether or not the sidebar
+    // and its goal widget happen to be open.
+    launchGlobalConfetti();
+    state.emit(EVENTS.DAILY_WRITING_GOAL_REACHED);
   }
 }
 

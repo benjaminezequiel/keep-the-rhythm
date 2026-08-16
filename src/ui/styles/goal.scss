@@ -1,0 +1,205 @@
+.goal-widget {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	overflow: hidden;
+
+	width: 100%;
+	box-sizing: border-box;
+	padding: var(--size-4-3) var(--size-4-2) var(--size-4-4);
+	margin-bottom: 4px;
+	border-radius: var(--radius-m);
+
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+}
+
+.goal-widget__header {
+	align-self: flex-start;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.goal-widget__ring-wrapper {
+	position: relative;
+	width: 132px;
+	height: 132px;
+	max-width: 100%;
+	margin-top: 4px;
+
+	transition: transform 500ms var(--spring-easing);
+}
+
+.goal-widget__ring {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+
+.goal-widget__track {
+	stroke-width: 9;
+}
+
+/**
+* Mixed towards the card's own background (not transparent) so the fill and
+* stroke below are fully opaque — otherwise the ring's inner half repaints
+* on top of the disc fill and the overlap comes out visibly darker.
+* Mixed in srgb, not oklch: oklch's hue is undefined at an achromatic
+* endpoint like a white/near-white background, so engines resolve it
+* inconsistently and can rotate the accent color towards pink instead of
+* just fading it — srgb interpolates channel-by-channel and has no such
+* hue to rotate.
+*/
+.theme-light .goal-widget__track {
+	fill: color-mix(in srgb, var(--light-4) 18%, var(--background-primary));
+	stroke: color-mix(in srgb, var(--light-4) 18%, var(--background-primary));
+}
+.theme-dark .goal-widget__track {
+	fill: color-mix(in srgb, var(--dark-4) 18%, var(--background-primary));
+	stroke: color-mix(in srgb, var(--dark-4) 18%, var(--background-primary));
+}
+
+.goal-widget__fill {
+	fill: none;
+	stroke-width: 9;
+	stroke-linecap: round;
+	transition:
+		stroke-dashoffset 700ms var(--spring-easing),
+		filter 400ms ease;
+}
+
+.theme-light .goal-widget__fill {
+	stroke: var(--light-4);
+	--goal-accent: var(--light-4);
+}
+.theme-dark .goal-widget__fill {
+	stroke: var(--dark-4);
+	--goal-accent: var(--dark-4);
+}
+
+.goal-widget--reached .goal-widget__fill {
+	filter: drop-shadow(
+		0 0 6px color-mix(in oklch, var(--goal-accent), transparent 40%)
+	);
+}
+
+.goal-widget__center {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	pointer-events: none;
+}
+
+.goal-widget__label {
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+}
+
+.goal-widget--reached .goal-widget__label {
+	color: var(--text-normal);
+}
+
+.goal-widget__value {
+	font-size: var(--font-ui-larger);
+	font-weight: var(--font-medium);
+	color: var(--text-normal);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.2;
+}
+
+.goal-widget__unit {
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+}
+
+.goal-widget__caption {
+	margin-top: 6px;
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+}
+
+/**
+* CELEBRATION ANIMATION, played once when the daily goal is first reached
+*/
+.goal-widget--celebrate .goal-widget__ring-wrapper {
+	animation: goal-pulse 1400ms var(--spring-easing);
+}
+
+.goal-widget--celebrate .goal-widget__fill {
+	animation: goal-glow 1400ms ease-out;
+}
+
+@keyframes goal-pulse {
+	0% {
+		transform: scale(1);
+	}
+	30% {
+		transform: scale(1.12);
+	}
+	60% {
+		transform: scale(0.98);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes goal-glow {
+	0% {
+		filter: drop-shadow(0 0 0 transparent);
+	}
+	35% {
+		filter: drop-shadow(
+			0 0 14px
+				color-mix(in oklch, var(--goal-accent), transparent 20%)
+		);
+	}
+	100% {
+		filter: drop-shadow(
+			0 0 6px color-mix(in oklch, var(--goal-accent), transparent 40%)
+		);
+	}
+}
+
+/**
+* CONFETTI, bursts from the top of the card and falls through it once the
+* goal is reached. Contained by .goal-widget's overflow: hidden.
+*/
+.goal-widget__confetti {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.goal-widget__confetti-piece {
+	position: absolute;
+	top: -10px;
+	left: var(--left);
+	width: 6px;
+	height: 11px;
+	background: var(--piece-color);
+	border-radius: 1px;
+	opacity: 0;
+	animation: confetti-fall var(--duration) cubic-bezier(0.25, 0.46, 0.45, 0.94)
+		var(--delay) forwards;
+}
+
+@keyframes confetti-fall {
+	0% {
+		opacity: 0;
+		transform: translate(0, 0) rotate(0deg);
+	}
+	12% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translate(var(--drift), 210px) rotate(var(--rotation));
+	}
+}

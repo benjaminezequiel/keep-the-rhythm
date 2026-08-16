@@ -120,6 +120,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
             "Display the overview section in the word count heatmap.",
         },
         {
+          key: "sidebarConfig.visibility.showGoalWidget",
+          type: "toggle",
+          title: "Show daily goal widget",
+          description:
+            "Display an animated ring showing progress towards today's writing goal.",
+        },
+        {
           key: "sidebarConfig.visibility.showEntries",
           type: "toggle",
           title: "Show today's entries",

@@ -464,8 +464,13 @@ export default class KeepTheRhythm extends Plugin {
 		await this.saveData(this.data);
 	}
 
-	public async updateCurrentStreak(increase: boolean) {
-		if (!this.data.stats) return;
+	/**
+	 * @returns true only when this call is the one that newly crosses the goal for today
+	 * (i.e. the goal wasn't already marked as completed). Used to fire the goal-reached
+	 * celebration exactly once per day instead of on every keystroke.
+	 */
+	public async updateCurrentStreak(increase: boolean): Promise<boolean> {
+		if (!this.data.stats) return false;
 
 		// TODO: check previous date to see when was the last one
 
@@ -477,11 +482,14 @@ export default class KeepTheRhythm extends Plugin {
 			this.data.stats.daysWithCompletedGoal,
 		);
 
+		let justCompleted = false;
+
 		if (increase) {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {
-				return;
+				return false;
 			}
 			this.data.stats.daysWithCompletedGoal.push(state.today);
+			justCompleted = true;
 		} else {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {
 				const newArray = this.data.stats.daysWithCompletedGoal?.filter(
@@ -491,6 +499,7 @@ export default class KeepTheRhythm extends Plugin {
 			}
 		}
 		this.quietSave();
+		return justCompleted;
 	}
 
 	public async updateAndSaveEverything() {

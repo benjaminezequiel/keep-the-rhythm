@@ -82,6 +82,7 @@ export interface Settings {
 			showSlots: boolean;
 			showHeatmap: boolean;
 			showEntries: boolean;
+			showGoalWidget: boolean;
 		};
 		slots: SlotConfig[];
 	};
@@ -176,6 +177,7 @@ export const DEFAULT_SETTINGS: Settings = {
 			showSlots: true,
 			showEntries: true,
 			showHeatmap: true,
+			showGoalWidget: true,
 		},
 		slots: [
 			{
