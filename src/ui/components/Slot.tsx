@@ -126,7 +126,7 @@ export const Slot = ({
 				const newProgress =
 					(v / state.plugin.data.settings.dailyWritingGoal) * 100;
 
-				setProgressValue(Math.min(newProgress, 100));
+				setProgressValue(Math.min(Math.max(newProgress, 0), 100));
 			}
 			setValue(v);
 		} catch (error) {

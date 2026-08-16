@@ -1,0 +1,40 @@
+/**
+* GLOBAL CONFETTI OVERLAY
+* Appended directly to <body> by src/ui/confetti.ts, so it shows up
+* regardless of which (if any) plugin pane is open — same idea as
+* Obsidian's own Notice toasts.
+*/
+.ktr-global-confetti {
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+	z-index: var(--layer-notice, 9999);
+}
+
+.ktr-global-confetti__piece {
+	position: absolute;
+	top: -12px;
+	left: var(--left);
+	width: 7px;
+	height: 13px;
+	background: var(--piece-color);
+	border-radius: 1px;
+	opacity: 0;
+	animation: ktr-global-confetti-fall var(--duration)
+		cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay) forwards;
+}
+
+@keyframes ktr-global-confetti-fall {
+	0% {
+		opacity: 0;
+		transform: translate(0, 0) rotate(0deg);
+	}
+	10% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translate(var(--drift), 100vh) rotate(var(--rotation));
+	}
+}
