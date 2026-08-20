@@ -148,7 +148,7 @@ export function sumTimeEntries(
 			break;
 		case Unit.CHAR:
 			if (!excludeStart) {
-				total += dailyActivity?.wordCountStart || 0;
+				total += dailyActivity?.charCountStart || 0;
 			} else {
 				total = 0;
 			}
