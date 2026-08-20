@@ -20,7 +20,7 @@ import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
 
-import { formatDate, scheduleNextDayTrigger } from "@/utils/dateUtils";
+import { formatDate } from "@/utils/dateUtils";
 
 import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
@@ -38,7 +38,6 @@ export default class KeepTheRhythm extends Plugin {
 		},
 	};
 
-	private dayTimer: number | null = null;
 	private JSON_DEBOUNCE_TIME = 1000;
 	private LAST_BREAKING_CHANGE_TO_SCHEMA = "0.2";
 
@@ -46,9 +45,6 @@ export default class KeepTheRhythm extends Plugin {
 
 	async onload() {
 		state.setPlugin(this);
-		this.dayTimer = scheduleNextDayTrigger(() => {
-			this.updateAndSaveEverything(); // or just refresh heatmap
-		});
 
 		initDatabase();
 
@@ -392,10 +388,6 @@ export default class KeepTheRhythm extends Plugin {
 
 	async onunload() {
 		events.cleanDBTimeout();
-
-		if (this.dayTimer !== null) {
-			window.clearTimeout(this.dayTimer);
-		}
 
 		if (this.JsonDebounceTimeout) {
 			clearTimeout(this.JsonDebounceTimeout);
