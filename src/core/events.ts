@@ -17,7 +17,7 @@ import {
 import { sumTimeEntries, upsertChange } from "@/utils/utils";
 import { renameTrackedPath } from "./activityTracker";
 
-let dbUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+let dbUpdateTimeout: number | null = null;
 let pendingActivity: DailyActivity | null = null;
 const DEBOUNCE_TIME = 100; // ms
 
@@ -153,13 +153,13 @@ async function flushChangesToDB(activity: DailyActivity) {
 
 function scheduleFlush(activity: DailyActivity) {
 	pendingActivity = activity;
-	if (dbUpdateTimeout) clearTimeout(dbUpdateTimeout);
-	dbUpdateTimeout = setTimeout(() => flushNow(), DEBOUNCE_TIME);
+	if (dbUpdateTimeout) window.clearTimeout(dbUpdateTimeout);
+	dbUpdateTimeout = window.setTimeout(() => flushNow(), DEBOUNCE_TIME);
 }
 
 export async function flushNow() {
 	if (dbUpdateTimeout) {
-		clearTimeout(dbUpdateTimeout);
+		window.clearTimeout(dbUpdateTimeout);
 		dbUpdateTimeout = null;
 	}
 	const activity = pendingActivity;

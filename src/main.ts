@@ -50,7 +50,9 @@ export default class KeepTheRhythm extends Plugin {
 		initDatabase();
 
 		this.registerInterval(
-			window.setInterval(() => checkDayChange(), 30_000),
+			window.setInterval(() => {
+				checkDayChange();
+			}, 30_000),
 		);
 		this.registerDomEvent(document, "visibilitychange", () =>
 			checkDayChange(),
@@ -131,10 +133,10 @@ export default class KeepTheRhythm extends Plugin {
 
 		state.on(EVENTS.REFRESH_EVERYTHING, async () => {
 			if (this.JsonDebounceTimeout) {
-				clearTimeout(this.JsonDebounceTimeout);
+				window.clearTimeout(this.JsonDebounceTimeout);
 			}
 
-			this.JsonDebounceTimeout = setTimeout(async () => {
+			this.JsonDebounceTimeout = window.setTimeout(async () => {
 				await this.saveDataToJSON();
 			}, this.JSON_DEBOUNCE_TIME);
 		});
@@ -397,7 +399,8 @@ export default class KeepTheRhythm extends Plugin {
 	async onunload() {
 		await events.flushNow();
 
-		if (this.JsonDebounceTimeout) clearTimeout(this.JsonDebounceTimeout);
+		if (this.JsonDebounceTimeout)
+			window.clearTimeout(this.JsonDebounceTimeout);
 
 		await this.saveDataToJSON();
 		await this.backupDataToVaultFolder(this.data);

@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
 		"resolveJsonModule": true,
 		"jsx": "react",
 		"inlineSourceMap": true,
@@ -12,7 +11,7 @@
 		"noImplicitAny": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"importHelpers": true,
 		"paths": {
 			"@/*": ["./src/*"]
@@ -22,5 +21,5 @@
 		"lib": ["DOM", "ES2018"],
 		"typeRoots": ["./node_modules/@types", "./node_modules/obsidian"]
 	},
-	"include": ["**/*.ts", "*.d.ts"]
+	"include": ["src/**/*.ts", "src/**/*.tsx", "*.d.ts"]
 }

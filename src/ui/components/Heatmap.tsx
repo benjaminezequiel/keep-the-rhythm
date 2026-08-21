@@ -244,7 +244,7 @@ const getCellIntensityLevel = (
 		case HeatmapColorModes.SOLID:
 			return count >= low ? 4 : 0;
 
-		case HeatmapColorModes.STOPS:
+		case HeatmapColorModes.STOPS: {
 			// Ensure thresholds are properly ordered
 			const sortedThresholds = [low, medium, high].sort((a, b) => a - b);
 			const [minThreshold, midThreshold, maxThreshold] = sortedThresholds;
@@ -254,6 +254,7 @@ const getCellIntensityLevel = (
 			if (count < midThreshold) return 2;
 			if (count < maxThreshold) return 3;
 			return 4;
+		}
 		default:
 			return 0;
 	}
