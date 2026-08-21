@@ -1,6 +1,6 @@
 {
 	"name": "keep-the-rhyhtm",
-	"version": "0.2.14",
+	"version": "0.2.15",
 	"description": "Visualize daily word count with a heatmap.",
 	"main": "main.js",
 	"type": "module",
@@ -8,6 +8,7 @@
 		"dev": "node esbuild.config.js --watch",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.js production",
 		"test": "jest",
+		"version-bump": "node scripts/version-bump.js",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"check": "tsc --noEmit --skipLibCheck && eslint .",
