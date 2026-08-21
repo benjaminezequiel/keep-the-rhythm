@@ -62,6 +62,7 @@ runGit([
 ]);
 runGit(["commit", "-m", `version-bump: ${newVersion}`]);
 runGit(["tag", newVersion]);
+runGit(["push", "origin", "master"]);
 runGit(["push", "origin", newVersion]);
 
 process.stdout.write(`Updated plugin version to ${newVersion}\n`);
