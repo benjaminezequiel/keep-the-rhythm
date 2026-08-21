@@ -99,7 +99,7 @@ export interface SlotConfig {
 export interface PluginData {
 	settings: Settings;
 	migratedPreviousVersion?: boolean;
-	schema?: "0.2" | "0.3" | string;
+	schema?: string;
 	stats?: {
 		currentStreak?: number;
 		highestStreak?: number;

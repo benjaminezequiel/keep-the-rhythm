@@ -4,7 +4,7 @@ import { getActivtityForFile, getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
 import { getDB } from "../db/db";
 import { DailyActivity, TimeEntry } from "@/db/types";
-import { TFile, Editor, moment as _moment } from "obsidian";
+import { TFile, Editor, MarkdownView, MarkdownFileInfo } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getCurrentTimeKey } from "@/utils/dateUtils";
 import {
@@ -28,7 +28,7 @@ const DEBOUNCE_TIME = 100; // ms
  */
 export async function handleEditorChange(
 	editor: Editor,
-	info: any,
+	info: MarkdownView | MarkdownFileInfo,
 	plugin: KeepTheRhythm,
 ) {
 	const file = info.file;
@@ -148,14 +148,14 @@ async function flushChangesToDB(activity: DailyActivity) {
 			);
 		});
 
-	checkStreak();
+	void checkStreak();
 	state.emit(EVENTS.REFRESH_EVERYTHING);
 }
 
 function scheduleFlush(activity: DailyActivity) {
 	pendingActivity = activity;
 	if (dbUpdateTimeout) window.clearTimeout(dbUpdateTimeout);
-	dbUpdateTimeout = window.setTimeout(() => flushNow(), DEBOUNCE_TIME);
+	dbUpdateTimeout = window.setTimeout(() => void flushNow(), DEBOUNCE_TIME);
 }
 
 export async function flushNow() {
@@ -181,9 +181,9 @@ async function checkStreak() {
 	const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
 
 	if (writtenToday >= goal) {
-		state.plugin.updateCurrentStreak(true);
+		void state.plugin.updateCurrentStreak(true);
 	} else {
-		state.plugin.updateCurrentStreak(false);
+		void state.plugin.updateCurrentStreak(false);
 	}
 }
 

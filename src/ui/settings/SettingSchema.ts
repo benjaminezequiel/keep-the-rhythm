@@ -4,7 +4,8 @@ export interface SettingItem {
 	title: string;
 	description?: string;
 	placeholder?: string;
-	visibleWhen?: Record<string, any>;
+	options?: Record<string, string>;
+	visibleWhen?: Record<string, boolean | string[]>;
 }
 
 export interface SettingsSection {

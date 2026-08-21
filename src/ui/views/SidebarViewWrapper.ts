@@ -30,7 +30,7 @@ export class PluginCoreUI extends ItemView {
 	async onOpen() {
 		const container = this.containerEl.children[1];
 		container.empty();
-		const reactContainer = container.createEl("div");
+		const reactContainer = container.createDiv();
 		const sideBarConfig =
 			this.plugin.data.settings.sidebarConfig.visibility;
 		this.root = createRoot(reactContainer);

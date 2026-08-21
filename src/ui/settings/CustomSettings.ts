@@ -15,7 +15,7 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 	if (!settings.heatmapConfig.colors) return;
 
 	const mode = settings.heatmapConfig.intensityMode;
-	const colorValues = settings.heatmapConfig.colors[theme] as ColorConfig;
+	const colorValues = settings.heatmapConfig.colors[theme];
 
 	let levelsToShow: (keyof ColorConfig)[];
 
@@ -49,13 +49,15 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 			new ConfirmationModal(
 				state.plugin.app,
 				`Are you sure you want to reset the ${theme} theme colors to their default values?`,
-				async () => {
+				() => {
+					void (async () => {
 					if (!settings.heatmapConfig.colors) return;
 					settings.heatmapConfig.colors[theme] = {
 						...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
 					};
 					await state.plugin.updateAndSaveEverything();
 					state.plugin.applyColorStyles();
+					})();
 				},
 			).open();
 		});
@@ -113,7 +115,7 @@ export function createLanguageDropdown(setting: Setting) {
 						break;
 				}
 				settings.enabledLanguages = [...newScripts];
-				state.plugin.updateAndSaveEverything();
+				void state.plugin.updateAndSaveEverything();
 				updateVisibility("enabledLanguages", newScripts);
 			});
 	});
@@ -233,7 +235,7 @@ export function createBackupFolderPathSetting(
 
 	setting.addText((text) => {
 		text.setPlaceholder(config.placeholder || "")
-			.setValue(currentValue || "")
+			.setValue(typeof currentValue === "string" ? currentValue : "")
 			.onChange(async (value) => {
 				const cleanPath = value.trim().replace(/^\/+|\/+$/g, "");
 

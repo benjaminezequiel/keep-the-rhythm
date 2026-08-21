@@ -42,14 +42,6 @@ export const getFileNameWithoutExtension = (path: string): string => {
 	return fileName.replace(/\.[^/.]+$/, "");
 };
 
-export const log = (msg: string) => {
-	console.info(
-		`%cKEEP THE RHYTHM%c ${msg}`,
-		"font-weight: bold; color: purple;",
-		"font-weight: normal",
-	);
-};
-
 export async function getFileContent(file: TFile, plugin: KeepTheRhythm) {
 	return await plugin.app.vault.read(file);
 }
@@ -274,16 +266,18 @@ export function getDateStreaks(dateStrings: string[]) {
 	return { longestStreak, currentStreak };
 }
 
-export function debounce<T extends (...args: any[]) => void>(
+export function debounce<T extends (...args: unknown[]) => void>(
 	func: T,
 	delay: number,
 ): T {
 	let timeoutId: number | null = null;
 
-	return function (this: any, ...args: Parameters<T>) {
+	return function (this: unknown, ...args: Parameters<T>) {
 		if (timeoutId) window.clearTimeout(timeoutId);
-		timeoutId = window.setTimeout(() => func.apply(this, args), delay);
-	} as T;
+		timeoutId = window.setTimeout(() => {
+			func.apply(this, args);
+		}, delay);
+	} as unknown as T;
 }
 
 export async function getExistingActivity(file: TFile, date: string) {
@@ -343,7 +337,7 @@ export async function getExistingOrCreateNewEntry(
 
 	try {
 		const id = await getDB().dailyActivity.add(newActivity);
-		return { ...newActivity, id: id as number };
+		return { ...newActivity, id: id };
 	} catch (err) {
 		// something inserted while still reading the file
 		const raced = await getExistingActivity(file, date);

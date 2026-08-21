@@ -1,13 +1,15 @@
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import jsep from "jsep";
 import { DailyActivity } from "@/db/types";
+
+type JsepExpression = jsep.Expression;
 import {
 	isValidCalculationType,
 	isValidTargetCount,
 	isValidUnit,
 	isValidColoringMode,
 } from "@/utils/utils";
-import { SlotConfig, TargetCount, Unit, CalculationType } from "@/defs/types";
+import { SlotConfig, Unit, CalculationType } from "@/defs/types";
 import { state } from "./pluginState";
 
 export function parseSlotQuery(query: string): SlotConfig[] {
@@ -39,9 +41,9 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 
 		slots.push({
 			index: i,
-			option: type as TargetCount,
-			unit: unit as Unit,
-			calc: (calc as CalculationType) ?? CalculationType.TOTAL,
+			option: type,
+			unit: unit,
+			calc: (calc) ?? CalculationType.TOTAL,
 		});
 	}
 
@@ -159,14 +161,15 @@ function normalizeLogicalOperators(input: string): string {
 	return input.replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||");
 }
 
-export function compileEvaluator(node: any): (entry: DailyActivity) => boolean {
+export function compileEvaluator(node: JsepExpression | null):
+	(entry: DailyActivity) => boolean {
 	if (!node) {
 		return () => true;
 	}
 
 	return (entry: DailyActivity) => {
 		try {
-			return interpretNode(node, entry);
+			return Boolean(interpretNode(node, entry));
 		} catch (error) {
 			console.error("Filter evaluation error:", error);
 			return false;
@@ -214,7 +217,7 @@ function splitFilterAndOptions(input: string) {
 	};
 }
 
-function interpretNode(node: any, entry: DailyActivity): any {
+function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
 	if (!node) return true;
 
 	switch (node.type) {
@@ -232,10 +235,14 @@ function interpretNode(node: any, entry: DailyActivity): any {
 				: "";
 		}
 		case "BinaryExpression": {
-			const left = interpretNode(node.left, entry);
-			const right = interpretNode(node.right, entry);
+			const left = interpretNode(node.left as JsepExpression, entry);
+			const right = interpretNode(node.right as JsepExpression, entry);
+			const operator =
+				typeof node.operator === "string"
+					? node.operator
+					: "unknown";
 
-			switch (node.operator) {
+			switch (operator) {
 				case "&&":
 					return left && right;
 				case "||":
@@ -259,18 +266,22 @@ function interpretNode(node: any, entry: DailyActivity): any {
 				case "<=":
 					return Number(left) <= Number(right);
 				default:
-					console.warn(`Unsupported operator: ${node.operator}`);
+					console.warn(`Unsupported operator: ${operator}`);
 					return true;
 			}
 		}
 		case "UnaryExpression": {
-			const argument = interpretNode(node.argument, entry);
-			switch (node.operator) {
+			const argument = interpretNode(node.argument as JsepExpression, entry);
+			const operator =
+				typeof node.operator === "string"
+					? node.operator
+					: "unknown";
+			switch (operator) {
 				case "!":
 					return !argument;
 				default:
 					console.warn(
-						`Unsupported unary operator: ${node.operator}`,
+						`Unsupported unary operator: ${operator}`,
 					);
 					return argument;
 			}
