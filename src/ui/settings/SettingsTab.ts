@@ -1,5 +1,6 @@
 import { formatDate } from "@/utils/dateUtils";
 import { App, PluginSettingTab, Setting } from "obsidian";
+import KeepTheRhythm from "@/main";
 import { Settings } from "@/defs/types";
 
 import { SETTINGS_SCHEMA, SettingItem } from "./SettingSchema";
@@ -12,10 +13,10 @@ import {
 } from "./CustomSettings";
 
 export class SettingsTab extends PluginSettingTab {
-	private plugin: any;
+	private plugin: KeepTheRhythm;
 	private settings: Settings;
 
-	constructor(app: App, plugin: any) {
+	constructor(app: App, plugin: KeepTheRhythm) {
 		super(app, plugin);
 		this.plugin = plugin;
 		this.settings = plugin.data.settings;
@@ -39,12 +40,12 @@ export class SettingsTab extends PluginSettingTab {
 		// Extra settings and elements not contemplated by settings setup
 		// // containerEl.createEl("button").setText("Saw or bug or have feedback?");
 		containerEl.createEl("hr");
-		containerEl.createEl("div").innerHTML = `
+		containerEl.createDiv().innerHTML = `
 			<a href="https://www.buymeacoffee.com/ezben"><img src="https://img.buymeacoffee.com/button-api/?text=Support this plugin!&emoji=&slug=ezben&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" /></a>
 		`;
 	}
 
-	private renderSetting(containerEl: HTMLElement, config: any) {
+	private renderSetting(containerEl: HTMLElement, config: SettingItem) {
 		const wrapper = containerEl.createDiv();
 		wrapper.setAttr("data-setting-key", config.key);
 
@@ -68,7 +69,9 @@ export class SettingsTab extends PluginSettingTab {
 			case "date":
 				setting.addText((text) => {
 					text.inputEl.setAttribute("type", "date");
-					text.setValue(formatDate(currentValue)).onChange(
+					const dateValue =
+						currentValue instanceof Date ? currentValue : new Date();
+					text.setValue(formatDate(dateValue)).onChange(
 						async (value) => {
 							const date = value ? new Date(value) : null;
 							setByPath(this.settings, config.key, date);
@@ -98,7 +101,9 @@ export class SettingsTab extends PluginSettingTab {
 				setting.addText((text) =>
 					text
 						.setPlaceholder(config.placeholder ?? "")
-						.setValue(String(currentValue ?? ""))
+						.setValue(
+							typeof currentValue === "number" ? String(currentValue) : "",
+						)
 						.onChange(async (value) => {
 							const num = parseInt(value);
 							if (!isNaN(num)) {
@@ -113,8 +118,10 @@ export class SettingsTab extends PluginSettingTab {
 			case "dropdown":
 				setting.addDropdown((dropdown) => {
 					dropdown
-						.addOptions(config.options)
-						.setValue(currentValue)
+						.addOptions(config.options ?? {})
+						.setValue(
+							typeof currentValue === "string" ? currentValue : "",
+						)
 						.onChange(async (value) => {
 							setByPath(this.settings, config.key, value);
 							await this.plugin.updateAndSaveEverything();
@@ -152,34 +159,43 @@ export class SettingsTab extends PluginSettingTab {
 	}
 }
 
-export function getByPath(obj: any, path: string) {
-	return path.split(".").reduce((acc, key) => acc?.[key], obj);
+export function getByPath(obj: Settings, path: string): unknown {
+	return path.split(".").reduce<unknown>((acc, key) => {
+		if (typeof acc !== "object" || acc === null) return undefined;
+		return (acc as Record<string, unknown>)[key];
+	}, obj);
 }
 
 // This has to change the whole object cause mutating nested properties won't trigger rerenders for the relevant components
-export function setByPath(obj: any, path: string, value: any) {
+export function setByPath(obj: Settings, path: string, value: unknown): void {
 	const keys = path.split(".");
-	const last = keys.pop()!;
+	const last = keys.pop();
+	if (!last) return;
 
 	// Walk and copy the object chain to maintain immutability
-	let target = obj;
-	const parents: any[] = [];
-	keys.forEach((key) => {
+	let target: Record<string, unknown> = obj as unknown as Record<string, unknown>;
+	const parents: Record<string, unknown>[] = [];
+	for (const key of keys) {
 		parents.push(target);
-		target[key] = { ...target[key] }; // create shallow copy
-		target = target[key];
-	});
+		const child = target[key];
+		target[key] =
+			typeof child === "object" && child !== null ? { ...child } : {};
+		target = target[key] as Record<string, unknown>;
+	}
 
 	target[last] = value;
 
 	// Re-assign references back up the chain
 	for (let i = keys.length - 1; i >= 0; i--) {
 		const parent = parents[i];
-		parent[keys[i]] = { ...parent[keys[i]] };
+		const child = parent[keys[i]];
+		if (typeof child === "object" && child !== null) {
+			parent[keys[i]] = { ...child };
+		}
 	}
 }
 
-export function updateVisibility(changedKey: string, newValue: any) {
+export function updateVisibility(changedKey: string, newValue: unknown): void {
 	SETTINGS_SCHEMA.sections.forEach((section) => {
 		section.settings.forEach((s: SettingItem) => {
 			if (!s.visibleWhen) return;

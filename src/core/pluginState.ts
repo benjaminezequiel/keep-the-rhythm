@@ -2,7 +2,7 @@ import { DailyActivity } from "@/db/types";
 import { formatDate } from "@/utils/dateUtils";
 import KeepTheRhythm from "@/main";
 
-type Listener = (...args: any[]) => void;
+type Listener = (...args: unknown[]) => void;
 
 export const EVENTS = {
 	/**
@@ -140,13 +140,13 @@ export class PluginState {
 		this._events[event] = this._events[event].filter((i) => i !== listener);
 	}
 
-	emit(event: string, ...args: any[]): void {
+	emit(event: string, ...args: unknown[]): void {
 		const listeners = this._events[event];
 		if (!listeners?.length) return;
 
 		const snapshot = [...listeners];
 
-		Promise.resolve().then(() => {
+		void Promise.resolve().then(() => {
 			for (const listener of snapshot) {
 				try {
 					listener(...args);

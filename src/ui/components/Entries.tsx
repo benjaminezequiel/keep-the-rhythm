@@ -52,12 +52,15 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 
 	useEffect(() => {
 		mounted.current = true;
-		handleEntriesRefresh();
+		const handleRefresh = () => {
+			void handleEntriesRefresh();
+		};
+		handleRefresh();
 
-		state.on(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+		state.on(EVENTS.REFRESH_EVERYTHING, handleRefresh);
 		return () => {
 			mounted.current = false;
-			state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+			state.off(EVENTS.REFRESH_EVERYTHING, handleRefresh);
 		};
 	}, [handleEntriesRefresh]);
 
@@ -144,7 +147,9 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 							>
 								<span
 									className="todayEntries__file-path"
-									onClick={() => openFile(entry.filePath)}
+									onClick={() => {
+									void openFile(entry.filePath);
+								}}
 								>
 									{getFileNameWithoutExtension(
 										entry.filePath,
@@ -164,7 +169,8 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 											ref={(el) =>
 												el && setIcon(el, "trash-2")
 											}
-											onMouseDown={async () => {
+											onMouseDown={() => {
+												void (async () => {
 												if (entry.id === undefined) {
 													new Notice(
 														"Entry has no id, cannot delete.",
@@ -177,6 +183,7 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 												state.emit(
 													EVENTS.REFRESH_EVERYTHING,
 												);
+												})();
 											}}
 										/>
 									</Tooltip>

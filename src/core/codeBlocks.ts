@@ -31,7 +31,7 @@ export function createHeatmapCodeBlock(
 	root.render(
 		React.createElement(Heatmap, {
 			heatmapConfig: query?.options,
-			query: query?.filter,
+			query: query?.filter ?? undefined,
 			isCodeBlock: true,
 		}),
 	);
