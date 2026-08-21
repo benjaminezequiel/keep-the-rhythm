@@ -14,13 +14,14 @@ import {
 	PluginData,
 } from "@/defs/types";
 
+import { invalidateAll } from "@/core/activityTracker";
 import { getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
-
-import { formatDate, scheduleNextDayTrigger } from "@/utils/dateUtils";
+import { formatDate } from "@/utils/dateUtils";
+import { checkDayChange } from "@/core/activityTracker";
 
 import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
@@ -38,7 +39,6 @@ export default class KeepTheRhythm extends Plugin {
 		},
 	};
 
-	private dayTimer: number | null = null;
 	private JSON_DEBOUNCE_TIME = 1000;
 	private LAST_BREAKING_CHANGE_TO_SCHEMA = "0.2";
 
@@ -46,11 +46,15 @@ export default class KeepTheRhythm extends Plugin {
 
 	async onload() {
 		state.setPlugin(this);
-		this.dayTimer = scheduleNextDayTrigger(() => {
-			this.updateAndSaveEverything(); // or just refresh heatmap
-		});
 
 		initDatabase();
+
+		this.registerInterval(
+			window.setInterval(() => checkDayChange(), 30_000),
+		);
+		this.registerDomEvent(document, "visibilitychange", () =>
+			checkDayChange(),
+		);
 
 		// todo: check if this is really necessary
 		getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
@@ -365,11 +369,11 @@ export default class KeepTheRhythm extends Plugin {
 				if (file instanceof TFile) events.handleFileDelete(file);
 			}),
 		);
-		this.registerEvent(
-			this.app.vault.on("create", (file: TAbstractFile) => {
-				if (file instanceof TFile) events.handleFileCreate(file);
-			}),
-		);
+		// this.registerEvent(
+		// 	this.app.vault.on("create", (file: TAbstractFile) => {
+		// 		// if (file instanceof TFile) events.handleFileCreate(file);
+		// 	}),
+		// );
 		this.registerEvent(
 			this.app.vault.on(
 				"rename",
@@ -391,18 +395,14 @@ export default class KeepTheRhythm extends Plugin {
 	// #region Unloading
 
 	async onunload() {
-		events.cleanDBTimeout();
+		await events.flushNow();
 
-		if (this.dayTimer !== null) {
-			window.clearTimeout(this.dayTimer);
-		}
+		if (this.JsonDebounceTimeout) clearTimeout(this.JsonDebounceTimeout);
 
-		if (this.JsonDebounceTimeout) {
-			clearTimeout(this.JsonDebounceTimeout);
-		}
-		this.saveDataToJSON();
-		this.backupDataToVaultFolder(this.data);
+		await this.saveDataToJSON();
+		await this.backupDataToVaultFolder(this.data);
 
+		invalidateAll();
 		await getDB().dailyActivity.clear();
 	}
 
@@ -416,7 +416,7 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 
-			newData.stats?.dailyActivity.forEach(async (activity, index) => {
+			for (const activity of newData.stats?.dailyActivity ?? []) {
 				let existingActivity;
 
 				if (activity.id) {
@@ -425,16 +425,16 @@ export default class KeepTheRhythm extends Plugin {
 					);
 				}
 
-				/** Find any new activity and add it to the db */
 				if (
 					existingActivity &&
-					JSON.stringify(existingActivity) == JSON.stringify(activity)
+					JSON.stringify(existingActivity) ===
+						JSON.stringify(activity)
 				) {
-					return;
-				} else {
-					getDB().dailyActivity.put(activity);
+					continue;
 				}
-			});
+
+				await getDB().dailyActivity.put(activity);
+			}
 
 			/** Assign new external settings*/
 			if (this.data.settings !== newData.settings) {
@@ -444,8 +444,8 @@ export default class KeepTheRhythm extends Plugin {
 				};
 			}
 
+			invalidateAll();
 			state.emit(EVENTS.REFRESH_EVERYTHING);
-			//TODO: ADD "SAVE AND UPDATE" HERE + EMIT UPDATE TO PLUGIN STATE
 		} catch (error) {
 			console.error("Error in onExternalSettingsChange:", error);
 		}

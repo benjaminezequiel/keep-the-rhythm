@@ -2,8 +2,7 @@ import { deleteActivityById } from "../../db/queries";
 import { Tooltip } from "./Tooltip";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import React from "react";
-import { useEffect, useState, useRef } from "react";
-import { formatDate } from "../../utils/dateUtils";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getActivityByDate } from "../../db/queries";
 import { sumTimeEntries, getFileNameWithoutExtension } from "../../utils/utils";
 import { state, EVENTS } from "../../core/pluginState";
@@ -14,164 +13,185 @@ import { ManualEntryModal } from "../components/ManualEntry";
 import { EntryFilter } from "@/core/codeBlocks";
 
 interface EntriesProps {
-  date?: string;
-  filters?: EntryFilter[];
+	date?: string;
+	filters?: EntryFilter[];
 }
 
-export const Entries = ({
-  date = formatDate(new Date()),
-  filters,
-}: EntriesProps) => {
-  const [unit, setUnit] = useState<Unit>(Unit.WORD);
-  const [entries, setEntries] = useState<DailyActivity[]>([]);
+const matchesFilters = (entry: DailyActivity, filters?: EntryFilter[]) => {
+	if (!filters || filters.length === 0) return true;
+	const path = entry.filePath ?? "";
+	return filters.every((f) => {
+		if (f.type === "includes") return path.includes(f.value);
+		if (f.type === "excludes") return !path.includes(f.value);
+		return true;
+	});
+};
 
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+export const Entries = ({ date, filters }: EntriesProps) => {
+	const [unit, setUnit] = useState<Unit>(Unit.WORD);
+	const [entries, setEntries] = useState<DailyActivity[]>([]);
 
-  if (
-    deleteButtonRef instanceof HTMLElement &&
-    !deleteButtonRef.dataset.iconSet
-  ) {
-    setIcon(deleteButtonRef, "trash-2");
-    deleteButtonRef.dataset.iconSet = "true";
-  }
+	const [today, setToday] = useState<string>(state.today);
 
-  const handleEntriesRefresh = async () => {
-    const fetchedActivities = await getActivityByDate(date);
+	const requestId = useRef(0);
+	const mounted = useRef(true);
 
-    const pathCounts = new Map<string, number>();
-    for (const activity of fetchedActivities) {
-      if (activity.filePath) {
-        pathCounts.set(
-          activity.filePath,
-          (pathCounts.get(activity.filePath) || 0) + 1,
-        );
-      }
-    }
+	const activeDate = date ?? today;
 
-    setEntries(
-      fetchedActivities
-        .filter((entry) => sumTimeEntries(entry, Unit.WORD, true) != 0)
-        .filter((entry) => {
-          if (!filters || filters.length === 0) return true;
-          return filters.every((f) => {
-            if (f.type === "includes") return entry.filePath?.includes(f.value);
-            if (f.type === "excludes")
-              return !entry.filePath?.includes(f.value);
-            return true;
-          });
-        })
-        .sort((a, b) => {
-          const aCount = sumTimeEntries(a, unit, true);
-          const bCount = sumTimeEntries(b, unit, true);
-          return bCount - aCount;
-        }),
-    );
-  };
+	const handleEntriesRefresh = useCallback(async () => {
+		const targetDate = date ?? state.today;
+		setToday(state.today);
 
-  const toggleUnit = () => {
-    setUnit(unit == Unit.WORD ? Unit.CHAR : Unit.WORD);
-  };
+		const id = ++requestId.current;
+		const fetched = await getActivityByDate(targetDate);
 
-  const addManualEntry = () => {
-    new ManualEntryModal(state.plugin.app).open();
-  };
+		if (!mounted.current || id !== requestId.current) return;
 
-  useEffect(() => {
-    handleEntriesRefresh();
-    state.on(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+		setEntries(fetched.filter((entry) => matchesFilters(entry, filters)));
+	}, [date, filters]);
 
-    return () => {
-      state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
-    };
-  }, []);
+	useEffect(() => {
+		mounted.current = true;
+		handleEntriesRefresh();
 
-  return (
-    <div className="todayEntries__section">
-      <RadixTooltip.Provider delayDuration={200}>
-        <div className="todayEntries__header">
-          <div className="todayEntries__section-title">
-            {date == state.today ? "ENTRIES TODAY" : `ENTRIES (${date})`}
-          </div>
-          <Tooltip content="Add Entry">
-            <button
-              className="todayEntries__manual-entry"
-              ref={(el) => el && setIcon(el, "list-plus")}
-              onMouseDown={addManualEntry}
-            />
-          </Tooltip>
-          <Tooltip content="Toggle Unit">
-            <button
-              className="todayEntries__entry-unit"
-              ref={(el) => el && setIcon(el, "case-sensitive")}
-              onMouseDown={toggleUnit}
-            />
-          </Tooltip>
-        </div>
-        {entries.length > 0 ? (
-          entries.map((entry) => {
-            const delta = sumTimeEntries(entry, unit, true);
-            const prefix = delta > 0 ? "+" : "";
+		state.on(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+		return () => {
+			mounted.current = false;
+			state.off(EVENTS.REFRESH_EVERYTHING, handleEntriesRefresh);
+		};
+	}, [handleEntriesRefresh]);
 
-            return (
-              <div key={entry.filePath} className="todayEntires__list-item">
-                <span
-                  className="todayEntries__file-path"
-                  onClick={async () => {
-                    const file = state.plugin.app.vault.getFileByPath(
-                      entry.filePath,
-                    );
+	const visibleEntries = useMemo(() => {
+		return entries
+			.map((entry) => ({
+				entry,
+				delta: sumTimeEntries(entry, unit, true),
+			}))
+			.filter(({ delta }) => delta !== 0)
+			.sort((a, b) => b.delta - a.delta);
+	}, [entries, unit]);
 
-                    if (!file) {
-                      new Notice("File not found!");
-                      return;
-                    }
+	const toggleUnit = () => {
+		setUnit((prev) => (prev === Unit.WORD ? Unit.CHAR : Unit.WORD));
+	};
 
-                    const leaves =
-                      state.plugin.app.workspace.getLeavesOfType("markdown");
-                    for (const leaf of leaves) {
-                      if (
-                        leaf.view instanceof FileView &&
-                        leaf.view.file?.path == file.path
-                      ) {
-                        // Activate the existing leaf
-                        state.plugin.app.workspace.setActiveLeaf(leaf);
-                        return;
-                      }
-                    }
+	const addManualEntry = () => {
+		new ManualEntryModal(state.plugin.app).open();
+	};
 
-                    const newLeaf = state.plugin.app.workspace.getLeaf("tab");
+	const openFile = async (filePath?: string) => {
+		if (!filePath) {
+			new Notice("File not found!");
+			return;
+		}
 
-                    await newLeaf.openFile(file);
-                  }}
-                >
-                  {getFileNameWithoutExtension(entry.filePath)}
-                </span>
-                <div className="todayEntries__list-item-right">
-                  <span className="todayEntries__word-count">
-                    {prefix}
-                    {delta.toLocaleString()}
-                  </span>
-                  <span className="todayEntries_list-item-unit">
-                    {" " + unit.toLowerCase() + "s"}
-                  </span>
-                  <Tooltip content="Delete entry">
-                    <button
-                      className="todayEntries__delete-button"
-                      ref={(el) => el && setIcon(el, "trash-2")}
-                      onMouseDown={async () => {
-                        await deleteActivityById(entry.id);
-                        state.emit(EVENTS.REFRESH_EVERYTHING);
-                      }}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <p className="empty-data">No files edited today</p>
-        )}
-      </RadixTooltip.Provider>
-    </div>
-  );
+		const file = state.plugin.app.vault.getFileByPath(filePath);
+		if (!file) {
+			new Notice("File not found!");
+			return;
+		}
+
+		const leaves = state.plugin.app.workspace.getLeavesOfType("markdown");
+		for (const leaf of leaves) {
+			if (
+				leaf.view instanceof FileView &&
+				leaf.view.file?.path === file.path
+			) {
+				state.plugin.app.workspace.setActiveLeaf(leaf);
+				return;
+			}
+		}
+
+		const newLeaf = state.plugin.app.workspace.getLeaf("tab");
+		await newLeaf.openFile(file);
+	};
+
+	const isToday = activeDate === today;
+
+	return (
+		<div className="todayEntries__section">
+			<RadixTooltip.Provider delayDuration={200}>
+				<div className="todayEntries__header">
+					<div className="todayEntries__section-title">
+						{isToday ? "ENTRIES TODAY" : `ENTRIES (${activeDate})`}
+					</div>
+					<Tooltip content="Add Entry">
+						<button
+							className="todayEntries__manual-entry"
+							ref={(el) => el && setIcon(el, "list-plus")}
+							onMouseDown={addManualEntry}
+						/>
+					</Tooltip>
+					<Tooltip content="Toggle Unit">
+						<button
+							className="todayEntries__entry-unit"
+							ref={(el) => el && setIcon(el, "case-sensitive")}
+							onMouseDown={toggleUnit}
+						/>
+					</Tooltip>
+				</div>
+				{visibleEntries.length > 0 ? (
+					visibleEntries.map(({ entry, delta }) => {
+						const prefix = delta > 0 ? "+" : "";
+
+						return (
+							<div
+								key={
+									entry.id ??
+									`${entry.date}:${entry.filePath}`
+								}
+								className="todayEntries__list-item"
+							>
+								<span
+									className="todayEntries__file-path"
+									onClick={() => openFile(entry.filePath)}
+								>
+									{getFileNameWithoutExtension(
+										entry.filePath,
+									)}
+								</span>
+								<div className="todayEntries__list-item-right">
+									<span className="todayEntries__word-count">
+										{prefix}
+										{delta.toLocaleString()}
+									</span>
+									<span className="todayEntries_list-item-unit">
+										{" " + unit.toLowerCase() + "s"}
+									</span>
+									<Tooltip content="Delete entry">
+										<button
+											className="todayEntries__delete-button"
+											ref={(el) =>
+												el && setIcon(el, "trash-2")
+											}
+											onMouseDown={async () => {
+												if (entry.id === undefined) {
+													new Notice(
+														"Entry has no id, cannot delete.",
+													);
+													return;
+												}
+												await deleteActivityById(
+													entry.id,
+												);
+												state.emit(
+													EVENTS.REFRESH_EVERYTHING,
+												);
+											}}
+										/>
+									</Tooltip>
+								</div>
+							</div>
+						);
+					})
+				) : (
+					<p className="empty-data">
+						{isToday
+							? "No files edited today"
+							: "No files edited on this date"}
+					</p>
+				)}
+			</RadixTooltip.Provider>
+		</div>
+	);
 };

@@ -2,11 +2,13 @@ import { addDeltaToActivity } from "@/db/queries";
 import { TFile } from "obsidian";
 import { EVENTS, state } from "@/core/pluginState";
 import { AbstractInputSuggest } from "obsidian";
-import { App, Modal, Setting, TextComponent } from "obsidian";
+import { App, Modal, Setting, TextComponent, Notice } from "obsidian";
+import { flushNow } from "@/core/events";
 import {
 	getExistingOrCreateNewEntry,
 	getFileNameWithoutExtension,
 } from "@/utils/utils";
+import { invalidateActivity } from "@/core/activityTracker";
 import { DailyActivity } from "@/db/types";
 
 export class ManualEntryModal extends Modal {
@@ -21,7 +23,7 @@ export class ManualEntryModal extends Modal {
 	private wordsDelta = 0;
 	private charsDelta = 0;
 	private charsManuallySet = false;
-	private charsInput: TextComponent;
+	private charsInput: TextComponent | null = null;
 
 	constructor(app: App) {
 		super(app);
@@ -39,20 +41,6 @@ export class ManualEntryModal extends Modal {
 					});
 
 				new FileSuggest(this.app, search.inputEl);
-
-				search.inputEl.addEventListener("blur", async () => {
-					const value = search.getValue();
-					const file = state.plugin.app.vault.getFileByPath(value);
-
-					if (!file) {
-						console.error("KTR: Invalid file selection");
-						return;
-					}
-					this.entry = await getExistingOrCreateNewEntry(
-						file,
-						state.today,
-					);
-				});
 			});
 
 		new Setting(this.contentEl)
@@ -65,7 +53,7 @@ export class ManualEntryModal extends Modal {
 					if (!this.charsManuallySet) {
 						const derived = this.wordsDelta * 5;
 						this.charsDelta = derived;
-						this.charsInput.setValue(
+						this.charsInput?.setValue(
 							derived === 0 ? "" : String(derived),
 						);
 					}
@@ -136,16 +124,25 @@ export class ManualEntryModal extends Modal {
 			btn
 				.setButtonText("Save New Entry")
 				.setCta()
-				.onClick(() => {
-					this.saveNewEntry();
-					state.emit(EVENTS.REFRESH_EVERYTHING);
+				.onClick(async () => {
+					await this.saveNewEntry();
 					this.close();
 				}),
 		);
 	}
 
 	private async saveNewEntry() {
-		await addDeltaToActivity(this.entry, this.wordsDelta, this.charsDelta);
+		const file = this.app.vault.getFileByPath(this.entry.filePath);
+		if (!(file instanceof TFile)) {
+			new Notice("KTR: pick a valid file");
+			return;
+		}
+
+		await flushNow();
+		const target = await getExistingOrCreateNewEntry(file, this.entry.date);
+		await addDeltaToActivity(target, this.wordsDelta, this.charsDelta);
+		invalidateActivity(file.path, target.date);
+		state.emit(EVENTS.REFRESH_EVERYTHING);
 	}
 }
 

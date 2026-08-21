@@ -12,8 +12,10 @@ import {
 } from "@/utils/dateUtils";
 import { sumTimeEntries } from "@/utils/utils";
 import { DailyActivity } from "./types";
-import { moment as _moment, debounce, Notice, Vault } from "obsidian";
+import { moment as _moment, Notice, Vault } from "obsidian";
 import { getFileWordAndCharCount } from "@/utils/utils";
+import { getTrackedCounts, forgetFile } from "@/core/activityTracker";
+import { getLanguageBasedWordCount } from "@/core/wordCounting";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -39,7 +41,7 @@ export async function getTotalValueByDate(
 		.equals(date)
 		.toArray();
 
-	let value = activities.reduce((sum, activity) => {
+	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
 	}, 0);
 
@@ -56,7 +58,7 @@ export async function getTotalValueInDateRange(
 		.between(startDate, endDate, true, true)
 		.toArray();
 
-	let value = activities.reduce((sum, activity) => {
+	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
 	}, 0);
 
@@ -239,22 +241,21 @@ export async function getCurrentCount(
 	calc?: CalculationType,
 ): Promise<number> {
 	if (target === TargetCount.CURRENT_FILE) {
-		if (state.currentActivity) {
-			return sumTimeEntries(state?.currentActivity, unit) || 0;
-		} else {
-			// No current session - just sum all past activity for this file
-			const activeFile = state.plugin.app.workspace.getActiveFile();
-			if (activeFile) {
-				const activities = await getDB()
-					.dailyActivity.where("filePath")
-					.equals(activeFile.path)
-					.toArray();
-				return activities.reduce((sum, activity) => {
-					return sum + sumTimeEntries(activity, unit, false);
-				}, 0);
-			}
-			return 0;
-		}
+		const activeFile = state.plugin.app.workspace.getActiveFile();
+		if (!activeFile || activeFile.extension !== "md") return 0;
+
+		// handleEditorChange already computed this from the live editor
+		const tracked = getTrackedCounts(activeFile.path);
+		if (tracked) return unit === Unit.CHAR ? tracked.chars : tracked.words;
+
+		// File open but never edited this session
+		const content = await state.plugin.app.vault.cachedRead(activeFile);
+		return unit === Unit.CHAR
+			? content.length
+			: getLanguageBasedWordCount(
+					content,
+					state.plugin.data.settings.enabledLanguages,
+				);
 	}
 
 	let startDate: string;
@@ -338,7 +339,11 @@ export async function getCurrentCount(
 
 export const deleteActivityById = async (entryId: number | undefined) => {
 	if (!entryId) return;
-	getDB().dailyActivity.delete(entryId);
+
+	const entry = await getDB().dailyActivity.get(entryId);
+	await getDB().dailyActivity.delete(entryId);
+
+	if (entry) forgetFile(entry.filePath, entry.date);
 };
 
 export const deleteActivityFromDate = async (
@@ -355,10 +360,11 @@ export const deleteActivityFromDate = async (
 		.first();
 
 	if (entry?.id) {
-		getDB().dailyActivity.delete(entry.id);
+		await getDB().dailyActivity.delete(entry.id);
+		forgetFile(filePath, date);
 		state.emit(EVENTS.REFRESH_EVERYTHING);
 	} else {
-		const notice = new Notice(
+		new Notice(
 			"Failed to delete this entry! This is a bug, contact the developer.",
 		);
 	}
