@@ -8,6 +8,7 @@ export default defineConfig(
 		"main.js",
 		"esbuild.config.js",
 		"eslint.config.mts",
+		"site/_site/**",
 	]),
 	{
 		languageOptions: {

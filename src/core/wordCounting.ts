@@ -61,7 +61,7 @@ function resolveOptions(overrides?: WordCountOptions): WordCountOptions {
 	let settings: WordCountOptions | undefined;
 
 	try {
-		settings = state?.plugin?.data?.settings as unknown as WordCountOptions;
+		settings = state?.plugin?.data?.settings;
 	} catch {
 		settings = undefined;
 	}
