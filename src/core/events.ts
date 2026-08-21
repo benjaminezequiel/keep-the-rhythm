@@ -41,6 +41,7 @@ export async function handleEditorChange(
 		words: getLanguageBasedWordCount(
 			content,
 			plugin.data.settings.enabledLanguages,
+			plugin.data.settings,
 		),
 		chars: content.length,
 	};

@@ -204,7 +204,11 @@ export async function getFileWordAndCharCount(
 	fileContent: string,
 	enabledLanguages: Language[],
 ) {
-	const wordCount = getLanguageBasedWordCount(fileContent, enabledLanguages);
+	const wordCount = getLanguageBasedWordCount(
+		fileContent,
+		enabledLanguages,
+		state.plugin.data.settings,
+	);
 	const charCount = fileContent.length;
 	return [wordCount, charCount];
 }
@@ -315,6 +319,7 @@ export async function createActivityObject(file: TFile, date: string) {
 		wordCountStart: getLanguageBasedWordCount(
 			content,
 			state.plugin.data.settings.enabledLanguages,
+			state.plugin.data.settings,
 		),
 		charCountStart: content.length,
 		changes: [],
