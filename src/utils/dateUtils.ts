@@ -1,6 +1,4 @@
 import { moment as _moment } from "obsidian";
-import { state } from "@/core/pluginState";
-import { invalidateAll } from "@/core/activityTracker";
 
 const moment = _moment as unknown as typeof _moment.default;
 

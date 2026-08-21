@@ -1,15 +1,11 @@
 import { getLeafWithFile } from "../../utils/utils";
 import { formatDate } from "@/utils/dateUtils";
-import { weekdaysNames, monthNames } from "../texts";
 import React from "react";
 import { HeatmapColorModes, IntensityConfig } from "../../defs/types";
 import * as obsidian from "obsidian";
 import { Tooltip } from "./Tooltip";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { useCtrlKey } from "../../utils/useModiferKey";
 import { getCorePluginSettings } from "../../utils/windowUtility";
 import { state } from "@/core/pluginState";
-import { Heatmap } from "./Heatmap";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
 

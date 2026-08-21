@@ -12,9 +12,9 @@ import {
 } from "@/utils/dateUtils";
 import { sumTimeEntries } from "@/utils/utils";
 import { DailyActivity } from "./types";
-import { moment as _moment, debounce, Notice, Vault } from "obsidian";
+import { moment as _moment, Notice, Vault } from "obsidian";
 import { getFileWordAndCharCount } from "@/utils/utils";
-import { getTrackedCounts } from "@/core/activityTracker";
+import { getTrackedCounts, forgetFile } from "@/core/activityTracker";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 
 const moment = _moment as unknown as typeof _moment.default;
@@ -41,7 +41,7 @@ export async function getTotalValueByDate(
 		.equals(date)
 		.toArray();
 
-	let value = activities.reduce((sum, activity) => {
+	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
 	}, 0);
 
@@ -58,7 +58,7 @@ export async function getTotalValueInDateRange(
 		.between(startDate, endDate, true, true)
 		.toArray();
 
-	let value = activities.reduce((sum, activity) => {
+	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
 	}, 0);
 
@@ -339,7 +339,11 @@ export async function getCurrentCount(
 
 export const deleteActivityById = async (entryId: number | undefined) => {
 	if (!entryId) return;
-	getDB().dailyActivity.delete(entryId);
+
+	const entry = await getDB().dailyActivity.get(entryId);
+	await getDB().dailyActivity.delete(entryId);
+
+	if (entry) forgetFile(entry.filePath, entry.date);
 };
 
 export const deleteActivityFromDate = async (

@@ -252,7 +252,7 @@ export function getDateStreaks(dateStrings: string[]) {
 			.format("YYYY-MM-DD");
 		if (!dateSet.has(prevDay)) {
 			let streak = 1;
-			let nextDate = startDate.clone().add(1, "day");
+			const nextDate = startDate.clone().add(1, "day");
 			while (dateSet.has(nextDate.format("YYYY-MM-DD"))) {
 				streak++;
 				nextDate.add(1, "day");
@@ -261,7 +261,7 @@ export function getDateStreaks(dateStrings: string[]) {
 		}
 	}
 
-	let today = moment().startOf("day");
+	const today = moment().startOf("day");
 	while (dateSet.has(today.format("YYYY-MM-DD"))) {
 		currentStreak++;
 		today.subtract(1, "day");
@@ -283,7 +283,7 @@ export function debounce<T extends (...args: any[]) => void>(
 }
 
 export async function getExistingActivity(file: TFile, date: string) {
-	let existingActivity: DailyActivity | undefined = await getDB()
+	const existingActivity: DailyActivity | undefined = await getDB()
 		.dailyActivity.where("[date+filePath]")
 		.equals([date, file.path])
 		.first();
@@ -331,7 +331,7 @@ export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
 ): Promise<DailyActivity> {
-	let existing = await getExistingActivity(file, date);
+	const existing = await getExistingActivity(file, date);
 	if (existing) return existing;
 
 	const newActivity = await createActivityObject(file, date);

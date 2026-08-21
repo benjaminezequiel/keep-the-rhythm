@@ -54,7 +54,7 @@ export function createHeatmapCodeBlock(
 export function createSlotsCodeBlock(
 	source: string,
 	el: HTMLElement,
-	ctx: MarkdownPostProcessorContext,
+	_ctx: MarkdownPostProcessorContext,
 ): void {
 	if (!state.plugin.data || !state.plugin.data.settings) {
 		return; // add log / error
@@ -117,7 +117,7 @@ function parseSource(source: string): {
 export function createEntriesCodeBlock(
 	source: string,
 	el: HTMLElement,
-	ctx: MarkdownPostProcessorContext,
+	_ctx: MarkdownPostProcessorContext,
 ): void {
 	if (!state.plugin.data || !state.plugin.data.settings) {
 		return;

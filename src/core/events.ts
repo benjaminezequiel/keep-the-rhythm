@@ -11,12 +11,11 @@ import {
 	takeDelta,
 	resolveActivity,
 	checkDayChange,
-	invalidateActivity,
 	forgetFile,
 	getTrackedCounts,
 } from "./activityTracker";
-const moment = _moment as unknown as typeof _moment.default;
 import { sumTimeEntries, upsertChange } from "@/utils/utils";
+import { renameTrackedPath } from "./activityTracker";
 
 let dbUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingActivity: DailyActivity | null = null;
@@ -37,17 +36,18 @@ export async function handleEditorChange(
 
 	checkDayChange();
 
-	const activity = await resolveActivity(file);
+	const content = editor.getValue();
+	const counts = {
+		words: getLanguageBasedWordCount(
+			content,
+			plugin.data.settings.enabledLanguages,
+		),
+		chars: content.length,
+	};
+
+	const activity = await resolveActivity(file, counts);
 	state.setCurrentActivity(activity);
 
-	/**
-	 * Calculates delta word count based on
-	 * @var wordCountStart: amount of words the file started at the first time it was opened
-	 * @var prevWordsAdded: amount of words written today (added across changes[])
-	 * @var newWordCount: current amount of words in the file
-	 */
-
-	const content = editor.getValue();
 	const { wordsAdded, charsAdded } = takeDelta(
 		file,
 		getLanguageBasedWordCount(
@@ -240,24 +240,20 @@ export async function handleFileDelete(file: TFile) {
 }
 
 /**
- * @function handleFileCreate
- * - Add file to FileStats table?
- */
-export function handleFileCreate(file: TFile) {}
-
-/**
  * @function handleFileRename
  * Update all references to this file to match new filepath
  */
 export async function handleFileRename(file: TFile, oldPath: string) {
 	try {
+		await flushNow();
 		await getDB()
 			.dailyActivity.where("filePath")
 			.equals(oldPath)
 			.modify((dailyEntry) => {
 				dailyEntry.filePath = file.path;
 			});
-		invalidateActivity(file.path);
+
+		renameTrackedPath(oldPath, file.path);
 
 		state.emit(EVENTS.REFRESH_EVERYTHING);
 	} catch (error) {

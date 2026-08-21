@@ -14,6 +14,7 @@ import {
 	PluginData,
 } from "@/defs/types";
 
+import { invalidateAll } from "@/core/activityTracker";
 import { getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
@@ -368,11 +369,11 @@ export default class KeepTheRhythm extends Plugin {
 				if (file instanceof TFile) events.handleFileDelete(file);
 			}),
 		);
-		this.registerEvent(
-			this.app.vault.on("create", (file: TAbstractFile) => {
-				if (file instanceof TFile) events.handleFileCreate(file);
-			}),
-		);
+		// this.registerEvent(
+		// 	this.app.vault.on("create", (file: TAbstractFile) => {
+		// 		// if (file instanceof TFile) events.handleFileCreate(file);
+		// 	}),
+		// );
 		this.registerEvent(
 			this.app.vault.on(
 				"rename",
@@ -394,14 +395,14 @@ export default class KeepTheRhythm extends Plugin {
 	// #region Unloading
 
 	async onunload() {
-		events.flushNow();
+		await events.flushNow();
 
-		if (this.JsonDebounceTimeout) {
-			clearTimeout(this.JsonDebounceTimeout);
-		}
-		this.saveDataToJSON();
-		this.backupDataToVaultFolder(this.data);
+		if (this.JsonDebounceTimeout) clearTimeout(this.JsonDebounceTimeout);
 
+		await this.saveDataToJSON();
+		await this.backupDataToVaultFolder(this.data);
+
+		invalidateAll();
 		await getDB().dailyActivity.clear();
 	}
 
@@ -415,25 +416,28 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 
-			newData.stats?.dailyActivity.forEach(async (activity, index) => {
-				let existingActivity;
+			await newData.stats?.dailyActivity.forEach(
+				async (activity, index) => {
+					let existingActivity;
 
-				if (activity.id) {
-					existingActivity = await getDB().dailyActivity.get(
-						activity.id,
-					);
-				}
+					if (activity.id) {
+						existingActivity = await getDB().dailyActivity.get(
+							activity.id,
+						);
+					}
 
-				/** Find any new activity and add it to the db */
-				if (
-					existingActivity &&
-					JSON.stringify(existingActivity) == JSON.stringify(activity)
-				) {
-					return;
-				} else {
-					getDB().dailyActivity.put(activity);
-				}
-			});
+					/** Find any new activity and add it to the db */
+					if (
+						existingActivity &&
+						JSON.stringify(existingActivity) ==
+							JSON.stringify(activity)
+					) {
+						return;
+					} else {
+						getDB().dailyActivity.put(activity);
+					}
+				},
+			);
 
 			/** Assign new external settings*/
 			if (this.data.settings !== newData.settings) {
@@ -443,8 +447,8 @@ export default class KeepTheRhythm extends Plugin {
 				};
 			}
 
+			invalidateAll();
 			state.emit(EVENTS.REFRESH_EVERYTHING);
-			//TODO: ADD "SAVE AND UPDATE" HERE + EMIT UPDATE TO PLUGIN STATE
 		} catch (error) {
 			console.error("Error in onExternalSettingsChange:", error);
 		}

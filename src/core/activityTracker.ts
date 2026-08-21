@@ -5,7 +5,7 @@ import { getExistingOrCreateNewEntry } from "@/utils/utils";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { formatDate } from "@/utils/dateUtils";
 
-type Counts = { words: number; chars: number };
+export type Counts = { words: number; chars: number };
 
 const activities = new Map<string, DailyActivity>();
 
@@ -30,8 +30,15 @@ export async function readCounts(file: TFile): Promise<Counts> {
 /**
  * Returns the activity for the file on the current day, creating it if needed.
  */
-export async function resolveActivity(file: TFile): Promise<DailyActivity> {
+export async function resolveActivity(
+	file: TFile,
+	seed?: Counts,
+): Promise<DailyActivity> {
 	const key = keyFor(file.path);
+
+	if (seed && !lastCounts.has(key)) {
+		lastCounts.set(key, seed);
+	}
 
 	const cached = activities.get(key);
 	if (cached) return cached;

@@ -1,5 +1,5 @@
 import { HeatmapColorModes, HeatmapConfig } from "@/defs/types";
-import jsep, { Expression } from "jsep";
+import jsep from "jsep";
 import { DailyActivity } from "@/db/types";
 import {
 	isValidCalculationType,
@@ -15,12 +15,12 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 	const arrayOfLines = query.match(/[^\r\n]+/g);
 	if (!arrayOfLines || arrayOfLines.length == 0) return [];
 
-	let slots: SlotConfig[] = [];
+	const slots: SlotConfig[] = [];
 
 	for (let i = 0; i < arrayOfLines.length; i++) {
 		const parts = arrayOfLines[i].replace(/ /g, "").split(",");
 
-		let type = parts[0];
+		const type = parts[0];
 		let unit = Unit.WORD;
 		let calc = CalculationType.TOTAL;
 
@@ -56,10 +56,10 @@ export function parseQueryToJSEP(query: string) {
 	jsep.addBinaryOp("CONTAINS", 6);
 
 	const { filterText, optionsText } = splitFilterAndOptions(query);
-	let normalized = normalizeLogicalOperators(filterText);
+	const normalized = normalizeLogicalOperators(filterText);
 
 	let parsed;
-	let config: HeatmapConfig = structuredClone(
+	const config: HeatmapConfig = structuredClone(
 		state.plugin.data.settings.heatmapConfig,
 	);
 	config.hideMonthLabels = false;
@@ -178,8 +178,8 @@ function splitFilterAndOptions(input: string) {
 	const lines = input.split("\n");
 	const sectionHeaderPattern = /^[A-Z_]+(?:\s|$)/;
 
-	let filterLines: string[] = [];
-	let optionsLines: string[] = [];
+	const filterLines: string[] = [];
+	const optionsLines: string[] = [];
 
 	let inOptions = false;
 

@@ -41,20 +41,6 @@ export class ManualEntryModal extends Modal {
 					});
 
 				new FileSuggest(this.app, search.inputEl);
-
-				search.inputEl.addEventListener("blur", async () => {
-					const value = search.getValue();
-					const file = state.plugin.app.vault.getFileByPath(value);
-
-					if (!file) {
-						console.error("KTR: Invalid file selection");
-						return;
-					}
-					this.entry = await getExistingOrCreateNewEntry(
-						file,
-						state.today,
-					);
-				});
 			});
 
 		new Setting(this.contentEl)
