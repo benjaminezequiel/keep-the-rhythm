@@ -16,6 +16,13 @@ meta.json
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 
+# Jekyll (docs site, see site/)
+site/_site/
+site/.jekyll-cache/
+site/.jekyll-metadata
+site/vendor/
+site/.bundle/
+
 # Ignore KTR files with data
 ktr-*
 main.css

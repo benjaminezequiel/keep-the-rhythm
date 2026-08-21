@@ -1,14 +1,10 @@
 ---
-layout: page
+layout: default
 title: Home
 permalink: /
 ---
 
-# Keep the Rhythm
 
-An Obsidian plugin that helps you maintain a consistent writing habit by
-tracking your daily word count, setting writing goals, and visualizing your
-progress through a heatmap and customizable code blocks.
 
 ![Keep the Rhythm plugin panel showing heatmap, stats and entries]({{ '/assets/hero.png' | relative_url }})
 
