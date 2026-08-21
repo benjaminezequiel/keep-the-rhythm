@@ -70,7 +70,9 @@ export class SettingsTab extends PluginSettingTab {
 				setting.addText((text) => {
 					text.inputEl.setAttribute("type", "date");
 					const dateValue =
-						currentValue instanceof Date ? currentValue : new Date();
+						currentValue instanceof Date
+							? currentValue
+							: new Date();
 					text.setValue(formatDate(dateValue)).onChange(
 						async (value) => {
 							const date = value ? new Date(value) : null;
@@ -102,7 +104,9 @@ export class SettingsTab extends PluginSettingTab {
 					text
 						.setPlaceholder(config.placeholder ?? "")
 						.setValue(
-							typeof currentValue === "number" ? String(currentValue) : "",
+							typeof currentValue === "number"
+								? String(currentValue)
+								: "",
 						)
 						.onChange(async (value) => {
 							const num = parseInt(value);
@@ -120,7 +124,9 @@ export class SettingsTab extends PluginSettingTab {
 					dropdown
 						.addOptions(config.options ?? {})
 						.setValue(
-							typeof currentValue === "string" ? currentValue : "",
+							typeof currentValue === "string"
+								? currentValue
+								: "",
 						)
 						.onChange(async (value) => {
 							setByPath(this.settings, config.key, value);
@@ -173,7 +179,10 @@ export function setByPath(obj: Settings, path: string, value: unknown): void {
 	if (!last) return;
 
 	// Walk and copy the object chain to maintain immutability
-	let target: Record<string, unknown> = obj as unknown as Record<string, unknown>;
+	let target: Record<string, unknown> = obj as unknown as Record<
+		string,
+		unknown
+	>;
 	const parents: Record<string, unknown>[] = [];
 	for (const key of keys) {
 		parents.push(target);

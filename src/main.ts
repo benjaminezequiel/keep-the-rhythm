@@ -23,7 +23,6 @@ import { SettingsTab } from "@/ui/settings/SettingsTab";
 import { formatDate } from "@/utils/dateUtils";
 import { checkDayChange } from "@/core/activityTracker";
 
-import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
@@ -62,7 +61,8 @@ export default class KeepTheRhythm extends Plugin {
 		void getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
 
 		/////////
-		const loadedData = (await this.loadData()) as unknown as PluginData | null;
+		const loadedData =
+			(await this.loadData()) as unknown as PluginData | null;
 
 		if (loadedData) {
 			// add setting to remove backups
@@ -211,7 +211,7 @@ export default class KeepTheRhythm extends Plugin {
 					if (contents && contents === jsonData) {
 						return;
 					}
-				} catch (err) {
+				} catch {
 					return null;
 				}
 			}
@@ -225,8 +225,6 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	private async cleanOlderBackups(backupPaths: string[], maxBackups: number) {
-		const now = window.moment();
-
 		// Sort backups by date (newest first)
 		const backupsWithDates = backupPaths
 			.map((fullPath) => {
@@ -272,9 +270,7 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	private async migrateDataFromJSON(loadedData: unknown) {
-		const previousStats = migrateDataFromOldFormat(
-			loadedData as OldFormat,
-		);
+		const previousStats = migrateDataFromOldFormat(loadedData as OldFormat);
 		this.data.stats = previousStats.stats;
 		this.data.schema = "0.2";
 
@@ -477,10 +473,6 @@ export default class KeepTheRhythm extends Plugin {
 		if (!this.data.stats.daysWithCompletedGoal) {
 			this.data.stats.daysWithCompletedGoal = [];
 		}
-
-		const { longestStreak, currentStreak } = utils.getDateStreaks(
-			this.data.stats.daysWithCompletedGoal,
-		);
 
 		if (increase) {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {

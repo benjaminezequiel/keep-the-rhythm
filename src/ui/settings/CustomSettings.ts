@@ -51,12 +51,12 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 				`Are you sure you want to reset the ${theme} theme colors to their default values?`,
 				() => {
 					void (async () => {
-					if (!settings.heatmapConfig.colors) return;
-					settings.heatmapConfig.colors[theme] = {
-						...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
-					};
-					await state.plugin.updateAndSaveEverything();
-					state.plugin.applyColorStyles();
+						if (!settings.heatmapConfig.colors) return;
+						settings.heatmapConfig.colors[theme] = {
+							...DEFAULT_SETTINGS.heatmapConfig.colors![theme],
+						};
+						await state.plugin.updateAndSaveEverything();
+						state.plugin.applyColorStyles();
 					})();
 				},
 			).open();
@@ -161,8 +161,7 @@ export function createThresholdSettings(setting: Setting) {
 	thresholds.forEach(({ key, placeholder }) => {
 		setting
 			.addText((text) => {
-				text
-					.setValue(intensityStops[key].toString())
+				text.setValue(intensityStops[key].toString())
 					.setPlaceholder(placeholder)
 					.onChange(async (value) => {
 						const num = parseInt(value);
@@ -178,8 +177,8 @@ export function createThresholdSettings(setting: Setting) {
 								newStops,
 							);
 						}
-					}),
-					text.inputEl.setAttribute("data-threshold-key", key);
+					});
+				text.inputEl.setAttribute("data-threshold-key", key);
 			})
 			.setClass("ktr__threshold-inputs");
 	});
@@ -217,10 +216,6 @@ export function updateThresholdVisibility() {
 	const mediumEl = document.querySelector<HTMLInputElement>(
 		'[data-threshold-key="medium"]',
 	);
-	const highEl = document.querySelector<HTMLInputElement>(
-		'[data-threshold-key="high"]',
-	);
-
 	if (lowEl)
 		lowEl.style.display = mode === HeatmapColorModes.SOLID ? "none" : "";
 	if (mediumEl)

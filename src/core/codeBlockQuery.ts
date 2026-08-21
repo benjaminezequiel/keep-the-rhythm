@@ -43,7 +43,7 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 			index: i,
 			option: type,
 			unit: unit,
-			calc: (calc) ?? CalculationType.TOTAL,
+			calc: calc ?? CalculationType.TOTAL,
 		});
 	}
 
@@ -161,8 +161,9 @@ function normalizeLogicalOperators(input: string): string {
 	return input.replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||");
 }
 
-export function compileEvaluator(node: JsepExpression | null):
-	(entry: DailyActivity) => boolean {
+export function compileEvaluator(
+	node: JsepExpression | null,
+): (entry: DailyActivity) => boolean {
 	if (!node) {
 		return () => true;
 	}
@@ -238,9 +239,7 @@ function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
 			const left = interpretNode(node.left as JsepExpression, entry);
 			const right = interpretNode(node.right as JsepExpression, entry);
 			const operator =
-				typeof node.operator === "string"
-					? node.operator
-					: "unknown";
+				typeof node.operator === "string" ? node.operator : "unknown";
 
 			switch (operator) {
 				case "&&":
@@ -271,18 +270,17 @@ function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
 			}
 		}
 		case "UnaryExpression": {
-			const argument = interpretNode(node.argument as JsepExpression, entry);
+			const argument = interpretNode(
+				node.argument as JsepExpression,
+				entry,
+			);
 			const operator =
-				typeof node.operator === "string"
-					? node.operator
-					: "unknown";
+				typeof node.operator === "string" ? node.operator : "unknown";
 			switch (operator) {
 				case "!":
 					return !argument;
 				default:
-					console.warn(
-						`Unsupported unary operator: ${operator}`,
-					);
+					console.warn(`Unsupported unary operator: ${operator}`);
 					return argument;
 			}
 		}

@@ -157,11 +157,6 @@ export function sumTimeEntries(
 	return total;
 }
 
-async function _resetDatabase() {
-	await getDB().delete();
-	location.reload(); // Force page reload to reinitialize DB
-}
-
 export interface PathCondition {
 	path: string;
 	isInclusion: boolean;
@@ -290,27 +285,6 @@ export async function getExistingActivity(file: TFile, date: string) {
 }
 
 export async function createActivityObject(file: TFile, date: string) {
-	// let newActivity: DailyActivity | undefined = await getDB()
-	// 	.dailyActivity.where("[date+filePath]")
-	// 	.equals([date, file.path])
-	// 	.first();
-
-	// const content = await state.plugin.app.vault.read(file);
-	// const currentWordCount = getLanguageBasedWordCount(
-	// 	content,
-	// 	state.plugin.data.settings.enabledLanguages,
-	// );
-
-	// newActivity = {
-	// 	date: date,
-	// 	filePath: file.path,
-	// 	wordCountStart: currentWordCount,
-	// 	charCountStart: content.length,
-	// 	changes: [],
-	// };
-
-	// return newActivity;
-
 	const content = await state.plugin.app.vault.read(file);
 
 	return {

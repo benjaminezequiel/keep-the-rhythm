@@ -45,7 +45,7 @@ export class ManualEntryModal extends Modal {
 
 		new Setting(this.contentEl)
 			.setClass("ktr-no-border")
-			.setName("Word Count")
+			.setName("Word count")
 			.addText((text) => {
 				text.onChange((value) => {
 					this.wordsDelta = Number(value);
@@ -61,7 +61,7 @@ export class ManualEntryModal extends Modal {
 			});
 
 		new Setting(this.contentEl)
-			.setName("Character Count")
+			.setName("Character count")
 			.setClass("ktr-no-border")
 			.setDesc("Defaults to words × 5. Edit to override.")
 			.addText((text) => {
@@ -122,7 +122,7 @@ export class ManualEntryModal extends Modal {
 
 		new Setting(this.contentEl).addButton((btn) =>
 			btn
-				.setButtonText("Save New Entry")
+				.setButtonText("Save new entry")
 				.setCta()
 				.onClick(async () => {
 					await this.saveNewEntry();

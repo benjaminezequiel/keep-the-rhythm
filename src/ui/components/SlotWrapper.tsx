@@ -67,7 +67,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 
 	const handleAddClick = () => {
 		if (slotsState && slotsState?.length >= 10) {
-			new Notice("Maximum of 10 slots per view! (at least for now)");
+			new Notice("Maximum of 10 slots per view! (At least for now)");
 			return;
 		}
 		const newSlot: SlotConfig = {

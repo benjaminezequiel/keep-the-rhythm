@@ -173,7 +173,7 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 												void (async () => {
 												if (entry.id === undefined) {
 													new Notice(
-														"Entry has no id, cannot delete.",
+														"Entry has no ID, cannot delete.",
 													);
 													return;
 												}

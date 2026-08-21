@@ -8,12 +8,12 @@ interface InternalPlugins {
 		| undefined;
 }
 
-interface ObsidianWindow extends Window {
+interface ObsidianWindow {
 	app: { internalPlugins: InternalPlugins };
 }
 
 export function getCorePluginSettings(pluginId: string): unknown {
-	const plugin = (window as ObsidianWindow).app.internalPlugins.getPluginById(
+	const plugin = (window as unknown as ObsidianWindow).app.internalPlugins.getPluginById(
 		pluginId,
 	);
 	if (plugin?.enabled) {
