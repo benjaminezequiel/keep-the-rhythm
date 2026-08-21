@@ -255,6 +255,7 @@ export async function getCurrentCount(
 			: getLanguageBasedWordCount(
 					content,
 					state.plugin.data.settings.enabledLanguages,
+					state.plugin.data.settings,
 				);
 	}
 

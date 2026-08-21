@@ -22,6 +22,7 @@ export async function readCounts(file: TFile): Promise<Counts> {
 		words: getLanguageBasedWordCount(
 			content,
 			state.plugin.data.settings.enabledLanguages,
+			state.plugin.data.settings,
 		),
 		chars: content.length,
 	};

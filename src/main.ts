@@ -495,6 +495,7 @@ export default class KeepTheRhythm extends Plugin {
 
 	public async updateAndSaveEverything() {
 		await this.saveData(this.data);
+		invalidateAll();
 		state.setToday(); // already refreshes everything
 	}
 
