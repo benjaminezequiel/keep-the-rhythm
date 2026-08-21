@@ -1,13 +1,22 @@
 import { getLeafWithFile } from "../../utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import React from "react";
-import { HeatmapColorModes, IntensityConfig } from "../../defs/types";
+import { HeatmapColorModes } from "../../defs/types";
 import * as obsidian from "obsidian";
 import { Tooltip } from "./Tooltip";
 import { getCorePluginSettings } from "../../utils/windowUtility";
 import { state } from "@/core/pluginState";
 import { moment as _moment } from "obsidian";
 const moment = _moment as unknown as typeof _moment.default;
+
+interface DailyNotesSettings {
+	folder?: string;
+	format?: string;
+}
+
+function isDailyNotesSettings(value: unknown): value is DailyNotesSettings {
+	return typeof value === "object" && value !== null;
+}
 
 interface HeatmapCellProps {
 	intensity: number;
@@ -28,6 +37,7 @@ export const HeatmapCell = ({
 		if (!state.plugin.data.settings.heatmapNavigation) return;
 
 		const dailyNotesSettings = getCorePluginSettings("daily-notes");
+		if (!isDailyNotesSettings(dailyNotesSettings)) return;
 		let notePath = "";
 
 		if (dailyNotesSettings?.folder) {
@@ -57,7 +67,7 @@ export const HeatmapCell = ({
 			if (existingLeaf) {
 				state.plugin.app.workspace.setActiveLeaf(existingLeaf);
 			} else {
-				state.plugin.app.workspace.getLeaf(true).openFile(existingFile);
+				void state.plugin.app.workspace.getLeaf(true).openFile(existingFile);
 			}
 		} else {
 			const newFile = await state.plugin.app.vault.create(notePath, "");
@@ -99,7 +109,13 @@ export const HeatmapCell = ({
 				</>
 			}
 		>
-			<div onClick={handleClick} className={classes} style={style}></div>
+			<div
+				onClick={(event) => {
+					void handleClick(event);
+				}}
+				className={classes}
+				style={style}
+			></div>
 		</Tooltip>
 	);
 };

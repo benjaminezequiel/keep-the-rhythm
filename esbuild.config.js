@@ -1,7 +1,7 @@
 import esbuild from "esbuild";
-import builtins from "builtin-modules";
 import { sassPlugin } from "esbuild-sass-plugin";
 import fs from "fs";
+import { builtinModules } from "node:module";
 import path from "path";
 import { createRequire } from "module";
 
@@ -83,7 +83,7 @@ const context = await esbuild.context({
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
-		...builtins,
+		...builtinModules,
 	],
 	format: "cjs",
 	target: "es2018",

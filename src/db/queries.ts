@@ -100,8 +100,8 @@ export async function removeDuplicatedDailyEntries() {
 	const allEntries = await getDB().dailyActivity.toArray();
 
 	// Create a map to track unique entries by date+filePath
-	const uniqueEntries = new Map();
-	const duplicateIds = [];
+	const uniqueEntries = new Map<string, DailyActivity>();
+	const duplicateIds: number[] = [];
 
 	for (const entry of allEntries) {
 		const key = `${entry.date}-${entry.filePath}`;
@@ -110,13 +110,20 @@ export async function removeDuplicatedDailyEntries() {
 			uniqueEntries.set(key, entry);
 		} else {
 			const existingEntry = uniqueEntries.get(key);
+			if (!existingEntry) continue;
 
-			for (const [key, change] of Object.entries(entry.changes)) {
-				if (existingEntry.changes[key]) {
-					existingEntry.changes[key].w += change.w;
-					existingEntry.changes[key].c += change.c;
+			for (const change of entry.changes ?? []) {
+				const existingChange = existingEntry.changes?.find(
+					(item) => item.timeKey === change.timeKey,
+				);
+				if (existingChange) {
+					existingChange.w += change.w;
+					existingChange.c += change.c;
 				} else {
-					existingEntry.changes[key] = { ...change };
+					existingEntry.changes = [
+						...(existingEntry.changes ?? []),
+						{ ...change },
+					];
 				}
 			}
 
@@ -329,7 +336,6 @@ export async function getCurrentCount(
 			);
 
 		default:
-			console.info(target);
 			throw new Error("Unsupported target type");
 	}
 

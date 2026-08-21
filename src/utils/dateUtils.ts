@@ -38,7 +38,7 @@ export function getStartOfYear(date: Date) {
 export function getLastDay() {
 	return moment().subtract(1, "day");
 }
-export function floorMomentToFive(m: any) {
+export function floorMomentToFive(m: ReturnType<typeof moment>) {
 	const ms = 1000 * 60 * 5;
 	return moment(Math.floor(m.valueOf() / ms) * ms);
 }
