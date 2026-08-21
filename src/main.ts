@@ -19,8 +19,8 @@ import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat } from "@/utils/migrateData";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
-
 import { formatDate } from "@/utils/dateUtils";
+import { checkDayChange } from "@/core/activityTracker";
 
 import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
@@ -47,6 +47,13 @@ export default class KeepTheRhythm extends Plugin {
 		state.setPlugin(this);
 
 		initDatabase();
+
+		this.registerInterval(
+			window.setInterval(() => checkDayChange(), 30_000),
+		);
+		this.registerDomEvent(document, "visibilitychange", () =>
+			checkDayChange(),
+		);
 
 		// todo: check if this is really necessary
 		getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
@@ -387,7 +394,7 @@ export default class KeepTheRhythm extends Plugin {
 	// #region Unloading
 
 	async onunload() {
-		events.cleanDBTimeout();
+		events.flushNow();
 
 		if (this.JsonDebounceTimeout) {
 			clearTimeout(this.JsonDebounceTimeout);

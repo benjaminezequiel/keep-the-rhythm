@@ -14,6 +14,8 @@ import { sumTimeEntries } from "@/utils/utils";
 import { DailyActivity } from "./types";
 import { moment as _moment, debounce, Notice, Vault } from "obsidian";
 import { getFileWordAndCharCount } from "@/utils/utils";
+import { getTrackedCounts } from "@/core/activityTracker";
+import { getLanguageBasedWordCount } from "@/core/wordCounting";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -239,22 +241,21 @@ export async function getCurrentCount(
 	calc?: CalculationType,
 ): Promise<number> {
 	if (target === TargetCount.CURRENT_FILE) {
-		if (state.currentActivity) {
-			return sumTimeEntries(state?.currentActivity, unit) || 0;
-		} else {
-			// No current session - just sum all past activity for this file
-			const activeFile = state.plugin.app.workspace.getActiveFile();
-			if (activeFile) {
-				const activities = await getDB()
-					.dailyActivity.where("filePath")
-					.equals(activeFile.path)
-					.toArray();
-				return activities.reduce((sum, activity) => {
-					return sum + sumTimeEntries(activity, unit, false);
-				}, 0);
-			}
-			return 0;
-		}
+		const activeFile = state.plugin.app.workspace.getActiveFile();
+		if (!activeFile || activeFile.extension !== "md") return 0;
+
+		// handleEditorChange already computed this from the live editor
+		const tracked = getTrackedCounts(activeFile.path);
+		if (tracked) return unit === Unit.CHAR ? tracked.chars : tracked.words;
+
+		// File open but never edited this session
+		const content = await state.plugin.app.vault.cachedRead(activeFile);
+		return unit === Unit.CHAR
+			? content.length
+			: getLanguageBasedWordCount(
+					content,
+					state.plugin.data.settings.enabledLanguages,
+				);
 	}
 
 	let startDate: string;

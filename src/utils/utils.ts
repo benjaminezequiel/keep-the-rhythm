@@ -12,6 +12,8 @@ import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
 import { moment as _moment } from "obsidian";
+import { TimeEntry } from "@/db/types";
+
 const moment = _moment as unknown as typeof _moment.default;
 
 export function getLeafWithFile(app: App, file: TFile): WorkspaceLeaf | null {
@@ -290,40 +292,70 @@ export async function getExistingActivity(file: TFile, date: string) {
 }
 
 export async function createActivityObject(file: TFile, date: string) {
-	let newActivity: DailyActivity | undefined = await getDB()
-		.dailyActivity.where("[date+filePath]")
-		.equals([date, file.path])
-		.first();
+	// let newActivity: DailyActivity | undefined = await getDB()
+	// 	.dailyActivity.where("[date+filePath]")
+	// 	.equals([date, file.path])
+	// 	.first();
+
+	// const content = await state.plugin.app.vault.read(file);
+	// const currentWordCount = getLanguageBasedWordCount(
+	// 	content,
+	// 	state.plugin.data.settings.enabledLanguages,
+	// );
+
+	// newActivity = {
+	// 	date: date,
+	// 	filePath: file.path,
+	// 	wordCountStart: currentWordCount,
+	// 	charCountStart: content.length,
+	// 	changes: [],
+	// };
+
+	// return newActivity;
 
 	const content = await state.plugin.app.vault.read(file);
-	const currentWordCount = getLanguageBasedWordCount(
-		content,
-		state.plugin.data.settings.enabledLanguages,
-	);
 
-	newActivity = {
-		date: date,
+	return {
+		date,
 		filePath: file.path,
-		wordCountStart: currentWordCount,
+		wordCountStart: getLanguageBasedWordCount(
+			content,
+			state.plugin.data.settings.enabledLanguages,
+		),
 		charCountStart: content.length,
 		changes: [],
 	};
-
-	return newActivity;
 }
 
 export async function getExistingOrCreateNewEntry(
 	file: TFile,
 	date: string,
 ): Promise<DailyActivity> {
-	let entry = await getExistingActivity(file, date);
+	let existing = await getExistingActivity(file, date);
+	if (existing) return existing;
 
-	/** File was not yet seen today, create an entry for it */
-	if (!entry) {
-		console.log("no entry found");
-		entry = await createActivityObject(file, date);
-		await getDB().dailyActivity.add(entry);
+	const newActivity = await createActivityObject(file, date);
+
+	try {
+		const id = await getDB().dailyActivity.add(newActivity);
+		return { ...newActivity, id: id as number };
+	} catch (err) {
+		// something inserted while still reading the file
+		const raced = await getExistingActivity(file, date);
+		if (raced) return raced;
+		throw err;
 	}
+}
 
-	return entry;
+export function upsertChange(
+	changes: TimeEntry[],
+	change: TimeEntry,
+): TimeEntry[] {
+	const next = [...changes];
+	const index = next.findIndex((e) => e.timeKey === change.timeKey);
+
+	if (index !== -1) next[index] = change;
+	else next.push(change);
+
+	return next.sort((a, b) => a.timeKey.localeCompare(b.timeKey));
 }
