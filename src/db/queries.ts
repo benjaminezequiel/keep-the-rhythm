@@ -360,10 +360,11 @@ export const deleteActivityFromDate = async (
 		.first();
 
 	if (entry?.id) {
-		getDB().dailyActivity.delete(entry.id);
+		await getDB().dailyActivity.delete(entry.id);
+		forgetFile(filePath, date);
 		state.emit(EVENTS.REFRESH_EVERYTHING);
 	} else {
-		const notice = new Notice(
+		new Notice(
 			"Failed to delete this entry! This is a bug, contact the developer.",
 		);
 	}

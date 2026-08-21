@@ -416,28 +416,25 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 
-			await newData.stats?.dailyActivity.forEach(
-				async (activity, index) => {
-					let existingActivity;
+			for (const activity of newData.stats?.dailyActivity ?? []) {
+				let existingActivity;
 
-					if (activity.id) {
-						existingActivity = await getDB().dailyActivity.get(
-							activity.id,
-						);
-					}
+				if (activity.id) {
+					existingActivity = await getDB().dailyActivity.get(
+						activity.id,
+					);
+				}
 
-					/** Find any new activity and add it to the db */
-					if (
-						existingActivity &&
-						JSON.stringify(existingActivity) ==
-							JSON.stringify(activity)
-					) {
-						return;
-					} else {
-						getDB().dailyActivity.put(activity);
-					}
-				},
-			);
+				if (
+					existingActivity &&
+					JSON.stringify(existingActivity) ===
+						JSON.stringify(activity)
+				) {
+					continue;
+				}
+
+				await getDB().dailyActivity.put(activity);
+			}
 
 			/** Assign new external settings*/
 			if (this.data.settings !== newData.settings) {

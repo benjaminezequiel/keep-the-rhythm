@@ -142,22 +142,19 @@ export class PluginState {
 
 	emit(event: string, ...args: any[]): void {
 		const listeners = this._events[event];
+		if (!listeners?.length) return;
 
-		if (!listeners) return;
-		if (event === EVENTS.REFRESH_EVERYTHING) {
-			requestAnimationFrame(() => {
-				for (const listener of listeners) {
+		const snapshot = [...listeners];
+
+		Promise.resolve().then(() => {
+			for (const listener of snapshot) {
+				try {
 					listener(...args);
+				} catch (error) {
+					console.error(`KTR listener failed for ${event}`, error);
 				}
-			});
-		} else {
-			// For non-UI events, use microtask queue
-			Promise.resolve().then(() => {
-				for (const listener of listeners) {
-					listener(...args);
-				}
-			});
-		}
+			}
+		});
 	}
 }
 

@@ -50,11 +50,8 @@ export async function handleEditorChange(
 
 	const { wordsAdded, charsAdded } = takeDelta(
 		file,
-		getLanguageBasedWordCount(
-			content,
-			plugin.data.settings.enabledLanguages,
-		),
-		content.length,
+		counts.words,
+		counts.chars,
 	);
 
 	// const wordsAdded = newWordCount - totalWords;
