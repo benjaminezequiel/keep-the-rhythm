@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,17 +33,35 @@ const packageLock = readJson("package-lock.json");
 const manifest = readJson("manifest.json");
 const versions = readJson("versions.json");
 
+if (newVersion in versions.data) {
+	console.error(`Version ${newVersion} already exists in versions.json`);
+	process.exit(1);
+}
+
 packageJson.data.version = newVersion;
 packageLock.data.version = newVersion;
 packageLock.data.packages[""].version = newVersion;
 manifest.data.version = newVersion;
-if (!(newVersion in versions.data)) {
-	versions.data[newVersion] = manifest.data.minAppVersion;
-}
+versions.data[newVersion] = manifest.data.minAppVersion;
 
 writeJson(packageJson.filePath, packageJson.data);
 writeJson(packageLock.filePath, packageLock.data);
 writeJson(manifest.filePath, manifest.data);
 writeJson(versions.filePath, versions.data);
+
+function runGit(args) {
+	execFileSync("git", args, { cwd: rootDir, stdio: "inherit" });
+}
+
+runGit([
+	"add",
+	"package.json",
+	"package-lock.json",
+	"manifest.json",
+	"versions.json",
+]);
+runGit(["commit", "-m", `version-bump: ${newVersion}`]);
+runGit(["tag", newVersion]);
+runGit(["push", "origin", newVersion]);
 
 process.stdout.write(`Updated plugin version to ${newVersion}\n`);
