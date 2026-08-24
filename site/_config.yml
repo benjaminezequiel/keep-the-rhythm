@@ -25,9 +25,4 @@ exclude:
     - vendor/
     - .bundle/
 
-analytics:
-    provider: "google-gtag"
-    google:
-        tracking_id: G-FT4GL69NXX"
-        anonymize_ip: false # default
-
+google_analytics: G-FT4GL69NXX
