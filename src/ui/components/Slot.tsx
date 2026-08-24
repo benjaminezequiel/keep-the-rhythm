@@ -49,7 +49,7 @@ export const Slot = ({
 
 	/** SETUP BUTTON ICONS USING OBSIDIAN UTILITY */
 	if (calcButtonRef.current) {
-		const icon = calcMode == "TOTAL" ? "chart-spline" : "sigma";
+		const icon = calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
 		setIcon(calcButtonRef.current, icon);
 	}
 	if (unitButtonRef.current) {
@@ -63,7 +63,7 @@ export const Slot = ({
 	}
 
 	if (calcButtonRef.current) {
-		const icon = calcMode == "TOTAL" ? "chart-spline" : "sigma";
+		const icon = calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
 		setIcon(calcButtonRef.current, icon);
 	}
 
@@ -84,7 +84,7 @@ export const Slot = ({
 
 		if (plugin?.data?.settings) {
 			plugin.data.settings.sidebarConfig.slots[index].calc = newCalc;
-			plugin.quietSave();
+			void plugin.quietSave();
 		}
 
 		setCalcType(newCalc);
@@ -95,7 +95,7 @@ export const Slot = ({
 
 		if (plugin?.data?.settings) {
 			plugin.data.settings.sidebarConfig.slots[index].unit = newUnit;
-			plugin.quietSave();
+			void plugin.quietSave();
 		}
 		setUnitType(newUnit);
 	};
@@ -107,7 +107,7 @@ export const Slot = ({
 
 		if (plugin && plugin.data && plugin.data.settings) {
 			plugin.data.settings.sidebarConfig.slots[index].option = newOption;
-			plugin.quietSave();
+			void plugin.quietSave();
 		}
 
 		setOptionType(newOption);
@@ -137,13 +137,16 @@ export const Slot = ({
 	};
 
 	useEffect(() => {
-		state.off(EVENTS.REFRESH_EVERYTHING, updateData);
-		state.on(EVENTS.REFRESH_EVERYTHING, updateData);
+		const handleRefresh = () => {
+			void updateData();
+		};
+		state.off(EVENTS.REFRESH_EVERYTHING, handleRefresh);
+		state.on(EVENTS.REFRESH_EVERYTHING, handleRefresh);
 
-		updateData();
+		void updateData();
 
 		return () => {
-			state.off(EVENTS.REFRESH_EVERYTHING, updateData);
+			state.off(EVENTS.REFRESH_EVERYTHING, handleRefresh);
 		};
 	}, [unitType, optionType, calcMode]);
 
@@ -167,7 +170,7 @@ export const Slot = ({
 							{showCalcType && (
 								<Tooltip
 									content={
-										calcMode == "TOTAL"
+										calcMode === CalculationType.TOTAL
 											? "Show daily average"
 											: "Show total"
 									}
@@ -221,7 +224,7 @@ export const Slot = ({
 					<div className="slot__unit">
 						{unitSupportingText()}
 						<span className="slot__unit-avg">
-							{showCalcType && calcMode == "AVG" ? "/day" : ""}
+							{showCalcType && calcMode === CalculationType.AVG ? "/day" : ""}
 						</span>
 					</div>
 				</div>

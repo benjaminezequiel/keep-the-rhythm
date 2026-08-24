@@ -30,7 +30,7 @@ export class PluginView extends ItemView {
 	async onOpen() {
 		const container = this.containerEl.children[1];
 		container.empty();
-		const reactContainer = container.createEl("div");
+		const reactContainer = container.createDiv();
 		this.root = createRoot(reactContainer);
 
 		this.root.render(

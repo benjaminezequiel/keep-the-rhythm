@@ -55,7 +55,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 		}
 
 		// Call quietSave to persist changes
-		state.plugin.quietSave();
+		void state.plugin.quietSave();
 
 		// Fix: Filter by uuid instead of index to maintain proper transition
 		setSlotsState((prevSlots) => {
@@ -67,7 +67,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 
 	const handleAddClick = () => {
 		if (slotsState && slotsState?.length >= 10) {
-			new Notice("Maximum of 10 slots per view! (at least for now)");
+			new Notice("Maximum of 10 slots per view! (At least for now)");
 			return;
 		}
 		const newSlot: SlotConfig = {
@@ -87,7 +87,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 		}
 
 		// Call quietSave to persist changes
-		state.plugin.quietSave();
+		void state.plugin.quietSave();
 
 		// Update state with new UUID for the new slot
 		setSlotsState([...(slotsState || []), { ...newSlot, uuid: uuidv4() }]);

@@ -1,0 +1,13 @@
+source "https://rubygems.org"
+
+# Matches the gem bundle GitHub Pages uses in Actions (actions/jekyll-build-pages),
+# so a local build here is representative of what will actually deploy.
+gem "github-pages", group: :jekyll_plugins
+
+# Ruby 3.4+ no longer bundles these by default, but the (older, pinned)
+# github-pages toolchain still needs them.
+gem "webrick"
+gem "csv"
+gem "logger"
+gem "base64"
+gem "bigdecimal"

@@ -70,6 +70,8 @@ export interface Settings {
 	startOfTheWeek: "MONDAY" | "SUNDAY"; // not used yet, should be used to offset start of the week calculations and heatmap
 	heatmapConfig: HeatmapConfig;
 	heatmapNavigation: boolean;
+	ignoreComments: boolean;
+	ignoreTasks: boolean;
 
 	backupConfig: {
 		enabled: boolean;
@@ -98,7 +100,7 @@ export interface SlotConfig {
 export interface PluginData {
 	settings: Settings;
 	migratedPreviousVersion?: boolean;
-	schema?: "0.2" | "0.3" | string;
+	schema?: string;
 	stats?: {
 		currentStreak?: number;
 		highestStreak?: number;
@@ -143,6 +145,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	dailyWritingGoal: 500,
 	startOfTheWeek: "SUNDAY",
 	heatmapNavigation: true,
+	ignoreComments: false,
+	ignoreTasks: false,
 	heatmapConfig: {
 		roundCells: true,
 		hideMonthLabels: false,

@@ -36,7 +36,7 @@ export async function activateSidebarView() {
   if (state.plugin.app.workspace.getLeavesOfType(VIEW_TYPE).length > 0) return; // add "window already open" notification, hm but its gonna focus later
 
   // Get the leaf and focus on it
-  const leaf = this.app.workspace.getRightLeaf(false);
+  const leaf = state.plugin.app.workspace.getRightLeaf(false);
   if (leaf) {
     await leaf.setViewState({
       type: VIEW_TYPE,

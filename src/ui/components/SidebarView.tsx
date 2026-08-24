@@ -69,7 +69,7 @@ export const KTRView = ({ plugin }: KTRView) => {
         {showGoalWidget && <GoalWidget />}
         {showSlots && <SlotWrapper slots={slots} />}
         {showHeatmap && (
-          <Heatmap heatmapConfig={heatmapConfigState} query={""} />
+          <Heatmap heatmapConfig={heatmapConfigState} />
         )}
         {showEntries && <Entries />}
       </KeyProvider>

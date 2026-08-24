@@ -1,7 +1,7 @@
 import React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { moment as _moment } from "obsidian";
+import jsep from "jsep";
 import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
@@ -13,7 +13,7 @@ import { getDB } from "@/db/db";
 
 interface HeatmapProps {
 	heatmapConfig: HeatmapConfig;
-	query?: any;
+	query?: jsep.Expression;
 	isCodeBlock?: boolean;
 }
 
@@ -57,8 +57,15 @@ export const Heatmap = ({
 			query?.type == "BinaryExpression" &&
 			query?.operator === "starts_with"
 		) {
-			let value = query.right.value;
-			if (typeof value === "string") {
+			const rightValue = query.right;
+			const rawValue =
+				typeof rightValue === "object" &&
+				rightValue !== null &&
+				"value" in rightValue
+					? rightValue.value
+					: undefined;
+			let value = typeof rawValue === "string" ? rawValue : undefined;
+			if (value !== undefined) {
 				value = value.startsWith("/") ? value.substring(1) : value;
 				results = await getDB()
 					.dailyActivity.where("[filePath+date]")
@@ -77,7 +84,7 @@ export const Heatmap = ({
 				.dailyActivity.where("date")
 				.anyOf([...requiredDates])
 				.filter((entry) => {
-					return filterFn!(entry);
+					return filterFn(entry);
 				})
 				.toArray();
 		} else {
@@ -244,7 +251,7 @@ const getCellIntensityLevel = (
 		case HeatmapColorModes.SOLID:
 			return count >= low ? 4 : 0;
 
-		case HeatmapColorModes.STOPS:
+		case HeatmapColorModes.STOPS: {
 			// Ensure thresholds are properly ordered
 			const sortedThresholds = [low, medium, high].sort((a, b) => a - b);
 			const [minThreshold, midThreshold, maxThreshold] = sortedThresholds;
@@ -254,6 +261,7 @@ const getCellIntensityLevel = (
 			if (count < midThreshold) return 2;
 			if (count < maxThreshold) return 3;
 			return 4;
+		}
 		default:
 			return 0;
 	}

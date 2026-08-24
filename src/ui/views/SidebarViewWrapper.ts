@@ -2,15 +2,13 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import KeepTheRhythm from "../../main";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
-import { IntensityConfig } from "@/defs/types";
-import { formatDate } from "@/utils/dateUtils";
 import { KTRView } from "../components/SidebarView";
 
 export const VIEW_TYPE = "keep-the-rhythm";
 
 export class PluginCoreUI extends ItemView {
 	plugin: KeepTheRhythm;
-	root: Root | null;
+	root: Root | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: KeepTheRhythm) {
 		super(leaf);
@@ -32,7 +30,7 @@ export class PluginCoreUI extends ItemView {
 	async onOpen() {
 		const container = this.containerEl.children[1];
 		container.empty();
-		const reactContainer = container.createEl("div");
+		const reactContainer = container.createDiv();
 		const sideBarConfig =
 			this.plugin.data.settings.sidebarConfig.visibility;
 		this.root = createRoot(reactContainer);

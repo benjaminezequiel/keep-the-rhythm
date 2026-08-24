@@ -1,7 +1,7 @@
 import esbuild from "esbuild";
-import builtins from "builtin-modules";
 import { sassPlugin } from "esbuild-sass-plugin";
 import fs from "fs";
+import { builtinModules } from "node:module";
 import path from "path";
 import { createRequire } from "module";
 
@@ -17,93 +17,101 @@ const prod = process.argv[2] === "production";
 // This patches Dexie during build-time, removing the global registration/guard-check
 // Done to avoid conflict with other plugins using Dexie
 const dexieIsolatePlugin = {
-  name: "dexie-isolate",
-  setup(build) {
-    build.onLoad(
-      { filter: /dexie[\\/]import-wrapper(-prod)?\.mjs$/, namespace: "file" },
-      (args) => {
-        let contents = fs.readFileSync(args.path, "utf8");
+	name: "dexie-isolate",
+	setup(build) {
+		build.onLoad(
+			{
+				filter: /dexie[\\/]import-wrapper(-prod)?\.mjs$/,
+				namespace: "file",
+			},
+			(args) => {
+				let contents = fs.readFileSync(args.path, "utf8");
 
-        contents = contents
-          .replace(/const DexieSymbol = Symbol\.for\("Dexie"\);\n/, "")
-          .replace(
-            /const Dexie = globalThis\[DexieSymbol\] \|\| \(globalThis\[DexieSymbol\] = _Dexie\);\n/,
-            "const Dexie = _Dexie;\n",
-          )
-          .replace(
-            /if \(_Dexie\.semVer !== Dexie\.semVer\) \{\n\s+throw new Error\(`Two different versions of Dexie loaded in the same app: \$\{_Dexie\.semVer\} and \$\{Dexie\.semVer\}`\);\n\s+\}\n/,
-            "",
-          );
+				contents = contents
+					.replace(
+						/const DexieSymbol = Symbol\.for\("Dexie"\);\n/,
+						"",
+					)
+					.replace(
+						/const Dexie = globalThis\[DexieSymbol\] \|\| \(globalThis\[DexieSymbol\] = _Dexie\);\n/,
+						"const Dexie = _Dexie;\n",
+					)
+					.replace(
+						/if \(_Dexie\.semVer !== Dexie\.semVer\) \{\n\s+throw new Error\(`Two different versions of Dexie loaded in the same app: \$\{_Dexie\.semVer\} and \$\{Dexie\.semVer\}`\);\n\s+\}\n/,
+						"",
+					);
 
-        if (
-          contents.includes("DexieSymbol") ||
-          contents.includes("Symbol.for")
-        ) {
-          throw new Error(
-            `[dexie-isolate] Failed to patch ${args.path} — Symbol.for still present. ` +
-              `Check that the source text matches the replace patterns.`,
-          );
-        }
+				if (
+					contents.includes("DexieSymbol") ||
+					contents.includes("Symbol.for")
+				) {
+					throw new Error(
+						`[dexie-isolate] Failed to patch ${args.path} — Symbol.for still present. ` +
+							`Check that the source text matches the replace patterns.`,
+					);
+				}
 
-        console.log(`[dexie-isolate] Patched: ${path.basename(args.path)}`);
-        return { contents, loader: "js" };
-      },
-    );
-  },
+				console.log(
+					`[dexie-isolate] Patched: ${path.basename(args.path)}`,
+				);
+				return { contents, loader: "js" };
+			},
+		);
+	},
 };
 
 const context = await esbuild.context({
-  metafile: true,
-  banner: {
-    js: banner,
-  },
-  entryPoints: ["src/main.ts", "src/ui/styles/styles.scss"],
-  entryNames: "[name]",
-  outdir: ".",
-  bundle: true,
-  external: [
-    "obsidian",
-    "electron",
-    "@codemirror/autocomplete",
-    "@codemirror/collab",
-    "@codemirror/commands",
-    "@codemirror/language",
-    "@codemirror/lint",
-    "@codemirror/search",
-    "@codemirror/state",
-    "@codemirror/view",
-    "@lezer/common",
-    "@lezer/highlight",
-    "@lezer/lr",
-    ...builtins,
-  ],
-  format: "cjs",
-  target: "es2018",
-  logLevel: "info",
-  sourcemap: prod ? false : "inline",
-  treeShaking: true,
-  define: {
-    "process.env.NODE_ENV": prod ? '"production"' : '"development"',
-  },
+	metafile: true,
+	banner: {
+		js: banner,
+	},
+	entryPoints: ["src/main.ts", "src/ui/styles/styles.scss"],
+	entryNames: "[name]",
+	outdir: ".",
+	bundle: true,
+	external: [
+		"obsidian",
+		"electron",
+		"@codemirror/autocomplete",
+		"@codemirror/collab",
+		"@codemirror/commands",
+		"@codemirror/language",
+		"@codemirror/lint",
+		"@codemirror/search",
+		"@codemirror/state",
+		"@codemirror/view",
+		"@lezer/common",
+		"@lezer/highlight",
+		"@lezer/lr",
+		...builtinModules,
+	],
+	format: "cjs",
+	target: "es2018",
+	logLevel: "info",
+	sourcemap: prod ? false : "inline",
+	treeShaking: true,
+	define: {
+		"process.env.NODE_ENV": prod ? '"production"' : '"development"',
+	},
 
-  minify: prod,
-  minifyWhitespace: prod,
-  minifyIdentifiers: prod,
-  minifySyntax: prod,
-  plugins: [
-    dexieIsolatePlugin,
-    sassPlugin({
-      type: "css",
-      outputStyle: "compressed",
-    }),
-  ],
+	minify: prod,
+	minifyWhitespace: prod,
+	minifyIdentifiers: prod,
+	minifySyntax: prod,
+	plugins: [
+		dexieIsolatePlugin,
+		sassPlugin({
+			type: "css",
+			outputStyle: "compressed",
+		}),
+	],
 });
 
 if (prod) {
-  const result = await context.rebuild();
+	const result = await context.rebuild();
 
-  fs.writeFileSync("meta.json", JSON.stringify(result.metafile, null, 2));
-  process.exit(0);
+	fs.writeFileSync("meta.json", JSON.stringify(result.metafile, null, 2));
+	process.exit(0);
 } else {
-  await context.watch(); // Watch for file changes in dev mode
+	await context.watch(); // Watch for file changes in dev mode
 }

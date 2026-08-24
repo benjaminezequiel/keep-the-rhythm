@@ -14,15 +14,15 @@ import {
 	PluginData,
 } from "@/defs/types";
 
+import { invalidateAll } from "@/core/activityTracker";
 import { getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
-import { migrateDataFromOldFormat } from "@/utils/migrateData";
+import { migrateDataFromOldFormat, OldFormat } from "@/utils/migrateData";
 import { SettingsTab } from "@/ui/settings/SettingsTab";
+import { formatDate } from "@/utils/dateUtils";
+import { checkDayChange } from "@/core/activityTracker";
 
-import { formatDate, scheduleNextDayTrigger } from "@/utils/dateUtils";
-
-import * as utils from "@/utils/utils";
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
 import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
@@ -38,25 +38,31 @@ export default class KeepTheRhythm extends Plugin {
 		},
 	};
 
-	private dayTimer: number | null = null;
 	private JSON_DEBOUNCE_TIME = 1000;
 	private LAST_BREAKING_CHANGE_TO_SCHEMA = "0.2";
 
-	private JsonDebounceTimeout: any = null;
+	private JsonDebounceTimeout: number | null = null;
 
 	async onload() {
 		state.setPlugin(this);
-		this.dayTimer = scheduleNextDayTrigger(() => {
-			this.updateAndSaveEverything(); // or just refresh heatmap
-		});
 
 		initDatabase();
 
+		this.registerInterval(
+			window.setInterval(() => {
+				checkDayChange();
+			}, 30_000),
+		);
+		this.registerDomEvent(document, "visibilitychange", () =>
+			checkDayChange(),
+		);
+
 		// todo: check if this is really necessary
-		getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
+		void getDB().dailyActivity.clear(); // restarts DB to ensure data.json is the source of truth
 
 		/////////
-		const loadedData = await this.loadData();
+		const loadedData =
+			(await this.loadData()) as unknown as PluginData | null;
 
 		if (loadedData) {
 			// add setting to remove backups
@@ -95,7 +101,7 @@ export default class KeepTheRhythm extends Plugin {
 
 		state.setToday();
 
-		this.checkVaultCountStaleness();
+		void this.checkVaultCountStaleness();
 
 		// /** Set of utility functions that registers required objects and sets plugin state */
 
@@ -125,13 +131,13 @@ export default class KeepTheRhythm extends Plugin {
 			codeBlocks.createEntriesCodeBlock,
 		);
 
-		state.on(EVENTS.REFRESH_EVERYTHING, async () => {
+		state.on(EVENTS.REFRESH_EVERYTHING, () => {
 			if (this.JsonDebounceTimeout) {
-				clearTimeout(this.JsonDebounceTimeout);
+				window.clearTimeout(this.JsonDebounceTimeout);
 			}
 
-			this.JsonDebounceTimeout = setTimeout(async () => {
-				await this.saveDataToJSON();
+			this.JsonDebounceTimeout = window.setTimeout(() => {
+				void this.saveDataToJSON();
 			}, this.JSON_DEBOUNCE_TIME);
 		});
 	}
@@ -159,13 +165,12 @@ export default class KeepTheRhythm extends Plugin {
 			}
 		}
 	}
-	private async backupDataToVaultFolder(data: any) {
+	private async backupDataToVaultFolder(data: PluginData) {
 		const backupConfig =
 			data.settings.backupConfig || this.data.settings.backupConfig;
 
 		// Check if backups are enabled
 		if (!backupConfig.enabled) {
-			console.log("KTR: Backups disabled, ignoring");
 			return;
 		}
 
@@ -199,7 +204,6 @@ export default class KeepTheRhythm extends Plugin {
 			for (const filePath of backupFiles) {
 				try {
 					if (!(await this.app.vault.adapter.exists(filePath))) {
-						console.error("File does not exist:", filePath);
 						return;
 					}
 					const contents =
@@ -207,8 +211,7 @@ export default class KeepTheRhythm extends Plugin {
 					if (contents && contents === jsonData) {
 						return;
 					}
-				} catch (err) {
-					console.error("Failed to read file:", filePath, err);
+				} catch {
 					return null;
 				}
 			}
@@ -222,8 +225,6 @@ export default class KeepTheRhythm extends Plugin {
 	}
 
 	private async cleanOlderBackups(backupPaths: string[], maxBackups: number) {
-		const now = window.moment();
-
 		// Sort backups by date (newest first)
 		const backupsWithDates = backupPaths
 			.map((fullPath) => {
@@ -249,7 +250,7 @@ export default class KeepTheRhythm extends Plugin {
 				return { fullPath, fileName, fileDate };
 			})
 			.filter((item) => item !== null)
-			.sort((a, b) => b!.fileDate.valueOf() - a!.fileDate.valueOf());
+			.sort((a, b) => b.fileDate.valueOf() - a.fileDate.valueOf());
 
 		// Keep only the most recent maxBackups, delete the rest
 		for (let i = maxBackups; i < backupsWithDates.length; i++) {
@@ -265,12 +266,11 @@ export default class KeepTheRhythm extends Plugin {
 			}
 
 			await this.app.vault.adapter.remove(backup.fullPath);
-			console.log(`Deleted old backup: ${backup.fileName}`);
 		}
 	}
 
-	private async migrateDataFromJSON(loadedData: any) {
-		const previousStats = migrateDataFromOldFormat(loadedData);
+	private async migrateDataFromJSON(loadedData: unknown) {
+		const previousStats = migrateDataFromOldFormat(loadedData as OldFormat);
 		this.data.stats = previousStats.stats;
 		this.data.schema = "0.2";
 
@@ -326,14 +326,14 @@ export default class KeepTheRhythm extends Plugin {
 
 	private initializeCommands() {
 		this.addRibbonIcon("calendar-days", "Keep the Rhythm", () => {
-			activateSidebarView();
+			void activateSidebarView();
 		});
 
 		this.addCommand({
 			id: "open-keep-the-rhythm",
 			name: "Open sidebar view",
 			callback: () => {
-				activateSidebarView();
+				void activateSidebarView();
 			},
 		});
 
@@ -349,7 +349,7 @@ export default class KeepTheRhythm extends Plugin {
 			id: "check-ktr-streak",
 			name: "Check writing goal from previous days",
 			callback: () => {
-				checkPreviousStreak();
+				void checkPreviousStreak();
 			},
 		});
 	}
@@ -357,31 +357,31 @@ export default class KeepTheRhythm extends Plugin {
 	private initializeEvents() {
 		this.registerEvent(
 			this.app.workspace.on("editor-change", (editor, info) => {
-				events.handleEditorChange(editor, info, this);
+				void events.handleEditorChange(editor, info, this);
 			}),
 		);
 		this.registerEvent(
 			this.app.vault.on("delete", (file: TAbstractFile) => {
-				if (file instanceof TFile) events.handleFileDelete(file);
+				if (file instanceof TFile) void events.handleFileDelete(file);
 			}),
 		);
-		this.registerEvent(
-			this.app.vault.on("create", (file: TAbstractFile) => {
-				if (file instanceof TFile) events.handleFileCreate(file);
-			}),
-		);
+		// this.registerEvent(
+		// 	this.app.vault.on("create", (file: TAbstractFile) => {
+		// 		// if (file instanceof TFile) events.handleFileCreate(file);
+		// 	}),
+		// );
 		this.registerEvent(
 			this.app.vault.on(
 				"rename",
 				(file: TAbstractFile, oldPath: string) => {
 					if (file instanceof TFile)
-						events.handleFileRename(file, oldPath);
+						void events.handleFileRename(file, oldPath);
 				},
 			),
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-open", (file) => {
-				if (file) events.handleFileOpen(file);
+				if (file) void events.handleFileOpen(file);
 			}),
 		);
 	}
@@ -390,19 +390,20 @@ export default class KeepTheRhythm extends Plugin {
 
 	// #region Unloading
 
-	async onunload() {
-		events.cleanDBTimeout();
+	onunload(): void {
+		void this.cleanupOnUnload();
+	}
 
-		if (this.dayTimer !== null) {
-			window.clearTimeout(this.dayTimer);
-		}
+	private async cleanupOnUnload(): Promise<void> {
+		await events.flushNow();
 
-		if (this.JsonDebounceTimeout) {
-			clearTimeout(this.JsonDebounceTimeout);
-		}
-		this.saveDataToJSON();
-		this.backupDataToVaultFolder(this.data);
+		if (this.JsonDebounceTimeout)
+			window.clearTimeout(this.JsonDebounceTimeout);
 
+		await this.saveDataToJSON();
+		await this.backupDataToVaultFolder(this.data);
+
+		invalidateAll();
 		await getDB().dailyActivity.clear();
 	}
 
@@ -416,7 +417,7 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 
-			newData.stats?.dailyActivity.forEach(async (activity, index) => {
+			for (const activity of newData.stats?.dailyActivity ?? []) {
 				let existingActivity;
 
 				if (activity.id) {
@@ -425,16 +426,16 @@ export default class KeepTheRhythm extends Plugin {
 					);
 				}
 
-				/** Find any new activity and add it to the db */
 				if (
 					existingActivity &&
-					JSON.stringify(existingActivity) == JSON.stringify(activity)
+					JSON.stringify(existingActivity) ===
+						JSON.stringify(activity)
 				) {
-					return;
-				} else {
-					getDB().dailyActivity.put(activity);
+					continue;
 				}
-			});
+
+				await getDB().dailyActivity.put(activity);
+			}
 
 			/** Assign new external settings*/
 			if (this.data.settings !== newData.settings) {
@@ -444,8 +445,8 @@ export default class KeepTheRhythm extends Plugin {
 				};
 			}
 
+			invalidateAll();
 			state.emit(EVENTS.REFRESH_EVERYTHING);
-			//TODO: ADD "SAVE AND UPDATE" HERE + EMIT UPDATE TO PLUGIN STATE
 		} catch (error) {
 			console.error("Error in onExternalSettingsChange:", error);
 		}
@@ -478,10 +479,6 @@ export default class KeepTheRhythm extends Plugin {
 			this.data.stats.daysWithCompletedGoal = [];
 		}
 
-		const { longestStreak, currentStreak } = utils.getDateStreaks(
-			this.data.stats.daysWithCompletedGoal,
-		);
-
 		let justCompleted = false;
 
 		if (increase) {
@@ -498,12 +495,13 @@ export default class KeepTheRhythm extends Plugin {
 				this.data.stats.daysWithCompletedGoal = newArray;
 			}
 		}
-		this.quietSave();
+		void this.quietSave();
 		return justCompleted;
 	}
 
 	public async updateAndSaveEverything() {
 		await this.saveData(this.data);
+		invalidateAll();
 		state.setToday(); // already refreshes everything
 	}
 

@@ -1,0 +1,28 @@
+title: Keep the Rhythm
+description: >-
+    An Obsidian plugin that helps you maintain a consistent writing habit by
+    tracking your daily word count, setting writing goals, and visualizing
+    your progress through a heatmap and customizable code blocks.
+
+baseurl: ""
+url: "https://ktr.benjaminezequiel.com"
+
+theme: jekyll-theme-minimal
+
+header_pages:
+    - installation.md
+    - usage.md
+    - code-blocks.md
+    - settings.md
+    - faq.md
+
+github_username: benjaminezequiel
+
+exclude:
+    - README.md
+    - Gemfile
+    - Gemfile.lock
+    - vendor/
+    - .bundle/
+
+google_analytics: G-FT4GL69NXX

@@ -1,7 +1,6 @@
 import Dexie from "dexie";
 import { state } from "@/core/pluginState";
 import { DailyActivity } from "./types";
-import { Plugin } from "obsidian";
 
 class KTRDatabase extends Dexie {
 	dailyActivity!: Dexie.Table<DailyActivity, number>;
