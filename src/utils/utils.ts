@@ -13,6 +13,7 @@ import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
 import { moment as _moment } from "obsidian";
 import { TimeEntry } from "@/db/types";
+import { Vault } from "obsidian";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -331,4 +332,19 @@ export function upsertChange(
 	else next.push(change);
 
 	return next.sort((a, b) => a.timeKey.localeCompare(b.timeKey));
+}
+
+export function hashString(value: string): string {
+	let hash = 0;
+	for (let i = 0; i < value.length; i++) {
+		hash = (hash << 5) - hash + value.charCodeAt(i);
+		hash |= 0;
+	}
+	return Math.abs(hash).toString(36);
+}
+
+export function getVaultKey(vault: Vault): string {
+	return (vault.adapter as unknown as { getResourcePath(p: string): string })
+		.getResourcePath("")
+		.split("?")[0];
 }

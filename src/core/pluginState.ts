@@ -18,10 +18,6 @@ export const EVENTS = {
 };
 
 export class PluginState {
-	// constructor(plugin: KeepTheRhythm) {
-	// this._plugin = plugin;
-	// }
-
 	/**
 	 * Allows access of data/functions from plugin class and Obsidian by React components
 	 * */

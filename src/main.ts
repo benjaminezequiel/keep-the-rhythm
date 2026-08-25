@@ -15,7 +15,7 @@ import {
 } from "@/defs/types";
 
 import { invalidateAll } from "@/core/activityTracker";
-import { getDB, initDatabase } from "@/db/db";
+import { closeDB, getDB, initDatabase } from "@/db/db";
 import { EVENTS, state } from "@/core/pluginState";
 import { PluginView, VIEW_TYPE } from "@/ui/views/PluginView";
 import { migrateDataFromOldFormat, OldFormat } from "@/utils/migrateData";
@@ -45,8 +45,7 @@ export default class KeepTheRhythm extends Plugin {
 
 	async onload() {
 		state.setPlugin(this);
-
-		initDatabase();
+		await initDatabase();
 
 		this.registerInterval(
 			window.setInterval(() => {
@@ -404,7 +403,7 @@ export default class KeepTheRhythm extends Plugin {
 		await this.backupDataToVaultFolder(this.data);
 
 		invalidateAll();
-		await getDB().dailyActivity.clear();
+		closeDB();
 	}
 
 	// #endregion
