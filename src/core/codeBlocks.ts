@@ -25,7 +25,8 @@ export function createHeatmapCodeBlock(
 
 	if (!query?.options) return; // add log / error
 
-	const container = el.createDiv("heatmap-codeblock");
+	const containerClass = `heatmap-codeblock ${query.options.center ? "center" : ""}`;
+	const container = el.createDiv(containerClass);
 	const root = createRoot(container);
 
 	root.render(

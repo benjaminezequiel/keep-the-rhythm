@@ -131,6 +131,7 @@ export interface HeatmapConfig {
 	hideMonthLabels: boolean;
 	hideWeekdayLabels: boolean;
 	alignLeft: boolean;
+	center?: boolean;
 	startDate?: string;
 	intensityStops: {
 		low: number;
