@@ -23,7 +23,7 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 		const parts = arrayOfLines[i].replace(/ /g, "").split(",");
 
 		const type = parts[0];
-		let unit = Unit.WORD;
+		let unit = state.plugin.data.settings.preferredUnit ?? Unit.WORD;
 		let calc = CalculationType.TOTAL;
 
 		if (!isValidTargetCount(type)) {
@@ -146,6 +146,11 @@ export function parseQueryToJSEP(query: string) {
 						break;
 					case "WEEKS":
 						config.numberOfWeeks = Number(details) || 20;
+						break;
+					case "UNIT":
+						if (isValidUnit(details.trim())) {
+							config.unit = details.trim() as Unit;
+						}
 				}
 			}
 		}

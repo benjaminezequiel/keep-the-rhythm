@@ -25,6 +25,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
 			title: "General",
 			settings: [
 				{
+					key: "preferredUnit",
+					type: "dropdown",
+					title: "Preferred Unit",
+					description: "Default unit used when displaying counts.",
+					options: { WORD: "Words", CHAR: "Characters" },
+				},
+				{
 					key: "enabledLanguages",
 					type: "custom",
 					title: "Enabled Languages",

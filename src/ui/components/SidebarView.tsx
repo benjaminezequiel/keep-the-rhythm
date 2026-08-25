@@ -60,7 +60,10 @@ export const KTRView = ({ plugin }: KTRView) => {
       <KeyProvider>
         {showSlots && <SlotWrapper slots={slots} />}
         {showHeatmap && (
-          <Heatmap heatmapConfig={heatmapConfigState} />
+          <Heatmap
+            heatmapConfig={heatmapConfigState}
+            preferredUnit={plugin.data.settings.preferredUnit}
+          />
         )}
         {showEntries && <Entries />}
       </KeyProvider>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import jsep from "jsep";
@@ -6,22 +6,38 @@ import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/db/types";
-import { Unit, HeatmapColorModes, HeatmapConfig } from "@/defs/types";
+import {
+	Unit,
+	HeatmapColorModes,
+	HeatmapConfig,
+} from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
+import { Tooltip } from "./Tooltip";
 import { compileEvaluator } from "@/core/codeBlockQuery";
 import { getDB } from "@/db/db";
+import { setIcon } from "obsidian";
 
 interface HeatmapProps {
 	heatmapConfig: HeatmapConfig;
+	preferredUnit?: Unit;
 	query?: jsep.Expression;
 	isCodeBlock?: boolean;
 }
 
 export const Heatmap = ({
 	heatmapConfig,
+	preferredUnit = Unit.WORD,
 	query,
 	isCodeBlock,
 }: HeatmapProps) => {
+	const [unit, setUnit] = useState<Unit>(preferredUnit);
+	const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
+	const [hoveredWeekday, setHoveredWeekday] = useState<number | null>(null);
+
+	useEffect(() => {
+		setUnit(preferredUnit);
+	}, [preferredUnit]);
+
 	let startDate: Date | null = null;
 	let endDate: Date | null = null;
 	const weeksToShow = heatmapConfig.numberOfWeeks || 52;
@@ -97,13 +113,13 @@ export const Heatmap = ({
 		const dateMap: Record<string, number> = {};
 
 		for (const entry of results) {
-			const entryValue = sumTimeEntries(entry, Unit.WORD, true);
+			const entryValue = sumTimeEntries(entry, unit, true);
 			const valueUntilNow = dateMap[entry.date] || 0;
 			dateMap[entry.date] = valueUntilNow + entryValue;
 		}
 
 		return dateMap;
-	});
+	}, [unit, weeksToShow, baseDate, query]);
 
 	if (!heatmapData) {
 		return <div className="heatmap-loading">Loading heatmap...</div>; // Replace with spinner or skeleton
@@ -133,6 +149,15 @@ export const Heatmap = ({
 		return labels;
 	};
 
+	const monthLabels = getMonthLabels();
+	const getMonthForWeek = (weekIndex: number) => {
+		let monthIndex = 0;
+		for (let index = 0; index < monthLabels.length; index++) {
+			if (monthLabels[index].week <= weekIndex) monthIndex = index;
+		}
+		return monthIndex;
+	};
+
 	const wrapperClasses = `
 		heatmap-wrapper 
 		${heatmapConfig.hideWeekdayLabels ? "hide-weekday-labels" : ""}
@@ -148,36 +173,57 @@ export const Heatmap = ({
 			disableHoverableContent
 		>
 			{heatmapData && (
-				<div className={wrapperClasses}>
-					{!heatmapConfig.hideWeekdayLabels && (
-						<div className="week-day-labels">
-							{weekdaysNames.map((day) => (
-								<div key={day} className="week-day-label">
-									{day}
-								</div>
-							))}
-						</div>
-					)}
-					<div className="heatmap-content">
-						{!heatmapConfig.hideMonthLabels && (
-							<div
-								className="month-labels"
-								style={{
-									gridTemplateColumns: `repeat(${weeksToShow}, 10px)`,
-								}}
-							>
-								{getMonthLabels().map(({ month, week }) => (
+				<div className="heatmap-container">
+					<Tooltip content="Change Unit">
+						<button
+							className="KTR-min-button heatmap-unit-toggle"
+							ref={(element) =>
+								element && setIcon(element, "case-sensitive")
+							}
+							onClick={() =>
+								setUnit((previous) =>
+									previous === Unit.WORD ? Unit.CHAR : Unit.WORD,
+								)
+							}
+						/>
+					</Tooltip>
+					<div className={wrapperClasses}>
+						{!heatmapConfig.hideWeekdayLabels && (
+							<div className="week-day-labels">
+								{weekdaysNames.map((day, dayIndex) => (
 									<div
-										key={`${month}-${week}`}
-										className="month-label"
-										style={{ gridColumn: week }}
+										key={day}
+										className="week-day-label"
+										onMouseEnter={() => setHoveredWeekday(dayIndex)}
+										onMouseLeave={() => setHoveredWeekday(null)}
 									>
-										{month}
+										{day}
 									</div>
 								))}
 							</div>
 						)}
-						<div className="heatmap-new-grid">
+						<div className="heatmap-content">
+							{!heatmapConfig.hideMonthLabels && (
+								<div
+									className="month-labels"
+									style={{
+										gridTemplateColumns: `repeat(${weeksToShow}, 10px)`,
+									}}
+								>
+									{monthLabels.map(({ month, week }, monthIndex) => (
+										<div
+											key={`${month}-${week}`}
+											className="month-label"
+											style={{ gridColumn: week }}
+											onMouseEnter={() => setHoveredMonth(monthIndex)}
+											onMouseLeave={() => setHoveredMonth(null)}
+										>
+											{month}
+										</div>
+									))}
+								</div>
+							)}
+							<div className="heatmap-new-grid">
 							{Array(weeksToShow)
 								.fill(null)
 								.map((_, weekIndex) => (
@@ -202,6 +248,13 @@ export const Heatmap = ({
 													<HeatmapCell
 														key={dateStr}
 														count={count}
+																unit={unit}
+																dimmed={
+																	(hoveredMonth !== null &&
+																		getMonthForWeek(weekIndex) !== hoveredMonth) ||
+																	(hoveredWeekday !== null &&
+																		dayIndex !== hoveredWeekday)
+																}
 														date={dateStr}
 														squared={
 															!heatmapConfig.roundCells
@@ -220,6 +273,7 @@ export const Heatmap = ({
 								))}
 						</div>
 					</div>
+				</div>
 				</div>
 			)}
 		</RadixTooltip.Provider>

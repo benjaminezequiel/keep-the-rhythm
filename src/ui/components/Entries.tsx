@@ -28,7 +28,9 @@ const matchesFilters = (entry: DailyActivity, filters?: EntryFilter[]) => {
 };
 
 export const Entries = ({ date, filters }: EntriesProps) => {
-	const [unit, setUnit] = useState<Unit>(Unit.WORD);
+	const [unit, setUnit] = useState<Unit>(
+		state.plugin.data.settings.preferredUnit ?? Unit.WORD,
+	);
 	const [entries, setEntries] = useState<DailyActivity[]>([]);
 
 	const [today, setToday] = useState<string>(state.today);

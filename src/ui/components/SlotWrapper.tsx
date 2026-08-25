@@ -73,7 +73,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 		const newSlot: SlotConfig = {
 			index: state.plugin.data.settings.sidebarConfig.slots.length,
 			option: TargetCount.CURRENT_FILE,
-			unit: Unit.WORD,
+			unit: state.plugin.data.settings.preferredUnit ?? Unit.WORD,
 			calc: CalculationType.TOTAL,
 		};
 

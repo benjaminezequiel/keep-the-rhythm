@@ -65,6 +65,7 @@ export enum HeatmapColorModes {
 
 export interface Settings {
 	dailyWritingGoal: number;
+	preferredUnit: Unit;
 	enabledLanguages: Language[];
 	globalFilter?: string; // not used yet
 	startOfTheWeek: "MONDAY" | "SUNDAY"; // not used yet, should be used to offset start of the week calculations and heatmap
@@ -123,6 +124,7 @@ export const STARTING_STATS = {
 };
 
 export interface HeatmapConfig {
+	unit?: Unit;
 	numberOfWeeks?: number;
 	intensityMode: HeatmapColorModes;
 	roundCells: boolean;
@@ -143,6 +145,7 @@ export interface HeatmapConfig {
 export const DEFAULT_SETTINGS: Settings = {
 	enabledLanguages: ["LATIN"],
 	dailyWritingGoal: 500,
+	preferredUnit: Unit.WORD,
 	startOfTheWeek: "SUNDAY",
 	heatmapNavigation: true,
 	ignoreComments: false,
