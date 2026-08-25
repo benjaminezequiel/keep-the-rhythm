@@ -88,6 +88,13 @@ button.todayEntries__manual-entry {
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.todayEntries__list-item--deleted {
+	.todayEntries__file-path {
+		pointer-events: none;
+		text-decoration: line-through;
+		opacity: 0.3;
+	}
+}
 .todayEntries__file-path {
 	overflow: hidden;
 	text-overflow: ellipsis;

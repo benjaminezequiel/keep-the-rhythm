@@ -12,7 +12,6 @@ import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
 import { moment as _moment } from "obsidian";
-import { TimeEntry } from "@/db/types";
 import { Vault } from "obsidian";
 
 const moment = _moment as unknown as typeof _moment.default;
@@ -323,19 +322,6 @@ export async function getExistingOrCreateNewEntry(
 		if (raced) return raced;
 		throw err;
 	}
-}
-
-export function upsertChange(
-	changes: TimeEntry[],
-	change: TimeEntry,
-): TimeEntry[] {
-	const next = [...changes];
-	const index = next.findIndex((e) => e.timeKey === change.timeKey);
-
-	if (index !== -1) next[index] = change;
-	else next.push(change);
-
-	return next.sort((a, b) => a.timeKey.localeCompare(b.timeKey));
 }
 
 export function hashString(value: string): string {

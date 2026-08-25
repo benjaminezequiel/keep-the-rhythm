@@ -68,11 +68,14 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 
 	const visibleEntries = useMemo(() => {
 		return entries
-			.map((entry) => ({
-				entry,
-				delta: sumTimeEntries(entry, unit, true),
-			}))
-			.filter(({ delta }) => delta !== 0)
+			.map((entry) => {
+				const isDeleted = !state.plugin.app.vault.getFileByPath(
+					entry.filePath,
+				);
+				const delta = sumTimeEntries(entry, unit, true);
+				return { entry, delta, isDeleted };
+			})
+			.filter(({ delta, isDeleted }) => delta !== 0 || isDeleted)
 			.sort((a, b) => b.delta - a.delta);
 	}, [entries, unit]);
 
@@ -136,7 +139,7 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 					</Tooltip>
 				</div>
 				{visibleEntries.length > 0 ? (
-					visibleEntries.map(({ entry, delta }) => {
+					visibleEntries.map(({ entry, delta, isDeleted }) => {
 						const prefix = delta > 0 ? "+" : "";
 
 						return (
@@ -145,7 +148,11 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 									entry.id ??
 									`${entry.date}:${entry.filePath}`
 								}
-								className="todayEntries__list-item"
+								className={
+									isDeleted
+										? "todayEntries__list-item todayEntries__list-item--deleted"
+										: "todayEntries__list-item"
+								}
 							>
 								<span
 									className="todayEntries__file-path"
@@ -158,13 +165,22 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 									)}
 								</span>
 								<div className="todayEntries__list-item-right">
-									<span className="todayEntries__word-count">
-										{prefix}
-										{delta.toLocaleString()}
-									</span>
-									<span className="todayEntries_list-item-unit">
-										{" " + unit.toLowerCase() + "s"}
-									</span>
+									{/* {isDeleted && (
+										<span className="todayEntries__deleted-label">
+											DELETED
+										</span>
+									)} */}
+									{delta !== 0 && (
+										<>
+											<span className="todayEntries__word-count">
+												{prefix}
+												{delta.toLocaleString()}
+											</span>
+											<span className="todayEntries_list-item-unit">
+												{" " + unit.toLowerCase() + "s"}
+											</span>
+										</>
+									)}
 									<Tooltip content="Delete entry">
 										<button
 											className="todayEntries__delete-button"

@@ -14,7 +14,7 @@ import {
 	forgetFile,
 	getTrackedCounts,
 } from "./activityTracker";
-import { sumTimeEntries, upsertChange } from "@/utils/utils";
+import { sumTimeEntries } from "@/utils/utils";
 import { renameTrackedPath } from "./activityTracker";
 
 let dbUpdateTimeout: number | null = null;
@@ -217,7 +217,7 @@ export async function handleFileDelete(file: TFile) {
 					.dailyActivity.where("[date+filePath]")
 					.equals([state.today, file.path])
 					.modify((row) => {
-						row.changes = upsertChange(row.changes ?? [], change);
+						row.changes = [...(row.changes ?? []), change];
 					});
 			} else if (words !== 0 || chars !== 0) {
 				await getDB().dailyActivity.add({

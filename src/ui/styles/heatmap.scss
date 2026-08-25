@@ -235,7 +235,7 @@
 .heatmap-unit-toggle {
 	position: absolute;
 	transform: translateY(calc(100% - 2px));
-	outline: 2px solid var(--background-primary);
+	outline: 2px solid var(--background-primary) !important;
 	bottom: 0px;
 	right: 8px;
 	z-index: 10;
