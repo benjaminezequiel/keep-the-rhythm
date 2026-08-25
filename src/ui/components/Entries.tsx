@@ -150,8 +150,8 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 								<span
 									className="todayEntries__file-path"
 									onClick={() => {
-									void openFile(entry.filePath);
-								}}
+										void openFile(entry.filePath);
+									}}
 								>
 									{getFileNameWithoutExtension(
 										entry.filePath,
@@ -173,18 +173,20 @@ export const Entries = ({ date, filters }: EntriesProps) => {
 											}
 											onMouseDown={() => {
 												void (async () => {
-												if (entry.id === undefined) {
-													new Notice(
-														"Entry has no ID, cannot delete.",
+													if (
+														entry.id === undefined
+													) {
+														new Notice(
+															"Entry has no ID, cannot delete.",
+														);
+														return;
+													}
+													await deleteActivityById(
+														entry.id,
 													);
-													return;
-												}
-												await deleteActivityById(
-													entry.id,
-												);
-												state.emit(
-													EVENTS.REFRESH_EVERYTHING,
-												);
+													state.emit(
+														EVENTS.REFRESH_EVERYTHING,
+													);
 												})();
 											}}
 										/>

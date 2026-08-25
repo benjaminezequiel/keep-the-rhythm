@@ -72,7 +72,9 @@ export const HeatmapCell = ({
 			if (existingLeaf) {
 				state.plugin.app.workspace.setActiveLeaf(existingLeaf);
 			} else {
-				void state.plugin.app.workspace.getLeaf(true).openFile(existingFile);
+				void state.plugin.app.workspace
+					.getLeaf(true)
+					.openFile(existingFile);
 			}
 		} else {
 			const newFile = await state.plugin.app.vault.create(notePath, "");
@@ -112,7 +114,8 @@ export const HeatmapCell = ({
 				<>
 					<strong>{date}</strong>
 					<div>
-						{count.toLocaleString()} {unit === Unit.WORD ? "words" : "characters"}
+						{count.toLocaleString()}{" "}
+						{unit === Unit.WORD ? "words" : "characters"}
 					</div>
 				</>
 			}

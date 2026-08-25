@@ -6,11 +6,7 @@ import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
 import { DailyActivity } from "@/db/types";
-import {
-	Unit,
-	HeatmapColorModes,
-	HeatmapConfig,
-} from "@/defs/types";
+import { Unit, HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { Tooltip } from "./Tooltip";
 import { compileEvaluator } from "@/core/codeBlockQuery";
@@ -182,7 +178,9 @@ export const Heatmap = ({
 							}
 							onClick={() =>
 								setUnit((previous) =>
-									previous === Unit.WORD ? Unit.CHAR : Unit.WORD,
+									previous === Unit.WORD
+										? Unit.CHAR
+										: Unit.WORD,
 								)
 							}
 						/>
@@ -194,8 +192,12 @@ export const Heatmap = ({
 									<div
 										key={day}
 										className="week-day-label"
-										onMouseEnter={() => setHoveredWeekday(dayIndex)}
-										onMouseLeave={() => setHoveredWeekday(null)}
+										onMouseEnter={() =>
+											setHoveredWeekday(dayIndex)
+										}
+										onMouseLeave={() =>
+											setHoveredWeekday(null)
+										}
 									>
 										{day}
 									</div>
@@ -210,70 +212,83 @@ export const Heatmap = ({
 										gridTemplateColumns: `repeat(${weeksToShow}, 10px)`,
 									}}
 								>
-									{monthLabels.map(({ month, week }, monthIndex) => (
-										<div
-											key={`${month}-${week}`}
-											className="month-label"
-											style={{ gridColumn: week }}
-											onMouseEnter={() => setHoveredMonth(monthIndex)}
-											onMouseLeave={() => setHoveredMonth(null)}
-										>
-											{month}
-										</div>
-									))}
+									{monthLabels.map(
+										({ month, week }, monthIndex) => (
+											<div
+												key={`${month}-${week}`}
+												className="month-label"
+												style={{ gridColumn: week }}
+												onMouseEnter={() =>
+													setHoveredMonth(monthIndex)
+												}
+												onMouseLeave={() =>
+													setHoveredMonth(null)
+												}
+											>
+												{month}
+											</div>
+										),
+									)}
 								</div>
 							)}
 							<div className="heatmap-new-grid">
-							{Array(weeksToShow)
-								.fill(null)
-								.map((_, weekIndex) => (
-									<div
-										key={weekIndex}
-										className="heatmap-column"
-									>
-										{Array(7)
-											.fill(null)
-											.map((_, dayIndex) => {
-												const date = getDateForCell(
-													weekIndex,
-													dayIndex,
-													weeksToShow,
-													baseDate,
-												);
-												const dateStr =
-													formatDate(date);
-												const count =
-													heatmapData[dateStr] ?? 0;
-												return (
-													<HeatmapCell
-														key={dateStr}
-														count={count}
-																unit={unit}
-																dimmed={
-																	(hoveredMonth !== null &&
-																		getMonthForWeek(weekIndex) !== hoveredMonth) ||
-																	(hoveredWeekday !== null &&
-																		dayIndex !== hoveredWeekday)
-																}
-														date={dateStr}
-														squared={
-															!heatmapConfig.roundCells
-														}
-														intensity={getCellIntensityLevel(
-															count,
-															heatmapConfig,
-														)}
-														mode={
-															heatmapConfig.intensityMode
-														}
-													/>
-												);
-											})}
-									</div>
-								))}
+								{Array(weeksToShow)
+									.fill(null)
+									.map((_, weekIndex) => (
+										<div
+											key={weekIndex}
+											className="heatmap-column"
+										>
+											{Array(7)
+												.fill(null)
+												.map((_, dayIndex) => {
+													const date = getDateForCell(
+														weekIndex,
+														dayIndex,
+														weeksToShow,
+														baseDate,
+													);
+													const dateStr =
+														formatDate(date);
+													const count =
+														heatmapData[dateStr] ??
+														0;
+													return (
+														<HeatmapCell
+															key={dateStr}
+															count={count}
+															unit={unit}
+															dimmed={
+																(hoveredMonth !==
+																	null &&
+																	getMonthForWeek(
+																		weekIndex,
+																	) !==
+																		hoveredMonth) ||
+																(hoveredWeekday !==
+																	null &&
+																	dayIndex !==
+																		hoveredWeekday)
+															}
+															date={dateStr}
+															squared={
+																!heatmapConfig.roundCells
+															}
+															intensity={getCellIntensityLevel(
+																count,
+																heatmapConfig,
+															)}
+															mode={
+																heatmapConfig.intensityMode
+															}
+														/>
+													);
+												})}
+										</div>
+									))}
+							</div>
 						</div>
 					</div>
-				</div>
 				</div>
 			)}
 		</RadixTooltip.Provider>
