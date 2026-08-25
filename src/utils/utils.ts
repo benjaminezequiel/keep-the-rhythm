@@ -253,10 +253,14 @@ export function getDateStreaks(dateStrings: string[]) {
 		}
 	}
 
-	const today = moment().startOf("day");
-	while (dateSet.has(today.format("YYYY-MM-DD"))) {
+	const cursor = moment().startOf("day");
+	if (!dateSet.has(cursor.format("YYYY-MM-DD"))) {
+		// don't consider today, as the streak is not broken until the day ends
+		cursor.subtract(1, "day");
+	}
+	while (dateSet.has(cursor.format("YYYY-MM-DD"))) {
 		currentStreak++;
-		today.subtract(1, "day");
+		cursor.subtract(1, "day");
 	}
 
 	return { longestStreak, currentStreak };
