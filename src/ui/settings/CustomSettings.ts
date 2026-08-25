@@ -1,6 +1,5 @@
 import { getByPath, setByPath } from "./SettingsTab";
 import { SettingItem } from "./SettingSchema";
-import { updateVisibility } from "./SettingsTab";
 import { Setting } from "obsidian";
 import { ColorConfig, HeatmapColorModes, Language } from "@/defs/types";
 import { DEFAULT_SETTINGS } from "@/defs/types";
@@ -37,8 +36,6 @@ export function createColorSettings(setting: Setting, theme: "light" | "dark") {
 				colorValues[level] = value;
 				await state.plugin.updateAndSaveEverything();
 				state.plugin.applyColorStyles();
-				// propagate visibility if needed
-				updateVisibility(`heatmapConfig.colors[${theme}]`, value);
 			}),
 		);
 	});
@@ -116,7 +113,6 @@ export function createLanguageDropdown(setting: Setting) {
 				}
 				settings.enabledLanguages = [...newScripts];
 				void state.plugin.updateAndSaveEverything();
-				updateVisibility("enabledLanguages", newScripts);
 			});
 	});
 }
@@ -124,7 +120,7 @@ export function createLanguageDropdown(setting: Setting) {
 // ------------------------
 // Coloring mode dropdown
 // ------------------------
-export function createColorModeSettings(setting: Setting) {
+export function createColorModeSettings(setting: Setting, onModeChange: () => void) {
 	const settings = state.plugin.data.settings;
 
 	setting.setClass("ktr-first").addDropdown((dropdown) => {
@@ -132,8 +128,7 @@ export function createColorModeSettings(setting: Setting) {
 			.addOptions({ ...HeatmapColorModes })
 			.setValue(settings.heatmapConfig.intensityMode.toUpperCase())
 			.onChange(async (value) => {
-				await changeColorMode(value); // use callback instead of this.changeColorMode
-				updateVisibility("heatmapConfig.intensityMode", value);
+				await changeColorMode(value, onModeChange);
 			});
 	});
 }
@@ -172,19 +167,14 @@ export function createThresholdSettings(setting: Setting) {
 								intensityStops: newStops,
 							};
 							await state.plugin.updateAndSaveEverything();
-							updateVisibility(
-								"heatmapConfig.intensityStops",
-								newStops,
-							);
 						}
 					});
-				text.inputEl.setAttribute("data-threshold-key", key);
 			})
 			.setClass("ktr__threshold-inputs");
 	});
 }
 
-export async function changeColorMode(value: string) {
+export async function changeColorMode(value: string, onModeChange: () => void) {
 	const settings = state.plugin.data.settings;
 	const mode = value.toLowerCase() as HeatmapColorModes;
 
@@ -202,24 +192,11 @@ export async function changeColorMode(value: string) {
 		},
 	};
 
-	updateThresholdVisibility();
-
 	await state.plugin.updateAndSaveEverything();
-}
 
-export function updateThresholdVisibility() {
-	const mode = state.plugin.data.settings.heatmapConfig.intensityMode;
-
-	const lowEl = document.querySelector<HTMLInputElement>(
-		'[data-threshold-key="low"]',
-	);
-	const mediumEl = document.querySelector<HTMLInputElement>(
-		'[data-threshold-key="medium"]',
-	);
-	if (lowEl)
-		lowEl.style.display = mode === HeatmapColorModes.SOLID ? "none" : "";
-	if (mediumEl)
-		mediumEl.style.display = mode === HeatmapColorModes.STOPS ? "" : "none";
+	// Mode change affects which threshold/color controls are rendered,
+	// so the whole settings tab needs to re-declare its items.
+	onModeChange();
 }
 
 export function createBackupFolderPathSetting(

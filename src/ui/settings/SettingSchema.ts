@@ -52,6 +52,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
 					description:
 						"Task lines like \"- [ ] buy milk\" won't be counted at all. Checkbox syntax is always excluded regardless of this setting. Changing this won't retroactively update your history.",
 				},
+				{
+					key: "ignoreDeletedFiles",
+					type: "toggle",
+					title: "Ignore deleted files",
+					description:
+						"Deleting a file won't subtract its words and characters from your daily totals.",
+				},
 			],
 		},
 		{

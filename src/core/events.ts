@@ -209,23 +209,25 @@ export async function handleFileDelete(file: TFile) {
 			counts?.chars ??
 			(existing ? sumTimeEntries(existing, Unit.CHAR, false) : 0);
 
-		const change = { timeKey, w: -words, c: -chars };
+		if (!state.plugin.data.settings.ignoreDeletedFiles) {
+			const change = { timeKey, w: -words, c: -chars };
 
-		if (existing) {
-			await getDB()
-				.dailyActivity.where("[date+filePath]")
-				.equals([state.today, file.path])
-				.modify((row) => {
-					row.changes = upsertChange(row.changes ?? [], change);
+			if (existing) {
+				await getDB()
+					.dailyActivity.where("[date+filePath]")
+					.equals([state.today, file.path])
+					.modify((row) => {
+						row.changes = upsertChange(row.changes ?? [], change);
+					});
+			} else if (words !== 0 || chars !== 0) {
+				await getDB().dailyActivity.add({
+					date: state.today,
+					filePath: file.path,
+					wordCountStart: 0,
+					charCountStart: 0,
+					changes: [change],
 				});
-		} else if (words !== 0 || chars !== 0) {
-			await getDB().dailyActivity.add({
-				date: state.today,
-				filePath: file.path,
-				wordCountStart: 0,
-				charCountStart: 0,
-				changes: [change],
-			});
+			}
 		}
 
 		forgetFile(file.path);
