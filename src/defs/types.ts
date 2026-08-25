@@ -64,14 +64,16 @@ export enum HeatmapColorModes {
 }
 
 export interface Settings {
-	dailyWritingGoal: number; // created as setting, not used anywhere yet
-	enabledLanguages: Language[]; // guides the definition of REGEXes for word counting
+	dailyWritingGoal: number;
+	preferredUnit: Unit;
+	enabledLanguages: Language[];
 	globalFilter?: string; // not used yet
 	startOfTheWeek: "MONDAY" | "SUNDAY"; // not used yet, should be used to offset start of the week calculations and heatmap
 	heatmapConfig: HeatmapConfig;
 	heatmapNavigation: boolean;
 	ignoreComments: boolean;
 	ignoreTasks: boolean;
+	ignoreDeletedFiles: boolean;
 
 	backupConfig: {
 		enabled: boolean;
@@ -123,12 +125,14 @@ export const STARTING_STATS = {
 };
 
 export interface HeatmapConfig {
+	unit?: Unit;
 	numberOfWeeks?: number;
 	intensityMode: HeatmapColorModes;
 	roundCells: boolean;
 	hideMonthLabels: boolean;
 	hideWeekdayLabels: boolean;
 	alignLeft: boolean;
+	center?: boolean;
 	startDate?: string;
 	intensityStops: {
 		low: number;
@@ -143,10 +147,12 @@ export interface HeatmapConfig {
 export const DEFAULT_SETTINGS: Settings = {
 	enabledLanguages: ["LATIN"],
 	dailyWritingGoal: 500,
+	preferredUnit: Unit.WORD,
 	startOfTheWeek: "SUNDAY",
 	heatmapNavigation: true,
 	ignoreComments: false,
 	ignoreTasks: false,
+	ignoreDeletedFiles: false,
 	heatmapConfig: {
 		roundCells: true,
 		hideMonthLabels: false,

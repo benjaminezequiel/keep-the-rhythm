@@ -25,6 +25,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
 			title: "General",
 			settings: [
 				{
+					key: "preferredUnit",
+					type: "dropdown",
+					title: "Preferred Unit",
+					description: "Default unit used when displaying counts.",
+					options: { WORD: "Words", CHAR: "Characters" },
+				},
+				{
 					key: "enabledLanguages",
 					type: "custom",
 					title: "Enabled Languages",
@@ -51,6 +58,13 @@ export const SETTINGS_SCHEMA: SettingsSchema = {
 					title: "Don't count tasks",
 					description:
 						"Task lines like \"- [ ] buy milk\" won't be counted at all. Checkbox syntax is always excluded regardless of this setting. Changing this won't retroactively update your history.",
+				},
+				{
+					key: "ignoreDeletedFiles",
+					type: "toggle",
+					title: "Ignore deleted files",
+					description:
+						"Deleting a file won't subtract its words and characters from your daily totals.",
 				},
 			],
 		},

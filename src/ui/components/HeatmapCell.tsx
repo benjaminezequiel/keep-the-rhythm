@@ -7,6 +7,7 @@ import { Tooltip } from "./Tooltip";
 import { getCorePluginSettings } from "../../utils/windowUtility";
 import { state } from "@/core/pluginState";
 import { moment as _moment } from "obsidian";
+import { Unit } from "../../defs/types";
 const moment = _moment as unknown as typeof _moment.default;
 
 interface DailyNotesSettings {
@@ -21,6 +22,8 @@ function isDailyNotesSettings(value: unknown): value is DailyNotesSettings {
 interface HeatmapCellProps {
 	intensity: number;
 	count: number;
+	unit: Unit;
+	dimmed?: boolean;
 	date: string;
 	mode: HeatmapColorModes;
 	squared?: boolean;
@@ -29,6 +32,8 @@ interface HeatmapCellProps {
 export const HeatmapCell = ({
 	intensity,
 	count,
+	unit,
+	dimmed,
 	date,
 	mode,
 	squared,
@@ -67,7 +72,9 @@ export const HeatmapCell = ({
 			if (existingLeaf) {
 				state.plugin.app.workspace.setActiveLeaf(existingLeaf);
 			} else {
-				void state.plugin.app.workspace.getLeaf(true).openFile(existingFile);
+				void state.plugin.app.workspace
+					.getLeaf(true)
+					.openFile(existingFile);
 			}
 		} else {
 			const newFile = await state.plugin.app.vault.create(notePath, "");
@@ -94,7 +101,8 @@ export const HeatmapCell = ({
 
 	const isSquaredClass = squared ? "cell-squared" : "cell-rounded";
 
-	const classes = `heatmap-square ${isTodayClass} ${isSquaredClass} ${intensityClass}`;
+	const dimmedClass = dimmed ? "heatmap-square-dimmed" : "";
+	const classes = `heatmap-square ${isTodayClass} ${isSquaredClass} ${intensityClass} ${dimmedClass}`;
 
 	const style = {
 		"--intensity": `${intensity}%`,
@@ -105,7 +113,10 @@ export const HeatmapCell = ({
 			content={
 				<>
 					<strong>{date}</strong>
-					<div>{count.toLocaleString()} words</div>
+					<div>
+						{count.toLocaleString()}{" "}
+						{unit === Unit.WORD ? "words" : "characters"}
+					</div>
 				</>
 			}
 		>

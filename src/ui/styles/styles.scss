@@ -31,6 +31,10 @@
 	width: fit-content;
 	max-width: 100%;
 
+	&.center {
+		// justify-self: center;
+		margin: auto;
+	}
 	& > * {
 		width: fit-content;
 	}
@@ -60,4 +64,13 @@
 	background: var(--background-primary-alt);
 	border-radius: 8px;
 	border: 1px solid var(--background-modifier-border);
+}
+
+.heatmap-codeblock {
+	display: flex;
+	justify-content: var(--ktr-heatmap-alignment, flex-start);
+}
+
+.block-language-ktr-heatmap {
+	display: flex;
 }

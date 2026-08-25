@@ -1,15 +1,17 @@
 import Dexie from "dexie";
 import { state } from "@/core/pluginState";
 import { DailyActivity } from "./types";
+import { getVaultKey, hashString } from "@/utils/utils";
 
 class KTRDatabase extends Dexie {
 	dailyActivity!: Dexie.Table<DailyActivity, number>;
 
-	// It's necessary to add the vault name to the plugin DB because
-	// indexedDB is shared across the same electron app
+	// It's necessary to add an unique identifier to the vault
+	// indexedDB is shared across the same electron app, otherwise different vaults
+	// would share the db and explode!
 
-	constructor(vaultName: string) {
-		super(`KTRDatabase-${vaultName}`);
+	constructor(vaultKey: string) {
+		super(`KTRDatabase-${hashString(vaultKey)}`);
 
 		this.version(2).stores({
 			dailyActivity:
@@ -21,10 +23,10 @@ class KTRDatabase extends Dexie {
 let dbInstance: KTRDatabase | null = null;
 
 // Need to init the database onload() so that the plugin instance already exists
-export function initDatabase() {
+export async function initDatabase() {
 	if (!dbInstance) {
-		const vaultName = state.plugin.app.vault.getName();
-		dbInstance = new KTRDatabase(vaultName);
+		dbInstance = new KTRDatabase(getVaultKey(state.plugin.app.vault));
+		await getDB().dailyActivity.clear();
 	}
 }
 
@@ -35,4 +37,9 @@ export function getDB(): KTRDatabase {
 		);
 	}
 	return dbInstance;
+}
+
+export function closeDB() {
+	dbInstance?.close();
+	dbInstance = null;
 }

@@ -25,12 +25,14 @@ export function createHeatmapCodeBlock(
 
 	if (!query?.options) return; // add log / error
 
-	const container = el.createDiv("heatmap-codeblock");
+	const containerClass = `heatmap-codeblock ${query.options.center ? "center" : ""}`;
+	const container = el.createDiv(containerClass);
 	const root = createRoot(container);
 
 	root.render(
 		React.createElement(Heatmap, {
 			heatmapConfig: query?.options,
+			preferredUnit: query.options.unit,
 			query: query?.filter ?? undefined,
 			isCodeBlock: true,
 		}),

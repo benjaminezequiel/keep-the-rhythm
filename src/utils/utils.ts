@@ -12,7 +12,7 @@ import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { MarkdownView } from "obsidian";
 import { WorkspaceLeaf } from "obsidian";
 import { moment as _moment } from "obsidian";
-import { TimeEntry } from "@/db/types";
+import { Vault } from "obsidian";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -252,10 +252,14 @@ export function getDateStreaks(dateStrings: string[]) {
 		}
 	}
 
-	const today = moment().startOf("day");
-	while (dateSet.has(today.format("YYYY-MM-DD"))) {
+	const cursor = moment().startOf("day");
+	if (!dateSet.has(cursor.format("YYYY-MM-DD"))) {
+		// don't consider today, as the streak is not broken until the day ends
+		cursor.subtract(1, "day");
+	}
+	while (dateSet.has(cursor.format("YYYY-MM-DD"))) {
 		currentStreak++;
-		today.subtract(1, "day");
+		cursor.subtract(1, "day");
 	}
 
 	return { longestStreak, currentStreak };
@@ -320,15 +324,17 @@ export async function getExistingOrCreateNewEntry(
 	}
 }
 
-export function upsertChange(
-	changes: TimeEntry[],
-	change: TimeEntry,
-): TimeEntry[] {
-	const next = [...changes];
-	const index = next.findIndex((e) => e.timeKey === change.timeKey);
+export function hashString(value: string): string {
+	let hash = 0;
+	for (let i = 0; i < value.length; i++) {
+		hash = (hash << 5) - hash + value.charCodeAt(i);
+		hash |= 0;
+	}
+	return Math.abs(hash).toString(36);
+}
 
-	if (index !== -1) next[index] = change;
-	else next.push(change);
-
-	return next.sort((a, b) => a.timeKey.localeCompare(b.timeKey));
+export function getVaultKey(vault: Vault): string {
+	return (vault.adapter as unknown as { getResourcePath(p: string): string })
+		.getResourcePath("")
+		.split("?")[0];
 }
