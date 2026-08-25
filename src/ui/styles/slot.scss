@@ -217,10 +217,8 @@ button.KTR-add-slot-button {
 }
 
 .today-progress-bar {
-	--color: color-mix(in oklch, var(--background-secondary), white 5%);
 	height: 5px;
-	background-color: var(--color);
-	box-shadow: 0 0 0 1px var(--color);
+	background-color: var(--background-secondary-alt);
 	margin-top: 6px;
 	border-radius: 4px;
 	overflow: hidden;
@@ -240,11 +238,6 @@ button.KTR-add-slot-button {
 }
 
 .KTR-week-progress {
-	--color: color-mix(
-		in oklch,
-		var(--background-secondary),
-		var(--text-normal) 15%
-	);
 	display: flex;
 	gap: 4px;
 	margin-top: 8px;
@@ -252,7 +245,7 @@ button.KTR-add-slot-button {
 	.KTR-dot {
 		width: 100%;
 		height: 6px;
-		background-color: var(--color);
+		background-color: var(--background-secondary-alt);
 		border-radius: 8px;
 
 		&.completed {
