@@ -14,7 +14,7 @@ import { DailyActivity } from "@/db/types";
 export class ManualEntryModal extends Modal {
 	private entry: DailyActivity = {
 		date: state.today,
-		filePath: "",
+		filePath: state.currentActivity?.filePath || "",
 		wordCountStart: 0,
 		charCountStart: 0,
 		changes: [],
@@ -35,7 +35,7 @@ export class ManualEntryModal extends Modal {
 			.addSearch((search) => {
 				search
 					.setPlaceholder("Example: folder1/folder2")
-					.setValue(state.currentActivity?.filePath || "")
+					.setValue(this.entry.filePath)
 					.onChange(async (value) => {
 						this.entry.filePath = value;
 					});
