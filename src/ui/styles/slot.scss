@@ -199,11 +199,21 @@ button.KTR-add-slot-button {
 }
 
 .theme-light .progress {
-	background: linear-gradient(to right, var(--light-3), var(--light-4));
+	--bar-color-left: var(--light-0);
+	--bar-color-right: var(--light-4);
+
+	&.completed {
+		--bar-color-left: var(--light-4);
+	}
 }
 
 .theme-dark .progress {
-	background: linear-gradient(to right, var(--dark-3), var(--dark-4));
+	--bar-color-left: var(--dark-0);
+	--bar-color-right: var(--dark-4);
+
+	&.completed {
+		--bar-color-left: var(--dark-4);
+	}
 }
 
 .today-progress-bar {
@@ -217,8 +227,15 @@ button.KTR-add-slot-button {
 
 	.progress {
 		height: 100%;
-		transition: width 300ms ease;
+		transition-property: width;
+		transition-duration: 300ms;
+		transition-timing-function: ease;
 		border-radius: 2px;
+		background: linear-gradient(
+			to right,
+			var(--bar-color-left),
+			var(--bar-color-right)
+		);
 	}
 }
 
@@ -239,11 +256,7 @@ button.KTR-add-slot-button {
 		border-radius: 8px;
 
 		&.completed {
-			background: linear-gradient(
-				to right,
-				var(--light-3),
-				var(--light-4)
-			);
+			background: var(--light-4);
 		}
 	}
 }

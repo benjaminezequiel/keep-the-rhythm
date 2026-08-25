@@ -49,7 +49,8 @@ export const Slot = ({
 
 	/** SETUP BUTTON ICONS USING OBSIDIAN UTILITY */
 	if (calcButtonRef.current) {
-		const icon = calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
+		const icon =
+			calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
 		setIcon(calcButtonRef.current, icon);
 	}
 	if (unitButtonRef.current) {
@@ -63,7 +64,8 @@ export const Slot = ({
 	}
 
 	if (calcButtonRef.current) {
-		const icon = calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
+		const icon =
+			calcMode === CalculationType.TOTAL ? "chart-spline" : "sigma";
 		setIcon(calcButtonRef.current, icon);
 	}
 
@@ -224,7 +226,9 @@ export const Slot = ({
 					<div className="slot__unit">
 						{unitSupportingText()}
 						<span className="slot__unit-avg">
-							{showCalcType && calcMode === CalculationType.AVG ? "/day" : ""}
+							{showCalcType && calcMode === CalculationType.AVG
+								? "/day"
+								: ""}
 						</span>
 					</div>
 				</div>
@@ -233,7 +237,7 @@ export const Slot = ({
 				unitType !== Unit.CHAR && (
 					<div className="today-progress-bar">
 						<div
-							className="progress"
+							className={`progress ${progressValue === 100 ? "completed" : ""}`}
 							style={{
 								width: progressValue + "%",
 							}}
