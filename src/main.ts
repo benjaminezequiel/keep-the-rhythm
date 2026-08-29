@@ -25,7 +25,12 @@ import { checkDayChange } from "@/core/activityTracker";
 
 import * as events from "@/core/events";
 import * as codeBlocks from "@/core/codeBlocks";
-import { checkPreviousStreak, activateSidebarView } from "@/core/commands";
+import {
+	checkPreviousStreak,
+	activateSidebarView,
+	insertCustomCodeBlock,
+} from "@/core/commands";
+import { CUSTOM_CODE_BLOCK_COMMANDS } from "@/core/codeBlockTemplates";
 
 const moment = _moment as unknown as typeof _moment.default;
 
@@ -351,6 +356,16 @@ export default class KeepTheRhythm extends Plugin {
 				void checkPreviousStreak();
 			},
 		});
+
+		for (const command of CUSTOM_CODE_BLOCK_COMMANDS) {
+			this.addCommand({
+				id: command.id,
+				name: `Insert KTR ${command.label} code block`,
+				editorCallback: (editor) => {
+					insertCustomCodeBlock(command.key, editor);
+				},
+			});
+		}
 	}
 
 	private initializeEvents() {
