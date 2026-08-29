@@ -4,7 +4,7 @@ import { getActivtityForFile, getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
 import { getDB } from "../db/db";
 import { DailyActivity, TimeEntry } from "@/db/types";
-import { TFile, Editor, MarkdownView, MarkdownFileInfo } from "obsidian";
+import { TFile, Editor, MarkdownView, MarkdownFileInfo, Notice } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getCurrentTimeKey } from "@/utils/dateUtils";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./activityTracker";
 import { sumTimeEntries } from "@/utils/utils";
 import { renameTrackedPath } from "./activityTracker";
+import { launchGlobalConfetti } from "@/ui/confetti";
 
 let dbUpdateTimeout: number | null = null;
 let pendingActivity: DailyActivity | null = null;
@@ -178,13 +179,24 @@ async function checkStreak() {
 		TargetCount.CURRENT_DAY,
 	);
 
-	const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
+  const goal = state.plugin.data?.settings?.dailyWritingGoal || 500;
+  const goalReached = writtenToday >= goal;
 
-	if (writtenToday >= goal) {
-		void state.plugin.updateCurrentStreak(true);
-	} else {
-		void state.plugin.updateCurrentStreak(false);
-	}
+  const justReachedGoal =
+    await state.plugin.updateCurrentStreak(goalReached);
+
+  state.setReachedGoalToday(goalReached);
+
+  if (justReachedGoal) {
+    new Notice(
+      `🎉 Daily writing goal reached! You've written ${writtenToday.toLocaleString()} words today.`,
+    );
+    // Fired at the window level (not tied to the sidebar's React tree) so it
+    // shows up exactly like the Notice above, whether or not the sidebar
+    // and its goal widget happen to be open.
+    launchGlobalConfetti();
+    state.emit(EVENTS.DAILY_WRITING_GOAL_REACHED);
+  }
 }
 
 /**

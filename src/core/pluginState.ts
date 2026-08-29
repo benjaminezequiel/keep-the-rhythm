@@ -10,11 +10,17 @@ export const EVENTS = {
 	 */
 	REFRESH_EVERYTHING: "REFRESH_EVERYTHING",
 
-	/**
-	 * Only refreshes today, meaning data from previous days is not updated;
-	 * Only triggered when it's clear that only today's data changed.
-	 */
-	REFRESH_TODAY: "REFRESH_TODAY",
+  /**
+   * Only refreshes today, meaning data from previous days is not updated;
+   * Only triggered when it's clear that only today's data changed.
+   */
+  REFRESH_TODAY: "REFRESH_TODAY",
+
+  /**
+   * Fired the moment the daily writing goal is first crossed for the day.
+   * Used to trigger celebratory UI (e.g. the goal widget's pulse animation).
+   */
+  DAILY_WRITING_GOAL_REACHED: "DAILY_WRITING_GOAL_REACHED",
 };
 
 export class PluginState {

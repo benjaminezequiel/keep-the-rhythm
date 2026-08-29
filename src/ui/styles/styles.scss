@@ -4,6 +4,8 @@
 @use "./slot" as *;
 @use "./entries" as *;
 @use "./settings" as *;
+@use "./goal" as *;
+@use "./confetti" as *;
 
 .sidebar-view {
 	container-type: inline-size;
