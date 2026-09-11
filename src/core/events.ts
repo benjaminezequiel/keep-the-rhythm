@@ -4,7 +4,7 @@ import { getActivtityForFile, getCurrentCount } from "@/db/queries";
 import { EVENTS, state } from "./pluginState";
 import { getDB } from "../db/db";
 import { DailyActivity, TimeEntry } from "@/db/types";
-import { TFile, Editor, MarkdownView, MarkdownFileInfo } from "obsidian";
+import { TFile, Editor, MarkdownView, MarkdownFileInfo, debounce } from "obsidian";
 import { getLanguageBasedWordCount } from "@/core/wordCounting";
 import { getCurrentTimeKey } from "@/utils/dateUtils";
 import {
@@ -17,16 +17,20 @@ import {
 import { sumTimeEntries } from "@/utils/utils";
 import { renameTrackedPath } from "./activityTracker";
 
-let dbUpdateTimeout: number | null = null;
-let pendingActivity: DailyActivity | null = null;
-const DEBOUNCE_TIME = 100; // ms
+// 500 ms: longer than normal between-keystroke/word pauses, so there is no
+// refresh while actively typing, yet short enough that stats are already
+// updated once you pause.
+const DEBOUNCE_TIME = 500; // ms
 
 /**
  * @function handleEditorChange
- * Fires everytime the user makes an input inside a Markdown editor;
- * Is not fired when focused file changes (file-open)
+ * Fires on every input inside a Markdown editor (not on file-open).
+ *
+ * Each keystroke only copies content into a per-file pending map; the
+ * expensive recount + DB write + refresh runs debounced, once per typing
+ * pause. flushNow() drains immediately on unload, delete and rename.
  */
-export async function handleEditorChange(
+export function handleEditorChange(
 	editor: Editor,
 	info: MarkdownView | MarkdownFileInfo,
 	plugin: KeepTheRhythm,
@@ -34,9 +38,57 @@ export async function handleEditorChange(
 	const file = info.file;
 	if (!file || file.extension !== "md") return;
 
+	// Per-keystroke work is only this string copy — no counting, no DB, no render.
+	pendingEdits.set(file.path, {
+		content: editor.getValue(),
+		file,
+		plugin,
+	});
+	drainPendingEdits();
+}
+
+type PendingEdit = {
+	content: string;
+	file: TFile;
+	plugin: KeepTheRhythm;
+};
+
+const pendingEdits = new Map<string, PendingEdit>();
+
+/** One drain per typing pause, processing every file with pending edits. */
+const drainPendingEdits = debounce(drainPendingEditsImpl, DEBOUNCE_TIME, true);
+
+/** Promise of the drain currently executing, so flushNow() can join it. */
+let drainPromise: Promise<void> | null = null;
+
+async function drainPendingEditsImpl(): Promise<void> {
+	// Join instead of racing: flushNow() callers (delete, rename, unload)
+	// must observe the drain's writes before touching the same DB rows.
+	if (drainPromise) return drainPromise;
+
+	drainPromise = (async () => {
+		// Loop so entries captured mid-drain are flushed by this same run.
+		while (pendingEdits.size > 0) {
+			const batch = [...pendingEdits.values()];
+			pendingEdits.clear();
+			for (const edit of batch) {
+				await processEdit(edit);
+			}
+		}
+	})().finally(() => {
+		drainPromise = null;
+	});
+
+	return drainPromise;
+}
+
+async function processEdit({
+	content,
+	file,
+	plugin,
+}: PendingEdit) {
 	checkDayChange();
 
-	const content = editor.getValue();
 	const counts = {
 		words: getLanguageBasedWordCount(
 			content,
@@ -54,6 +106,9 @@ export async function handleEditorChange(
 		counts.words,
 		counts.chars,
 	);
+
+	// Nothing changed → no zero-entry pollution, no DB write, no refresh.
+	if (wordsAdded === 0 && charsAdded === 0) return;
 
 	// const wordsAdded = newWordCount - totalWords;
 	// const charsAdded = newCharCount - totalChars;
@@ -87,9 +142,7 @@ export async function handleEditorChange(
 		});
 	}
 
-	// WORKING ON UPDATING JUST TODAY!!!
-	state.emit(EVENTS.REFRESH_EVERYTHING);
-	scheduleFlush(activity);
+	await flushChangesToDB(activity);
 }
 
 /**
@@ -152,20 +205,8 @@ async function flushChangesToDB(activity: DailyActivity) {
 	state.emit(EVENTS.REFRESH_EVERYTHING);
 }
 
-function scheduleFlush(activity: DailyActivity) {
-	pendingActivity = activity;
-	if (dbUpdateTimeout) window.clearTimeout(dbUpdateTimeout);
-	dbUpdateTimeout = window.setTimeout(() => void flushNow(), DEBOUNCE_TIME);
-}
-
 export async function flushNow() {
-	if (dbUpdateTimeout) {
-		window.clearTimeout(dbUpdateTimeout);
-		dbUpdateTimeout = null;
-	}
-	const activity = pendingActivity;
-	pendingActivity = null;
-	if (activity) await flushChangesToDB(activity);
+	await drainPendingEdits.run();
 }
 
 /**
