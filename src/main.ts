@@ -493,15 +493,16 @@ export default class KeepTheRhythm extends Plugin {
 				return;
 			}
 			this.data.stats.daysWithCompletedGoal.push(state.today);
+			void this.quietSave();
 		} else {
 			if (this.data.stats.daysWithCompletedGoal.includes(state.today)) {
 				const newArray = this.data.stats.daysWithCompletedGoal?.filter(
 					(item) => item !== state.today,
 				);
 				this.data.stats.daysWithCompletedGoal = newArray;
+				void this.quietSave();
 			}
 		}
-		void this.quietSave();
 	}
 
 	public async updateAndSaveEverything() {
