@@ -17,7 +17,7 @@ Embed customizable heatmaps with filtering and display options:
 ```js
 filePath starts_with "journal"
 
-OPTIONS                                    // must always start with the OPTIONS header
+OPTIONS                                    // optional header before display options
 HIDE month_labels, weekday_labels          // allows to hide the labels
 COLORING_MODE liquid                       // toggles the coloring mode (liquid, stops, solid or gradual)
 STOPS 100, 500, 1000                       // changes the keypoints used for calculating the color of the cells
@@ -31,6 +31,10 @@ WEEKS 24                                   // changes how many weeks are display
 - Filter by file path: `filePath starts_with "folder_name"`
 - Compose queries: `(filePath starts_with "journal") OR (filePath starts_with "worldbuilding")`
 
+Filters are local to each code block. They do not affect other blocks in the note or the sidebar. Use a trailing `/` to match a folder and its contents, for example `filePath starts_with "journal/"`. Paths are relative to the vault and case-sensitive.
+
+Heatmaps accept filters and display options such as `WEEKS 26` and `UNIT WORDS`. Statistics such as `CURRENT_WEEK, WORDS` belong in a separate `ktr-slots` block. Invalid filters and misplaced slot lines display an error instead of falling back to vault-wide totals.
+
 ### Available Options
 
 - `HIDE month_labels, weekday_labels`: Hide specific labels
@@ -41,6 +45,22 @@ WEEKS 24                                   // changes how many weeks are display
 ## Data Slots (`ktr-slots`)
 
 Display inline statistics with customizable metrics:
+
+To limit every statistic in a block to a folder, put a `filePath` filter before the slots:
+
+```ktr-slots
+filePath starts_with "Stories/My Novel/"
+
+CURRENT_DAY, WORDS
+CURRENT_WEEK, WORDS
+CURRENT_MONTH, WORDS, AVG
+LAST_MONTH, WORDS
+WHOLE_VAULT, WORDS
+```
+
+Repeat the filter in each block you want to scope. Slot filters support `filePath` comparisons, `starts_with`, `contains`, and conditions joined with `AND`, `OR`, or `!`. `WORDS`/`CHARS` and `WORD`/`CHAR` are accepted. Averages, streaks, and weekly goal indicators use only matching activity. With a filter, `WHOLE_VAULT` counts the current content of matching Markdown files; `CURRENT_FILE` returns zero when the active file does not match. Without a filter, statistics retain their usual vault-wide scope.
+
+An unfiltered block can include:
 
 ```
 CURRENT_WEEK, WORDS

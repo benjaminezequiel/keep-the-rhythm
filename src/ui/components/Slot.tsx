@@ -4,7 +4,8 @@ import { setIcon } from "obsidian";
 import { useState, useEffect, useRef } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
-import { getCurrentCount } from "@/db/queries";
+import { getCurrentCount, getDaysWithCompletedGoal } from "@/db/queries";
+import type { FileFilter } from "@/db/types";
 import { CalculationType } from "@/defs/types";
 import { Tooltip } from "./Tooltip";
 import { getSlotLabel, weekdaysNames } from "../texts";
@@ -18,9 +19,11 @@ export const Slot = ({
 	calc,
 	onDelete,
 	isCodeBlock,
+	filter,
 }: SlotConfig & {
 	onDelete: (index: number) => void;
 	isCodeBlock?: boolean;
+	filter?: FileFilter;
 }) => {
 	// TODO: should probably make something that stores data that's not from today so its only udpated on refresh everything!
 
@@ -30,6 +33,7 @@ export const Slot = ({
 	const [calcMode, setCalcType] = useState<CalculationType>(calc);
 	const [progressValue, setProgressValue] = useState<number>(0);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [completedDays, setCompletedDays] = useState<string[]>([]);
 
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 	const unitButtonRef = useRef<HTMLButtonElement>(null);
@@ -123,7 +127,15 @@ export const Slot = ({
 		)
 			setIsLoading(true);
 		try {
-			const v = await getCurrentCount(unitType, optionType, calcMode);
+			const v = await getCurrentCount(
+				unitType,
+				optionType,
+				calcMode,
+				filter,
+			);
+			if (optionType === TargetCount.CURRENT_WEEK) {
+				setCompletedDays(await getDaysWithCompletedGoal(filter));
+			}
 			if (optionType === TargetCount.CURRENT_DAY) {
 				const newProgress =
 					(v / state.plugin.data.settings.dailyWritingGoal) * 100;
@@ -150,11 +162,11 @@ export const Slot = ({
 		return () => {
 			state.off(EVENTS.REFRESH_EVERYTHING, handleRefresh);
 		};
-	}, [unitType, optionType, calcMode]);
+	}, [unitType, optionType, calcMode, filter]);
 
 	function isDayCompleted(dayIndex: number) {
 		const date = getDateBasedOnIndex(dayIndex);
-		const data = state.plugin.data.stats?.daysWithCompletedGoal;
+		const data = completedDays;
 
 		if (data && data.includes(date)) {
 			return true;
@@ -165,7 +177,11 @@ export const Slot = ({
 	return (
 		<div className="slot">
 			<div id="customID" className="slot__header">
-				<div className="slot__label">{getSlotLabel(optionType)}</div>
+				<div className="slot__label">
+					{filter && optionType === TargetCount.WHOLE_VAULT
+						? "Matching files"
+						: getSlotLabel(optionType)}
+				</div>
 				{!isCodeBlock && (
 					<div className="slot__buttons">
 						<RadixTooltip.Provider delayDuration={200}>

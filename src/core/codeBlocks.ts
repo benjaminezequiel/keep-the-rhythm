@@ -1,6 +1,6 @@
 import { Entries } from "@/ui/components/Entries";
 import { SlotWrapper } from "@/ui/components/SlotWrapper";
-import { parseSlotQuery } from "./codeBlockQuery";
+import { compileEvaluator, parseSlotsCodeBlock } from "./codeBlockQuery";
 import { state } from "./pluginState";
 import { MarkdownPostProcessorContext } from "obsidian";
 import { parseQueryToJSEP } from "./codeBlockQuery";
@@ -21,7 +21,13 @@ export function createHeatmapCodeBlock(
 	}
 
 	const trimmedSource = source.trim();
-	const query = parseQueryToJSEP(trimmedSource);
+	let query;
+	try {
+		query = parseQueryToJSEP(trimmedSource);
+	} catch (error) {
+		renderQueryError(el, error);
+		return;
+	}
 
 	if (!query?.options) return; // add log / error
 
@@ -56,25 +62,47 @@ export function createHeatmapCodeBlock(
 export function createSlotsCodeBlock(
 	source: string,
 	el: HTMLElement,
-	_ctx: MarkdownPostProcessorContext,
+	ctx: MarkdownPostProcessorContext,
 ): void {
 	if (!state.plugin.data || !state.plugin.data.settings) {
 		return; // add log / error
 	}
-	const config = parseSlotQuery(source);
-	if (config.length === 0) return; // add log / error
+	let config;
+	try {
+		config = parseSlotsCodeBlock(source);
+	} catch (error) {
+		renderQueryError(el, error);
+		return;
+	}
+	if (config.slots.length === 0) return;
 
 	const container = el.createDiv("slots-codeblock");
 	const root = createRoot(container);
 
 	root.render(
 		React.createElement(SlotWrapper, {
-			slots: config,
+			slots: config.slots,
+			filter: config.filter ? compileEvaluator(config.filter) : undefined,
 			isCodeBlock: true,
 		}),
 	);
 
+	ctx.addChild(
+		new (class extends MarkdownRenderChild {
+			onunload() {
+				root.unmount();
+			}
+		})(container),
+	);
+
 	return;
+}
+
+function renderQueryError(el: HTMLElement, error: unknown) {
+	el.createDiv({
+		cls: "ktr-query-error",
+		text: `Keep the Rhythm: ${error instanceof Error ? error.message : String(error)}`,
+	});
 }
 
 ///////////////// ENTRIES

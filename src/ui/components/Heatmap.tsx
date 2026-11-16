@@ -5,12 +5,11 @@ import jsep from "jsep";
 import { weekdaysNames, monthNames } from "../texts";
 import { getDateForCell, sumTimeEntries } from "@/utils/utils";
 import { formatDate } from "@/utils/dateUtils";
-import { DailyActivity } from "@/db/types";
 import { Unit, HeatmapColorModes, HeatmapConfig } from "@/defs/types";
 import { HeatmapCell } from "./HeatmapCell";
 import { Tooltip } from "./Tooltip";
 import { compileEvaluator } from "@/core/codeBlockQuery";
-import { getDB } from "@/db/db";
+import { getActivityForDates } from "@/db/queries";
 import { setIcon } from "obsidian";
 
 interface HeatmapProps {
@@ -34,8 +33,6 @@ export const Heatmap = ({
 		setUnit(preferredUnit);
 	}, [preferredUnit]);
 
-	let startDate: Date | null = null;
-	let endDate: Date | null = null;
 	const weeksToShow = heatmapConfig.numberOfWeeks || 52;
 	const baseDate = heatmapConfig.startDate
 		? new Date(heatmapConfig.startDate)
@@ -49,62 +46,13 @@ export const Heatmap = ({
 				const date = getDateForCell(week, day, weeksToShow, baseDate);
 
 				requiredDates.add(formatDate(date));
-
-				if (!startDate || date < startDate) startDate = date;
-				if (!endDate || date > endDate) endDate = date;
 			}
 		}
 
-		let results: DailyActivity[] | null;
-		let filterFn: ((entry: DailyActivity) => boolean) | null = null;
-		if (query) {
-			try {
-				filterFn = compileEvaluator(query);
-			} catch (e) {
-				console.error("Error compiling query:", e);
-			}
-		}
-
-		if (
-			query?.type == "BinaryExpression" &&
-			query?.operator === "starts_with"
-		) {
-			const rightValue = query.right;
-			const rawValue =
-				typeof rightValue === "object" &&
-				rightValue !== null &&
-				"value" in rightValue
-					? rightValue.value
-					: undefined;
-			let value = typeof rawValue === "string" ? rawValue : undefined;
-			if (value !== undefined) {
-				value = value.startsWith("/") ? value.substring(1) : value;
-				results = await getDB()
-					.dailyActivity.where("[filePath+date]")
-					.between(
-						[value, startDate],
-						[value + "\uffff", endDate],
-						true,
-						true,
-					)
-					.toArray();
-			} else {
-				results = [];
-			}
-		} else if (query && filterFn) {
-			results = await getDB()
-				.dailyActivity.where("date")
-				.anyOf([...requiredDates])
-				.filter((entry) => {
-					return filterFn(entry);
-				})
-				.toArray();
-		} else {
-			results = await getDB()
-				.dailyActivity.where("date")
-				.anyOf([...requiredDates])
-				.toArray();
-		}
+		const results = await getActivityForDates(
+			[...requiredDates],
+			query ? compileEvaluator(query) : undefined,
+		);
 
 		const dateMap: Record<string, number> = {};
 

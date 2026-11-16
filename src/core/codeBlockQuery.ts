@@ -9,35 +9,93 @@ import {
 	isValidUnit,
 	isValidColoringMode,
 } from "@/utils/utils";
-import { SlotConfig, Unit, CalculationType } from "@/defs/types";
+import { SlotConfig, Unit, CalculationType, TargetCount } from "@/defs/types";
 import { state } from "./pluginState";
 
+const filterOperators = new Set([
+	"starts_with",
+	"STARTS_WITH",
+	"contains",
+	"CONTAINS",
+	"&&",
+	"||",
+	"==",
+	"!=",
+	">",
+	"<",
+	">=",
+	"<=",
+]);
+for (const operator of ["starts_with", "STARTS_WITH", "contains", "CONTAINS"]) {
+	jsep.addBinaryOp(operator, 6);
+}
+
+const heatmapOptions = new Set([
+	"OPTIONS",
+	"HIDE",
+	"COLORING_MODE",
+	"STOPS",
+	"SQUARED_CELLS",
+	"START_DATE",
+	"ROUNDED_CELLS",
+	"CENTER",
+	"WEEKS",
+	"UNIT",
+]);
+
+function parseUnit(value: string): Unit | undefined {
+	const normalized =
+		value === "WORDS" ? "WORD" : value === "CHARS" ? "CHAR" : value;
+	return isValidUnit(normalized) ? normalized : undefined;
+}
+
+export function parseSlotsCodeBlock(source: string) {
+	const { filterText, optionsText } = splitFilterAndOptions(source);
+	// Slots also count current files, for which only the path is available.
+	const filter = parseFilter(filterText, ["filePath"]);
+	return { filter, slots: parseSlotQuery(optionsText) };
+}
+
 export function parseSlotQuery(query: string): SlotConfig[] {
-	// returns a SlotConfig[]?
-	const arrayOfLines = query.match(/[^\r\n]+/g);
-	if (!arrayOfLines || arrayOfLines.length == 0) return [];
+	const arrayOfLines = query
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+	if (arrayOfLines.length === 0) return [];
 
 	const slots: SlotConfig[] = [];
 
 	for (let i = 0; i < arrayOfLines.length; i++) {
-		const parts = arrayOfLines[i].replace(/ /g, "").split(",");
+		const parts = arrayOfLines[i].split(",").map((part) => part.trim());
 
 		const type = parts[0];
 		let unit = state.plugin.data.settings.preferredUnit ?? Unit.WORD;
 		let calc = CalculationType.TOTAL;
 
 		if (!isValidTargetCount(type)) {
-			console.error("Invalid Type on Slots Codeblock");
-			return [];
-			// deveria mostrar o erro no codeblock mesmo, mas nao sei fazer isso ainda
+			throw new Error(`Unknown slot: ${type}.`);
 		}
 
-		if (parts[1] && isValidUnit(parts[1])) {
-			unit = parts[1];
+		if (parts[1]) {
+			const parsedUnit = parseUnit(parts[1]);
+			if (!parsedUnit)
+				throw new Error(
+					`Unknown unit: ${parts[1]}. Use WORDS or CHARS.`,
+				);
+			unit = parsedUnit;
 		}
-		if (parts[2] && isValidCalculationType(parts[2])) {
+		if (parts[2]) {
+			if (!isValidCalculationType(parts[2])) {
+				throw new Error(
+					`Unknown calculation: ${parts[2]}. Use TOTAL or AVG.`,
+				);
+			}
 			calc = parts[2];
 		}
+		if (parts.length > 3)
+			throw new Error(
+				`Too many values for ${type}. Use SLOT, UNIT, CALCULATION.`,
+			);
 
 		slots.push({
 			index: i,
@@ -51,32 +109,13 @@ export function parseSlotQuery(query: string): SlotConfig[] {
 }
 
 export function parseQueryToJSEP(query: string) {
-	// Configure jsep with custom operators
-	jsep.addBinaryOp("starts_with", 6);
-	jsep.addBinaryOp("STARTS_WITH", 6);
-	jsep.addBinaryOp("contains", 6);
-	jsep.addBinaryOp("CONTAINS", 6);
-
 	const { filterText, optionsText } = splitFilterAndOptions(query);
-	const normalized = normalizeLogicalOperators(filterText);
-
-	let parsed;
+	const parsed = parseFilter(filterText);
 	const config: HeatmapConfig = structuredClone(
 		state.plugin.data.settings.heatmapConfig,
 	);
 	config.hideMonthLabels = false;
 	config.hideWeekdayLabels = false;
-
-	if (filterText && filterText.trim()) {
-		try {
-			parsed = jsep(normalized);
-		} catch (error) {
-			console.error("Error parsing filter expression:", error);
-			console.error("Normalized query:", normalized);
-			// Return a valid but empty filter that matches everything
-			parsed = null;
-		}
-	}
 
 	if (optionsText) {
 		const arrayOfLines = optionsText.match(/[^\r\n]+/g);
@@ -84,18 +123,16 @@ export function parseQueryToJSEP(query: string) {
 			/** defaults to user settings to define heatmapconfig */
 
 			for (let i = 0; i < arrayOfLines.length; i++) {
-				const line = arrayOfLines[i];
-				const firstSpace = line.indexOf(" ");
-				let keyword;
-				let details;
-
-				if (firstSpace !== -1) {
-					keyword = line.slice(0, firstSpace);
-					details = line.slice(firstSpace + 1);
-				} else {
-					keyword = line;
-					details = "";
+				const line = arrayOfLines[i].split("//")[0].trim();
+				if (!line) continue;
+				const slotName = line.split(/[\s,]/)[0];
+				if (isValidTargetCount(slotName)) {
+					throw new Error(
+						`${slotName} belongs in a ktr-slots block. Heatmaps accept a filter and display options such as WEEKS.`,
+					);
 				}
+				const keyword = line.split(/\s/)[0];
+				const details = line.slice(keyword.length).trim();
 
 				switch (keyword) {
 					case "OPTIONS":
@@ -117,7 +154,8 @@ export function parseQueryToJSEP(query: string) {
 						break;
 					case "COLORING_MODE":
 						if (details && isValidColoringMode(details.trim())) {
-							config.intensityMode = details as HeatmapColorModes;
+							config.intensityMode =
+								details.trim() as HeatmapColorModes;
 						}
 						break;
 					case "STOPS":
@@ -151,9 +189,14 @@ export function parseQueryToJSEP(query: string) {
 						config.numberOfWeeks = Number(details) || 20;
 						break;
 					case "UNIT":
-						if (isValidUnit(details.trim())) {
-							config.unit = details.trim() as Unit;
-						}
+						config.unit = parseUnit(details.trim());
+						if (!config.unit)
+							throw new Error(
+								`Unknown unit: ${details}. Use WORDS or CHARS.`,
+							);
+						break;
+					default:
+						throw new Error(`Unknown heatmap option: ${keyword}.`);
 				}
 			}
 		}
@@ -166,17 +209,76 @@ export function parseQueryToJSEP(query: string) {
 }
 
 function normalizeLogicalOperators(input: string): string {
-	return input.replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||");
+	// Preserve words such as "OR" inside quoted folder names.
+	return input.replace(
+		/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:AND|OR)\b/gi,
+		(token) =>
+			/^(AND|OR)$/i.test(token)
+				? token.toUpperCase() === "AND"
+					? "&&"
+					: "||"
+				: token,
+	);
+}
+
+function parseFilter(
+	text: string,
+	fields = ["filePath", "date", "id", "wordCountStart", "charCountStart"],
+) {
+	if (!text.trim()) return undefined;
+	try {
+		const node = jsep(normalizeLogicalOperators(text));
+		validateFilter(node, fields);
+		return node;
+	} catch (error) {
+		throw new Error(
+			`Invalid filter: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
+}
+
+function validateFilter(node: JsepExpression, fields: string[]): void {
+	switch (node.type) {
+		case "Literal":
+			return;
+		case "Identifier": {
+			const { name } = node as jsep.Identifier;
+			if (!fields.includes(name))
+				throw new Error(
+					`Unknown filter field: ${name}. Allowed fields: ${fields.join(", ")}.`,
+				);
+			return;
+		}
+		case "BinaryExpression": {
+			const { operator, left, right } = node as jsep.BinaryExpression;
+			if (!filterOperators.has(operator))
+				throw new Error(`Unsupported operator: ${operator}.`);
+			validateFilter(left, fields);
+			validateFilter(right, fields);
+			return;
+		}
+		case "UnaryExpression": {
+			const { operator, argument } = node as jsep.UnaryExpression;
+			if (operator !== "!")
+				throw new Error(`Unsupported operator: ${operator}.`);
+			validateFilter(argument, fields);
+			return;
+		}
+		default:
+			throw new Error(
+				"Expected one filter expression. Join conditions with AND or OR.",
+			);
+	}
 }
 
 export function compileEvaluator(
-	node: JsepExpression | null,
-): (entry: DailyActivity) => boolean {
+	node: JsepExpression | null | undefined,
+): (entry: Partial<DailyActivity>) => boolean {
 	if (!node) {
 		return () => true;
 	}
 
-	return (entry: DailyActivity) => {
+	return (entry: Partial<DailyActivity>) => {
 		try {
 			return Boolean(interpretNode(node, entry));
 		} catch (error) {
@@ -188,7 +290,6 @@ export function compileEvaluator(
 
 function splitFilterAndOptions(input: string) {
 	const lines = input.split("\n");
-	const sectionHeaderPattern = /^[A-Z_]+(?:\s|$)/;
 
 	const filterLines: string[] = [];
 	const optionsLines: string[] = [];
@@ -208,8 +309,14 @@ function splitFilterAndOptions(input: string) {
 			continue;
 		}
 
-		// Check if this line starts a new section (all caps words)
-		if (!inOptions && sectionHeaderPattern.test(trimmedLine)) {
+		// Recognize actual options, including comma-separated slots. AND/OR
+		// on a new line must remain part of the filter expression.
+		const keyword = trimmedLine.split(/[\s,]/)[0];
+		if (
+			!inOptions &&
+			(heatmapOptions.has(keyword) ||
+				Object.values(TargetCount).includes(keyword as TargetCount))
+		) {
 			inOptions = true;
 		}
 
@@ -226,7 +333,10 @@ function splitFilterAndOptions(input: string) {
 	};
 }
 
-function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
+function interpretNode(
+	node: JsepExpression,
+	entry: Partial<DailyActivity>,
+): unknown {
 	if (!node) return true;
 
 	switch (node.type) {
@@ -273,8 +383,7 @@ function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
 				case "<=":
 					return Number(left) <= Number(right);
 				default:
-					console.warn(`Unsupported operator: ${operator}`);
-					return true;
+					throw new Error(`Unsupported operator: ${operator}`);
 			}
 		}
 		case "UnaryExpression": {
@@ -288,12 +397,10 @@ function interpretNode(node: JsepExpression, entry: DailyActivity): unknown {
 				case "!":
 					return !argument;
 				default:
-					console.warn(`Unsupported unary operator: ${operator}`);
-					return argument;
+					throw new Error(`Unsupported unary operator: ${operator}`);
 			}
 		}
 		default:
-			console.warn(`Unsupported node type: ${node.type}`);
-			return true;
+			throw new Error(`Unsupported node type: ${node.type}`);
 	}
 }

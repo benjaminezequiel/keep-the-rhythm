@@ -6,13 +6,19 @@ import { Slot } from "./Slot";
 import { state } from "@/core/pluginState";
 import { useEffect, useState, useRef } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
+import type { FileFilter } from "@/db/types";
 
 interface SlotWrapperProps {
 	slots: SlotConfig[] | undefined;
 	isCodeBlock?: boolean;
+	filter?: FileFilter;
 }
 
-export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
+export const SlotWrapper = ({
+	slots,
+	isCodeBlock,
+	filter,
+}: SlotWrapperProps) => {
 	const [slotsState, setSlotsState] = useState<
 		(SlotConfig & { uuid?: string })[] | undefined
 	>(() => slots?.map((slot) => ({ ...slot, uuid: uuidv4() })));
@@ -122,6 +128,7 @@ export const SlotWrapper = ({ slots, isCodeBlock }: SlotWrapperProps) => {
 									calc={slot.calc}
 									onDelete={handleDeleteClick}
 									isCodeBlock={isCodeBlock}
+									filter={filter}
 								/>
 							</div>
 						</CSSTransition>

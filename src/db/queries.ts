@@ -1,4 +1,4 @@
-import { TimeEntry } from "./types";
+import { FileFilter, TimeEntry } from "./types";
 import { getCurrentTimeKey } from "@/utils/dateUtils";
 import { getDateStreaks } from "@/utils/utils";
 import { getDB } from "./db";
@@ -23,6 +23,14 @@ export async function getActivityByDate(date: string) {
 	return await getDB().dailyActivity.where("date").equals(date).toArray();
 }
 
+export async function getActivityForDates(
+	dates: string[],
+	filter?: (entry: DailyActivity) => boolean,
+) {
+	const collection = getDB().dailyActivity.where("date").anyOf(dates);
+	return (filter ? collection.filter(filter) : collection).toArray();
+}
+
 /** Expects that there is only one activity for that file */
 // TODO: maybe I could check here if the file activity is duplicated to avoid errors.
 export async function getActivtityForFile(date: string, filePath: string) {
@@ -35,11 +43,9 @@ export async function getActivtityForFile(date: string, filePath: string) {
 export async function getTotalValueByDate(
 	date: string,
 	unit: Unit,
+	filter?: FileFilter,
 ): Promise<number> {
-	const activities = await getDB()
-		.dailyActivity.where("date")
-		.equals(date)
-		.toArray();
+	const activities = await getActivityForDates([date], filter);
 
 	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
@@ -52,11 +58,14 @@ export async function getTotalValueInDateRange(
 	startDate: string,
 	endDate: string,
 	unit: Unit,
+	filter?: FileFilter,
 ) {
-	const activities = await getDB()
+	const collection = getDB()
 		.dailyActivity.where("date")
-		.between(startDate, endDate, true, true)
-		.toArray();
+		.between(startDate, endDate, true, true);
+	const activities = await (
+		filter ? collection.filter(filter) : collection
+	).toArray();
 
 	const value = activities.reduce((sum, activity) => {
 		return sum + sumTimeEntries(activity, unit, true);
@@ -174,9 +183,13 @@ export async function getActivitiesFromLast24Hours(): Promise<DailyActivity[]> {
 
 export async function getTotalValueFromLast24Hours(
 	unit: Unit,
+	filter?: FileFilter,
 ): Promise<number> {
 	const activities = await getActivitiesFromLast24Hours();
-	return sumLast24Hours(activities, unit);
+	return sumLast24Hours(
+		filter ? activities.filter(filter) : activities,
+		unit,
+	);
 }
 
 export function sumLast24Hours(
@@ -207,7 +220,29 @@ export async function getWholeVaultCount(
 	unit: Unit,
 	vault: Vault,
 	enabledLanguages: Language[],
+	filter?: FileFilter,
 ) {
+	if (filter) {
+		// Filtered totals must not read or overwrite the whole-vault cache.
+		let total = 0;
+		for (const file of vault
+			.getMarkdownFiles()
+			.filter((file) => filter({ filePath: file.path }))) {
+			const tracked = getTrackedCounts(file.path);
+			if (tracked) {
+				total += unit === Unit.CHAR ? tracked.chars : tracked.words;
+			} else {
+				const content = await vault.cachedRead(file);
+				const [words, chars] = await getFileWordAndCharCount(
+					content,
+					enabledLanguages,
+				);
+				total += unit === Unit.CHAR ? chars : words;
+			}
+		}
+		return total;
+	}
+
 	const needsRecalc =
 		state.plugin.data.stats?.wholeVaultWordCount === undefined ||
 		state.plugin.data.stats?.wholeVaultCharCount === undefined;
@@ -242,14 +277,36 @@ export async function getWholeVaultCount(
 	return baseCount;
 }
 
+export async function getDaysWithCompletedGoal(
+	filter?: FileFilter,
+): Promise<string[]> {
+	if (!filter) return state.plugin.data.stats?.daysWithCompletedGoal ?? [];
+	const activities = await getDB().dailyActivity.filter(filter).toArray();
+	const totals = new Map<string, number>();
+	for (const activity of activities) {
+		totals.set(
+			activity.date,
+			(totals.get(activity.date) ?? 0) +
+				sumTimeEntries(activity, Unit.WORD, true),
+		);
+	}
+	return [...totals]
+		.filter(
+			([, total]) => total >= state.plugin.data.settings.dailyWritingGoal,
+		)
+		.map(([date]) => date);
+}
+
 export async function getCurrentCount(
 	unit: Unit,
 	target: TargetCount,
 	calc?: CalculationType,
+	filter?: FileFilter,
 ): Promise<number> {
 	if (target === TargetCount.CURRENT_FILE) {
 		const activeFile = state.plugin.app.workspace.getActiveFile();
 		if (!activeFile || activeFile.extension !== "md") return 0;
+		if (filter && !filter({ filePath: activeFile.path })) return 0;
 
 		// handleEditorChange already computed this from the live editor
 		const tracked = getTrackedCounts(activeFile.path);
@@ -271,18 +328,11 @@ export async function getCurrentCount(
 
 	switch (target) {
 		case TargetCount.CURRENT_STREAK:
-			// return state.plugin.data?.stats?.currentStreak || 0;
-			if (state.plugin.data.stats?.daysWithCompletedGoal) {
-				const { currentStreak } = getDateStreaks(
-					state.plugin.data.stats?.daysWithCompletedGoal,
-				);
-				return currentStreak;
-			} else {
-				return 0;
-			}
+			return getDateStreaks(await getDaysWithCompletedGoal(filter))
+				.currentStreak;
 
 		case TargetCount.CURRENT_DAY:
-			return await getTotalValueByDate(state.today, unit);
+			return await getTotalValueByDate(state.today, unit, filter);
 
 		case TargetCount.CURRENT_WEEK:
 			startDate = formatDate(getStartOfWeek(new Date()));
@@ -305,7 +355,7 @@ export async function getCurrentCount(
 			break;
 
 		case TargetCount.LAST_DAY:
-			return getTotalValueFromLast24Hours(unit);
+			return getTotalValueFromLast24Hours(unit, filter);
 			break;
 
 		case TargetCount.LAST_WEEK:
@@ -334,13 +384,19 @@ export async function getCurrentCount(
 				unit,
 				state.plugin.app.vault,
 				state.plugin.data.settings.enabledLanguages,
+				filter,
 			);
 
 		default:
 			throw new Error("Unsupported target type");
 	}
 
-	const value = await getTotalValueInDateRange(startDate, state.today, unit);
+	const value = await getTotalValueInDateRange(
+		startDate,
+		state.today,
+		unit,
+		filter,
+	);
 	return calc === CalculationType.AVG ? Math.round(value / totalDays) : value;
 }
 

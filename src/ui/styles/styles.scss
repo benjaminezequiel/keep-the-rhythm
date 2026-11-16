@@ -72,3 +72,10 @@
 .block-language-ktr-heatmap {
 	display: flex;
 }
+
+.ktr-query-error {
+	color: var(--text-error);
+	padding: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+}

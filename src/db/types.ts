@@ -7,6 +7,8 @@ export interface DailyActivity {
 	changes: TimeEntry[];
 }
 
+export type FileFilter = (entry: Pick<DailyActivity, "filePath">) => boolean;
+
 export interface TimeEntry {
 	timeKey: string;
 	w: number;
